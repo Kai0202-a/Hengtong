@@ -38,29 +38,33 @@ function ShippingStats(props) {
       };
     });
     setParts(newParts);
-    // 改為呼叫 API
-    for (let idx = 0; idx < parts.length; idx++) {
-      const part = parts[idx];
-      const qty = parseInt(quantities[idx], 10) || 0;
-      if (qty > 0) {
-        await fetch('https://hengtong-jtzomz8qi-kais-projects-975b317e.vercel.app/api/shipments', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            company: user?.company || user?.username || '',
-            partId: part.id,
-            partName: part.name,
-            quantity: qty,
-            price: part.price,
-            amount: qty * part.price,
-            time: today
-          })
-        });
+    try {
+      for (let idx = 0; idx < parts.length; idx++) {
+        const part = parts[idx];
+        const qty = parseInt(quantities[idx], 10) || 0;
+        if (qty > 0) {
+          const res = await fetch('https://hengtong-jtzomz8qi-kais-projects-975b317e.vercel.app/api/shipments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              company: user?.company || user?.username || '',
+              partId: part.id,
+              partName: part.name,
+              quantity: qty,
+              price: part.price,
+              amount: qty * part.price,
+              time: today
+            })
+          });
+          if (!res.ok) throw new Error('API 錯誤');
+        }
       }
+      alert('發送完成！');
+    } catch (err) {
+      alert('發送失敗，請稍後再試！');
     }
-    alert('發送完成！');
   }
 
   return (

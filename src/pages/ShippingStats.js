@@ -43,7 +43,7 @@ function ShippingStats(props) {
       const part = parts[idx];
       const qty = parseInt(quantities[idx], 10) || 0;
       if (qty > 0) {
-        await fetch('http://localhost:3001/api/shipments', {
+        await fetch('https://hengtong-jtzomz8qi-kais-projects-975b317e.vercel.app/api/shipments', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://hengtong.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', 'https://hengtong-1eqgsqjmp-kais-projects-975b317e.vercel.app');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

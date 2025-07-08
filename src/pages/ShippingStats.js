@@ -10,7 +10,7 @@ function getToday() {
 }
 
 function ShippingStats(props) {
-  const { parts, setParts } = props;
+  const { parts, setParts, updatePart } = props;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [showHistory, setShowHistory] = useState(false);
@@ -75,22 +75,21 @@ function ShippingStats(props) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newParts = parts.map((part, idx) => {
-      const qty = parseInt(quantities[idx], 10) || 0;
-      return {
-        ...part,
-        stock: part.stock - qty
-      };
-    });
-    setParts(newParts);
+    
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
       console.log('當前用戶:', userObj);
       
+      // 先處理出貨記錄和庫存更新
       for (let idx = 0; idx < parts.length; idx++) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
+          // 更新雲端庫存
+          const newStock = part.stock - qty;
+          await updatePart(part.id, newStock);
+          
+          // 發送出貨記錄
           const shipmentData = {
             company: userObj?.company || userObj?.username || 'admin',
             partId: part.id,
@@ -119,6 +118,7 @@ function ShippingStats(props) {
           }
         }
       }
+      
       alert('發送完成！');
       setQuantities(Array(parts.length).fill(""));
       

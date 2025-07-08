@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    // 获取所有经销商数据
+    // 获取所有通路商数据
     try {
       await client.connect();
       const db = client.db('hengtong');
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
   }
   
   else if (req.method === 'POST') {
-    // 新增经销商申请
+    // 新增通路商申请
     try {
       await client.connect();
       const db = client.db('hengtong');
@@ -89,6 +89,55 @@ export default async function handler(req, res) {
         success: true,
         message: '申請成功，請等待審核',
         data: newDealer
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    } finally {
+      await client.close();
+    }
+  }
+  
+  else if (req.method === 'PUT') {
+    // 更新通路商狀態
+    try {
+      await client.connect();
+      const db = client.db('hengtong');
+      const collection = db.collection('dealers');
+      
+      const { id, status } = req.body;
+      
+      if (!id || !status) {
+        res.status(400).json({
+          success: false,
+          error: '缺少必要參數'
+        });
+        return;
+      }
+      
+      const result = await collection.updateOne(
+        { _id: new ObjectId(id) },
+        { 
+          $set: { 
+            status: status,
+            updatedAt: new Date()
+          }
+        }
+      );
+      
+      if (result.matchedCount === 0) {
+        res.status(404).json({
+          success: false,
+          error: '找不到該通路商'
+        });
+        return;
+      }
+      
+      res.status(200).json({
+        success: true,
+        message: '狀態更新成功'
       });
     } catch (error) {
       res.status(500).json({

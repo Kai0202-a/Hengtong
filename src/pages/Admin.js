@@ -16,6 +16,12 @@ function Admin() {
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  // 新增通路商管理相關狀態
+  const [showDealerManagement, setShowDealerManagement] = useState(false);
+  const [dealers, setDealers] = useState([]);
+  const [dealersLoading, setDealersLoading] = useState(false);
+  const [dealersError, setDealersError] = useState(null);
+  
   // 整同一經銷商同一時間的出貨記錄
   const groupShipmentsByCompanyAndTime = (shipments) => {
     const grouped = {};
@@ -105,6 +111,75 @@ function Admin() {
     return () => clearInterval(interval);
   }, []);
 
+  // 獲取通路商數據
+  const fetchDealers = async () => {
+    try {
+      setDealersLoading(true);
+      setDealersError(null);
+      const response = await fetch('/api/dealers');
+      if (response.ok) {
+        const result = await response.json();
+        setDealers(result.data || []);
+      } else {
+        throw new Error(`獲取通路商數據失敗: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('獲取通路商數據失敗:', error);
+      setDealersError(error.message);
+    } finally {
+      setDealersLoading(false);
+    }
+  };
+  
+  // 更新通路商狀態
+  const updateDealerStatus = async (dealerId, newStatus) => {
+    try {
+      const response = await fetch('/api/dealers', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: dealerId,
+          status: newStatus
+        })
+      });
+      
+      if (response.ok) {
+        // 重新獲取數據
+        fetchDealers();
+        alert(`狀態更新成功！`);
+      } else {
+        throw new Error('更新失敗');
+      }
+    } catch (error) {
+      console.error('更新通路商狀態失敗:', error);
+      alert('更新失敗，請稍後再試');
+    }
+  };
+  
+  // 獲取狀態顯示文字和顏色
+  const getStatusDisplay = (status) => {
+    switch (status) {
+      case 'pending':
+        return { text: '待審核', color: '#ffa726' };
+      case 'active':
+        return { text: '已啟用', color: '#4CAF50' };
+      case 'suspended':
+        return { text: '已停用', color: '#f44336' };
+      default:
+        return { text: '未知', color: '#999' };
+    }
+  };
+  
+  // 處理通路商管理按鈕點擊
+  const handleDealerManagement = () => {
+    setShowDealerManagement(!showDealerManagement);
+    if (!showDealerManagement) {
+      fetchDealers();
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>
       {/* 置中提醒區塊 */}
@@ -184,13 +259,188 @@ function Admin() {
         )}
       </div>
       
+      {/* 通路商管理區塊 */}
+      {showDealerManagement && (
+        <div style={{ width: '95vw', maxWidth: 800, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '0 auto 24px auto', boxShadow: '0 2px 12px #0002' }}>
+          <h3 style={{ marginTop: 0, color: '#f5f6fa', textAlign: 'center' }}>
+            通路商帳號管理
+            <span style={{ fontSize: 12, color: '#4CAF50', marginLeft: 8 }}>(MongoDB)</span>
+          </h3>
+          
+          {dealersLoading && (
+            <div style={{ color: '#aaa', padding: 20, textAlign: 'center' }}>
+              正在載入通路商數據...
+            </div>
+          )}
+          
+          {dealersError && (
+            <div style={{ color: '#ff6b6b', padding: 20, background: '#2d1b1b', borderRadius: 8, margin: '10px 0', textAlign: 'center' }}>
+              ⚠️ 載入失敗: {dealersError}
+              <br />
+              <button 
+                onClick={fetchDealers}
+                style={{ marginTop: 10, padding: '5px 10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+              >
+                重新載入
+              </button>
+            </div>
+          )}
+          
+          {!dealersLoading && !dealersError && (
+            <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+              {dealers.length === 0 && (
+                <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>暫無通路商資料</div>
+              )}
+              
+              {dealers.map((dealer, idx) => {
+                const statusDisplay = getStatusDisplay(dealer.status);
+                return (
+                  <div key={dealer._id || idx} style={{
+                    marginBottom: 16,
+                    padding: 16,
+                    background: '#2a2e37',
+                    borderRadius: 8,
+                    border: `1px solid ${statusDisplay.color}20`
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 'bold', color: '#f5f6fa', marginBottom: 8 }}>
+                          {dealer.company || '未提供公司名稱'}
+                        </div>
+                        <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>
+                          <strong>負責人：</strong>{dealer.name || '未提供'}
+                        </div>
+                        <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>
+                          <strong>帳號：</strong>{dealer.username}
+                        </div>
+                        <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>
+                          <strong>統編：</strong>{dealer.taxId || '未提供'}
+                        </div>
+                        <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>
+                          <strong>地址：</strong>{dealer.address || '未提供'}
+                        </div>
+                        <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>
+                          <strong>電話：</strong>{dealer.phone || '未提供'}
+                        </div>
+                        <div style={{ fontSize: 14, color: '#aaa', marginBottom: 4 }}>
+                          <strong>信箱：</strong>{dealer.email || '未提供'}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#666' }}>
+                          申請時間：{new Date(dealer.createdAt).toLocaleString('zh-TW')}
+                        </div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                        <div style={{
+                          padding: '4px 12px',
+                          borderRadius: 16,
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                          background: `${statusDisplay.color}20`,
+                          color: statusDisplay.color,
+                          border: `1px solid ${statusDisplay.color}`
+                        }}>
+                          {statusDisplay.text}
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          {dealer.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => updateDealerStatus(dealer._id, 'active')}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: 12,
+                                  background: '#4CAF50',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: 4,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                核准
+                              </button>
+                              <button
+                                onClick={() => updateDealerStatus(dealer._id, 'suspended')}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: 12,
+                                  background: '#f44336',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: 4,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                拒絕
+                              </button>
+                            </>
+                          )}
+                          
+                          {dealer.status === 'active' && (
+                            <button
+                              onClick={() => updateDealerStatus(dealer._id, 'suspended')}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: 12,
+                                background: '#f44336',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 4,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              停用
+                            </button>
+                          )}
+                          
+                          {dealer.status === 'suspended' && (
+                            <button
+                              onClick={() => updateDealerStatus(dealer._id, 'active')}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: 12,
+                                background: '#4CAF50',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 4,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              啟用
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* 後台管理系統內容區塊 */}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <h2>後台管理系統</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 46, marginTop: 42 }}>
           <button style={{ padding: 16, fontSize: 18 }} onClick={() => navigate("/inventory")}>庫存管理</button>
           <button style={{ padding: 16, fontSize: 18 }} onClick={() => navigate("/shipping")}>銷售紀錄</button>
-          <button style={{ padding: 16, fontSize: 18 }}>通路商帳號管理</button>
+          <button 
+            style={{ 
+              padding: 16, 
+              fontSize: 18,
+              background: showDealerManagement ? '#4CAF50' : '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer'
+            }} 
+            onClick={handleDealerManagement}
+          >
+            通路商帳號管理 {showDealerManagement ? '(已開啟)' : ''}
+          </button>
           <button style={{ padding: 16, fontSize: 18 }}>資料備份/還原</button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>

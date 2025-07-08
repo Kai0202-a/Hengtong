@@ -39,31 +39,48 @@ function ShippingStats(props) {
     });
     setParts(newParts);
     try {
+      // 獲取用戶信息
+      const userObj = user || JSON.parse(localStorage.getItem('user'));
+      console.log('當前用戶:', userObj); // 調試用
+      
       for (let idx = 0; idx < parts.length; idx++) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
+          const shipmentData = {
+            company: userObj?.company || userObj?.username || 'admin',
+            partId: part.id,
+            partName: part.name,
+            quantity: qty,
+            price: part.price,
+            amount: qty * part.price,
+            time: today
+          };
+          
+          console.log('準備發送數據:', shipmentData); // 調試用
+          
           const res = await fetch('https://hengtong.vercel.app/api/shipments', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              company: user?.company || user?.username || '',
-              partId: part.id,
-              partName: part.name,
-              quantity: qty,
-              price: part.price,
-              amount: qty * part.price,
-              time: today
-            })
+            body: JSON.stringify(shipmentData)
           });
-          if (!res.ok) throw new Error('API 錯誤');
+          
+          const result = await res.json();
+          console.log('API 響應:', result); // 調試用
+          
+          if (!res.ok) {
+            throw new Error(`API 錯誤: ${result.error || res.status}`);
+          }
         }
       }
       alert('發送完成！');
+      // 清空數量輸入
+      setQuantities(Array(parts.length).fill(""));
     } catch (err) {
-      alert('發送失敗，請稍後再試！');
+      console.error('發送失敗:', err);
+      alert(`發送失敗：${err.message}`);
     }
   }
 

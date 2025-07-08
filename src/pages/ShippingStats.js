@@ -24,14 +24,9 @@ function ShippingStats(props) {
       return;
     }
     
-    // 檢查通路商狀態
-    if (localUser.role === 'dealer' && localUser.status === 'pending') {
-      navigate('/pending');
-      return;
-    }
-    
-    if (localUser.role === 'dealer' && localUser.status === 'suspended') {
-      alert('您的帳號已被停用，請聯繫管理員');
+    // 檢查通路商狀態 - 只允許 active 狀態的 dealer 進入
+    if (localUser.role === 'dealer' && localUser.status !== 'active') {
+      alert('您的帳號尚未審核通過或已被停用，請聯繫管理員');
       localStorage.removeItem('user');
       navigate('/');
       return;

@@ -47,16 +47,7 @@ function Home() {
         if (dealer) {
           // 檢查帳號狀態
           if (dealer.status === 'pending') {
-            const userObj = { 
-              username: dealer.username, 
-              role: "dealer", 
-              status: "pending",
-              company: dealer.company || dealer.name 
-            };
-            localStorage.setItem("user", JSON.stringify(userObj));
-            setUser(userObj);
-            setLoginMsg("登入成功！帳號審核中，請等待管理員審核...");
-            setTimeout(() => navigate("/pending"), 800);
+            setLoginMsg("您的帳號正在審核中，請等待管理員審核通過後再登入。");
           } else if (dealer.status === 'active') {
             const userObj = { 
               username: dealer.username, 
@@ -69,9 +60,9 @@ function Home() {
             setLoginMsg("登入成功！");
             setTimeout(() => navigate("/shipping"), 800);
           } else if (dealer.status === 'suspended') {
-            setLoginMsg("帳號已被停用，請聯繫管理員");
+            setLoginMsg("您的帳號已被停用，請聯繫管理員。");
           } else {
-            setLoginMsg("帳號狀態異常，請聯繫管理員");
+            setLoginMsg("帳號狀態異常，請聯繫管理員。");
           }
         } else {
           setLoginMsg("帳號或密碼錯誤");
@@ -124,7 +115,29 @@ function Home() {
           >
             {isLoggingIn ? "登入中..." : "登入"}
           </button>
-          <div style={{ marginTop: 8, color: loginMsg.includes("成功") ? "green" : "red" }}>{loginMsg}</div>
+          
+          {/* 改進的訊息顯示區域 */}
+          <div style={{ 
+            marginTop: 12, 
+            padding: loginMsg.includes("審核中") ? 12 : 0,
+            background: loginMsg.includes("審核中") ? "#fff3cd" : "transparent",
+            border: loginMsg.includes("審核中") ? "1px solid #ffeaa7" : "none",
+            borderRadius: loginMsg.includes("審核中") ? 6 : 0,
+            color: loginMsg.includes("成功") ? "green" : 
+                   loginMsg.includes("審核中") ? "#856404" : "red",
+            fontSize: loginMsg.includes("審核中") ? 14 : 16,
+            lineHeight: loginMsg.includes("審核中") ? 1.4 : 1
+          }}>
+            {loginMsg && (
+              <>
+                {loginMsg.includes("審核中") && (
+                  <div style={{ fontWeight: "bold", marginBottom: 4 }}>📋 帳號審核中</div>
+                )}
+                {loginMsg}
+              </>
+            )}
+          </div>
+          
           <div style={{ marginTop: 32, textAlign: 'center' }}>
             <button onClick={() => navigate('/register')}>申請帳號</button>
           </div>

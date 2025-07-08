@@ -5,7 +5,7 @@ import { partsData } from "./partsData";
 import { UserContext } from "../UserContext";
 
 function Inventory(props) {
-  const { parts, setParts } = props;
+  const { parts, setParts, updatePart } = props;
   const [search, setSearch] = useState("");
   const [inQty, setInQty] = useState({});
   const [outQty, setOutQty] = useState({});
@@ -19,6 +19,30 @@ function Inventory(props) {
       return;
     }
   }, [user, navigate]);
+
+  // 添加雲端庫存同步檢查
+  const syncWithCloud = async () => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/inventory');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.length > 0) {
+          const updatedParts = parts.map(part => {
+            const cloudPart = result.data.find(cp => cp.id === part.id);
+            return cloudPart ? { ...part, stock: cloudPart.stock } : part;
+          });
+          setParts(updatedParts);
+        }
+      }
+    } catch (error) {
+      console.error('同步雲端庫存失敗:', error);
+    }
+  };
+
+  // 頁面載入時同步一次雲端數據
+  useEffect(() => {
+    syncWithCloud();
+  }, []);
 
   // 搜尋處理函數
   const handleSearch = (e) => {
@@ -92,13 +116,8 @@ function Inventory(props) {
     const part = parts.find(p => p.id === id);
     const newStock = part.stock + qty;
     
-    const newParts = parts.map(part =>
-      part.id === id ? { ...part, stock: newStock } : part
-    );
-    setParts(newParts);
-    
-    // 同步到雲端
-    await syncStockToAPI(id, newStock, part.name);
+    // 使用 updatePart 函數來確保同步
+    await updatePart(id, newStock);
     
     setInQty({ ...inQty, [id]: "" });
   };
@@ -123,14 +142,8 @@ function Inventory(props) {
       createdAt: new Date().toISOString()
     };
     
-    // 更新本地庫存
-    const newParts = parts.map(part =>
-      part.id === id ? { ...part, stock: newStock } : part
-    );
-    setParts(newParts);
-    
-    // 同步庫存到雲端
-    await syncStockToAPI(id, newStock, part.name);
+    // 使用 updatePart 函數來確保同步
+    await updatePart(id, newStock);
     
     // 同步出貨記錄到雲端
     await syncShipmentToAPI(shipmentData);

@@ -61,6 +61,13 @@ function App() {
 
   useEffect(() => {
     fetchInventory();
+    
+    // 添加定期同步機制（每30秒同步一次，避免過於頻繁）
+    const interval = setInterval(() => {
+      fetchInventory();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -96,7 +103,7 @@ function App() {
           <Routes>
             <Route path="/home" element={<Home />} />
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/inventory" element={<Inventory parts={parts} updatePart={updateSinglePart} />} />
+            <Route path="/inventory" element={<Inventory parts={parts} setParts={setParts} updatePart={updateSinglePart} />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/shipping" element={<ShippingStats parts={parts} updatePart={updateSinglePart} />} />
             <Route path="/register" element={<Register />} />

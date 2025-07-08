@@ -101,14 +101,13 @@ function Admin() {
     shipments.forEach(shipment => {
       const company = shipment.company || '未知公司';
       const time = shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW');
-      // 修改：使用完整時間戳或訂單ID來確保唯一性
-      const timeKey = time;
-      const groupKey = `${company}-${timeKey}-${shipment._id || Math.random()}`;
+      const timeKey = time.substring(0, 16);
+      const groupKey = `${company}-${timeKey}`;
       
       if (!grouped[groupKey]) {
         grouped[groupKey] = {
           company,
-          time: time.substring(0, 16), // 顯示時只顯示到分鐘
+          time: timeKey,
           items: [],
           totalQuantity: 0,
           totalAmount: 0,
@@ -121,15 +120,27 @@ function Admin() {
       const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
       const itemProfit = (shipment.amount || 0) - itemCost;
       
-      // 每筆訂單都作為獨立項目添加
-      grouped[groupKey].items.push({
-        partName: shipment.partName || '未知商品',
-        quantity: shipment.quantity || 0,
-        price: shipment.price || 0,
-        amount: shipment.amount || 0,
-        cost: itemCost,
-        profit: itemProfit
-      });
+      // 檢查是否已有相同商品，如果有則累加數量
+      const existingItemIndex = grouped[groupKey].items.findIndex(item => item.partName === shipment.partName);
+      
+      if (existingItemIndex !== -1) {
+        // 相同商品存在，累加數量和金額
+        const existingItem = grouped[groupKey].items[existingItemIndex];
+        existingItem.quantity += shipment.quantity || 0;
+        existingItem.amount += shipment.amount || 0;
+        existingItem.cost += itemCost;
+        existingItem.profit += itemProfit;
+      } else {
+        // 新商品，直接加入
+        grouped[groupKey].items.push({
+          partName: shipment.partName || '未知商品',
+          quantity: shipment.quantity || 0,
+          price: shipment.price || 0,
+          amount: shipment.amount || 0,
+          cost: itemCost,
+          profit: itemProfit
+        });
+      }
       
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;

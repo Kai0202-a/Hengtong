@@ -23,12 +23,37 @@ function Admin() {
   const [dealersLoading, setDealersLoading] = useState(false);
   const [dealersError, setDealersError] = useState(null);
   
-  // 新增獲取庫存的函數
-  const getStockByPartName = (partName) => {
-    const part = partsData.find(p => p.name === partName);
-    return part ? part.stock : 0;
+  // 新增庫存狀態
+  const [inventory, setInventory] = useState([]);
+  
+  // 獲取庫存數據
+  const fetchInventory = async () => {
+    try {
+      const response = await fetch('/api/inventory');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setInventory(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('獲取庫存數據失敗:', error);
+    }
   };
   
+  // 修改獲取庫存的函數，使用API數據
+  const getStockByPartName = (partName) => {
+    // 先從API數據中查找
+    const apiPart = inventory.find(p => p.name === partName);
+    if (apiPart) {
+      return apiPart.stock;
+    }
+    
+    // 如果API數據中沒有，則從靜態數據中查找
+    const staticPart = partsData.find(p => p.name === partName);
+    return staticPart ? staticPart.stock : 0;
+  };
+
   // 整同一經銷商同一時間的出貨記錄
   const groupShipmentsByCompanyAndTime = (shipments) => {
     const grouped = {};
@@ -109,10 +134,12 @@ function Admin() {
   useEffect(() => {
     // 初始載入
     fetchShipments(true);
+    fetchInventory(); // 新增：獲取庫存數據
     
     // 定期更新數據（每10秒）
     const interval = setInterval(() => {
       fetchShipments(false);
+      fetchInventory(); // 新增：定期更新庫存數據
     }, 10000);
     
     return () => clearInterval(interval);

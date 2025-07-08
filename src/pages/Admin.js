@@ -96,16 +96,19 @@ function Admin() {
 
   // 整合同一經銷商同一時間的出貨記錄
   const groupShipmentsByCompanyAndTime = (shipments) => {
+    console.log('原始 shipments:', JSON.parse(JSON.stringify(shipments)));
     const grouped = {};
     
-    shipments.forEach(shipment => {
+    shipments.forEach((shipment, index) => {
+      console.log(`處理第 ${index + 1} 筆 shipment:`, JSON.parse(JSON.stringify(shipment)));
       const company = shipment.company || '未知公司';
-      // 統一使用 createdAt 進行時間分組，確保時間格式一致
       const date = new Date(shipment.createdAt);
       const timeKey = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
       const groupKey = `${company}-${timeKey}`;
+      console.log(`生成的 groupKey: ${groupKey}`);
       
       if (!grouped[groupKey]) {
+        console.log(`創建新的 group: ${groupKey}`);
         grouped[groupKey] = {
           company,
           time: timeKey,
@@ -114,24 +117,23 @@ function Admin() {
           totalAmount: 0,
           totalCost: 0,
           totalProfit: 0,
-          createdAt: shipment.createdAt || shipment.time
+          createdAt: shipment.createdAt
         };
       }
       
       const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
       const itemProfit = (shipment.amount || 0) - itemCost;
       
-      // 檢查是否已有相同商品
       const existingItem = grouped[groupKey].items.find(item => item.partName === shipment.partName);
       
       if (existingItem) {
-        // 累加相同商品的數量和金額
+        console.log(`找到相同商品 ${shipment.partName}，進行累加`);
         existingItem.quantity += shipment.quantity || 0;
         existingItem.amount += shipment.amount || 0;
         existingItem.cost += itemCost;
         existingItem.profit += itemProfit;
       } else {
-        // 添加新商品項目
+        console.log(`新增商品 ${shipment.partName}`);
         grouped[groupKey].items.push({
           partName: shipment.partName || '未知商品',
           quantity: shipment.quantity || 0,
@@ -142,15 +144,17 @@ function Admin() {
         });
       }
       
-      // 重新計算總計（確保金額正確累加）
       grouped[groupKey].totalQuantity = grouped[groupKey].items.reduce((sum, item) => sum + item.quantity, 0);
       grouped[groupKey].totalAmount = grouped[groupKey].items.reduce((sum, item) => sum + item.amount, 0);
       grouped[groupKey].totalCost = grouped[groupKey].items.reduce((sum, item) => sum + item.cost, 0);
       grouped[groupKey].totalProfit = grouped[groupKey].items.reduce((sum, item) => sum + item.profit, 0);
+      console.log(`更新後的 group ${groupKey}:`, JSON.parse(JSON.stringify(grouped[groupKey])));
     });
     
-    // 直接對第一階段的結果進行排序並返回
-    return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    console.log('最終 grouped:', JSON.parse(JSON.stringify(grouped)));
+    const finalResult = Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    console.log('最終結果:', JSON.parse(JSON.stringify(finalResult)));
+    return finalResult;
   };
 
   // 獲取通路商數據

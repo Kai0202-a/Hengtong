@@ -16,6 +16,7 @@ function Admin() {
   const [dealers, setDealers] = useState([]);
   const [dealersLoading, setDealersLoading] = useState(false);
   const [dealersError, setDealersError] = useState(null);
+  const [selectedDealer, setSelectedDealer] = useState(null); // 新增：選中的通路商詳細資料
   
   // 雲端庫存狀態
   const [cloudInventory, setCloudInventory] = useState([]);
@@ -174,7 +175,8 @@ function Admin() {
       
       if (response.ok) {
         fetchDealers();
-        alert(`狀態更新成功！`);
+        const statusText = newStatus === 'active' ? '啟用' : newStatus === 'suspended' ? '停用' : '審核通過';
+        alert(`通路商狀態已更新為：${statusText}`);
       } else {
         throw new Error('更新失敗');
       }
@@ -195,6 +197,16 @@ function Admin() {
       default:
         return { text: '未知', color: '#999' };
     }
+  };
+  
+  // 新增：顯示通路商詳細資料
+  const showDealerDetails = (dealer) => {
+    setSelectedDealer(dealer);
+  };
+  
+  // 新增：關閉詳細資料視窗
+  const closeDealerDetails = () => {
+    setSelectedDealer(null);
   };
   
   const handleDealerManagement = () => {
@@ -428,10 +440,10 @@ function Admin() {
         )}
       </div>
       
-      {/* 通路商管理區塊 */}
+      {/* 通路商管理區塊 - 修改標題 */}
       <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, color: '#f5f6fa' }}>通路商賬號管理</h3>
+          <h3 style={{ margin: 0, color: '#f5f6fa' }}>通路商上線狀態</h3>
           <button 
             onClick={handleDealerManagement}
             style={{ 
@@ -443,7 +455,7 @@ function Admin() {
               cursor: 'pointer' 
             }}
           >
-            {showDealerManagement ? '隱藏' : '顯示'}
+            {showDealerManagement ? '隱藏' : '管理通路商'}
           </button>
         </div>
         
@@ -465,54 +477,93 @@ function Admin() {
                         padding: 12, 
                         marginBottom: 8, 
                         borderRadius: 8,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
+                        border: dealer.status === 'pending' ? '2px solid #ffa726' : '1px solid #444'
                       }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{dealer.name}</div>
-                          <div style={{ fontSize: 12, color: '#aaa' }}>帳號: {dealer.username}</div>
-                          <div style={{ fontSize: 12, color: '#aaa' }}>電話: {dealer.phone}</div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ 
-                            color: statusInfo.color, 
-                            fontWeight: 'bold', 
-                            marginBottom: 8 
-                          }}>
-                            {statusInfo.text}
-                          </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                           <div>
+                            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{dealer.name}</div>
+                            <div style={{ fontSize: 12, color: '#aaa' }}>帳號: {dealer.username}</div>
+                            <div style={{ fontSize: 12, color: '#aaa' }}>電話: {dealer.phone}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                              color: statusInfo.color, 
+                              fontWeight: 'bold', 
+                              marginBottom: 8,
+                              padding: '4px 8px',
+                              background: statusInfo.color + '20',
+                              borderRadius: 4
+                            }}>
+                              {statusInfo.text}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {dealer.status === 'pending' && (
                             <button 
                               onClick={() => updateDealerStatus(dealer.id, 'active')}
                               style={{ 
-                                padding: '4px 8px', 
+                                padding: '6px 12px', 
                                 background: '#4CAF50', 
                                 color: 'white', 
                                 border: 'none', 
-                                borderRadius: 3, 
+                                borderRadius: 4, 
                                 cursor: 'pointer',
-                                marginRight: 4,
-                                fontSize: 10
+                                fontSize: 12,
+                                fontWeight: 'bold'
                               }}
                             >
-                              啟用
+                              ✅ 審核通過
                             </button>
-                            <button 
-                              onClick={() => updateDealerStatus(dealer.id, 'suspended')}
-                              style={{ 
-                                padding: '4px 8px', 
-                                background: '#f44336', 
-                                color: 'white', 
-                                border: 'none', 
-                                borderRadius: 3, 
-                                cursor: 'pointer',
-                                fontSize: 10
-                              }}
-                            >
-                              停用
-                            </button>
-                          </div>
+                          )}
+                          
+                          <button 
+                            onClick={() => updateDealerStatus(dealer.id, 'active')}
+                            disabled={dealer.status === 'active'}
+                            style={{ 
+                              padding: '6px 12px', 
+                              background: dealer.status === 'active' ? '#666' : '#4CAF50', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: 4, 
+                              cursor: dealer.status === 'active' ? 'not-allowed' : 'pointer',
+                              fontSize: 12
+                            }}
+                          >
+                            🟢 啟用
+                          </button>
+                          
+                          <button 
+                            onClick={() => updateDealerStatus(dealer.id, 'suspended')}
+                            disabled={dealer.status === 'suspended'}
+                            style={{ 
+                              padding: '6px 12px', 
+                              background: dealer.status === 'suspended' ? '#666' : '#f44336', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: 4, 
+                              cursor: dealer.status === 'suspended' ? 'not-allowed' : 'pointer',
+                              fontSize: 12
+                            }}
+                          >
+                            🔴 停用
+                          </button>
+                          
+                          <button 
+                            onClick={() => showDealerDetails(dealer)}
+                            style={{ 
+                              padding: '6px 12px', 
+                              background: '#2196F3', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: 4, 
+                              cursor: 'pointer',
+                              fontSize: 12
+                            }}
+                          >
+                            📋 詳細資料
+                          </button>
                         </div>
                       </div>
                     );
@@ -524,7 +575,146 @@ function Admin() {
         )}
       </div>
       
-      {/* 後台管理系統按鈕 */}
+      {/* 通路商詳細資料彈窗 */}
+      {selectedDealer && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#23272f',
+            padding: 24,
+            borderRadius: 12,
+            color: '#f5f6fa',
+            maxWidth: 500,
+            width: '90%',
+            maxHeight: '80%',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0 }}>通路商詳細資料</h3>
+              <button 
+                onClick={closeDealerDetails}
+                style={{
+                  background: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '8px 12px',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ 關閉
+              </button>
+            </div>
+            
+            <div style={{ lineHeight: 1.8 }}>
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>公司名稱：</strong>
+                <span>{selectedDealer.name}</span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>帳號：</strong>
+                <span>{selectedDealer.username}</span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>密碼：</strong>
+                <span style={{ fontFamily: 'monospace', background: '#333', padding: '2px 6px', borderRadius: 3 }}>
+                  {selectedDealer.password || '••••••••'}
+                </span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>聯絡電話：</strong>
+                <span>{selectedDealer.phone}</span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>電子郵件：</strong>
+                <span>{selectedDealer.email || '未提供'}</span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>地址：</strong>
+                <span>{selectedDealer.address || '未提供'}</span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>註冊時間：</strong>
+                <span>{selectedDealer.createdAt ? new Date(selectedDealer.createdAt).toLocaleString('zh-TW') : '未知'}</span>
+              </div>
+              
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: '#4CAF50' }}>帳號狀態：</strong>
+                <span style={{ 
+                  color: getStatusDisplay(selectedDealer.status).color,
+                  fontWeight: 'bold',
+                  background: getStatusDisplay(selectedDealer.status).color + '20',
+                  padding: '2px 8px',
+                  borderRadius: 4
+                }}>
+                  {getStatusDisplay(selectedDealer.status).text}
+                </span>
+              </div>
+              
+              <div style={{ marginTop: 20, padding: 12, background: '#2a2e37', borderRadius: 8 }}>
+                <strong style={{ color: '#ffa726' }}>快速操作：</strong>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {selectedDealer.status === 'pending' && (
+                    <button 
+                      onClick={() => {
+                        updateDealerStatus(selectedDealer.id, 'active');
+                        closeDealerDetails();
+                      }}
+                      style={{ 
+                        padding: '8px 16px', 
+                        background: '#4CAF50', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: 4, 
+                        cursor: 'pointer',
+                        fontSize: 14
+                      }}
+                    >
+                      ✅ 審核通過並啟用
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={() => {
+                      updateDealerStatus(selectedDealer.id, selectedDealer.status === 'active' ? 'suspended' : 'active');
+                      closeDealerDetails();
+                    }}
+                    style={{ 
+                      padding: '8px 16px', 
+                      background: selectedDealer.status === 'active' ? '#f44336' : '#4CAF50', 
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: 4, 
+                      cursor: 'pointer',
+                      fontSize: 14
+                    }}
+                  >
+                    {selectedDealer.status === 'active' ? '🔴 停用帳號' : '🟢 啟用帳號'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 後台管理系統按鈕 - 修改通路商管理按鈕文字 */}
       <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
         <h3 style={{ marginTop: 0, color: '#f5f6fa', textAlign: 'center' }}>後台管理系統</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
@@ -573,7 +763,7 @@ function Admin() {
               fontWeight: 'bold'
             }}
           >
-            👥 通路商賬號管理
+            👥 通路商上線狀態
           </button>
           
           <button 

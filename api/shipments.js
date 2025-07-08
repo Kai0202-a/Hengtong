@@ -1,9 +1,12 @@
 export default function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://hengtong-1eqgsqjmp-kais-projects-975b317e.vercel.app');
+  // 設定 CORS headers
+  res.setHeader('Access-Control-Allow-Origin', 'https://hengtong.vercel.app');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
+  // 處理 preflight request
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;

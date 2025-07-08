@@ -420,7 +420,7 @@ function Admin() {
           </button>
           
           <button 
-            onClick={() => navigate('/shipping-stats')}
+            onClick={() => navigate('/shipping')}
             style={{ 
               padding: '16px', 
               background: '#2196F3', 

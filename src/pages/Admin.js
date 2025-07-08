@@ -164,8 +164,20 @@ function Admin() {
           createdAt: order.createdAt
         };
       } else {
-        // 合併相同時間的訂單
-        finalGrouped[finalKey].items.push(...order.items);
+        // 合併相同時間的訂單時，檢查相同商品並累加
+        order.items.forEach(newItem => {
+          const existingItem = finalGrouped[finalKey].items.find(item => item.partName === newItem.partName);
+          if (existingItem) {
+            // 累加相同商品
+            existingItem.quantity += newItem.quantity;
+            existingItem.amount += newItem.amount;
+            existingItem.cost += newItem.cost;
+            existingItem.profit += newItem.profit;
+          } else {
+            // 添加新商品
+            finalGrouped[finalKey].items.push({...newItem});
+          }
+        });
         finalGrouped[finalKey].totalQuantity += order.totalQuantity;
         finalGrouped[finalKey].totalAmount += order.totalAmount;
         finalGrouped[finalKey].totalCost += order.totalCost;

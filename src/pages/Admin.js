@@ -106,19 +106,10 @@ function Admin() {
       console.log(`\n--- 處理第 ${index + 1} 筆 shipment ---`);
       console.log('當前 shipment:', JSON.parse(JSON.stringify(shipment)));
       
-      // 檢查必要字段
-      if (!shipment.company) {
-        console.warn('警告：shipment 缺少 company 字段:', shipment);
-      }
-      if (!shipment.createdAt) {
-        console.warn('警告：shipment 缺少 createdAt 字段:', shipment);
-      }
-      if (!shipment.partName) {
-        console.warn('警告：shipment 缺少 partName 字段:', shipment);
-      }
-      
       const company = shipment.company || '未知公司';
       const date = new Date(shipment.createdAt);
+      
+      // 修改：將時間精度降低到分鐘級別，忽略秒數
       const timeKey = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
       const groupKey = `${company}-${timeKey}`;
       
@@ -736,3 +727,118 @@ function Admin() {
 }
 
 export default Admin;
+
+function groupShipmentsByCompanyAndTime(shipments) {
+  console.log('=== 開始處理 shipments ===');
+  console.log('原始 shipments 數量:', shipments.length);
+  
+  const grouped = {};
+  
+  shipments.forEach((shipment, index) => {
+    console.log(`處理第 ${index + 1} 個 shipment:`, shipment);
+    
+    const company = shipment.company || 'unknown';
+    const date = new Date(shipment.createdAt);
+    
+    // 將秒數和毫秒數設為0，實現按分鐘分組
+    date.setSeconds(0, 0);
+    
+    const timeKey = date.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+    const groupKey = `${company}-${timeKey}`;
+    
+    console.log(`公司: ${company}`);
+    console.log(`時間: ${timeKey}`);
+    console.log(`分組鍵: ${groupKey}`);
+    
+    if (!grouped[groupKey]) {
+      console.log(`創建新的分組: ${groupKey}`);
+      grouped[groupKey] = {
+        company,
+        time: timeKey,
+        items: [],
+        totalQuantity: 0,
+        totalAmount: 0,
+        totalCost: 0,
+        totalProfit: 0,
+        createdAt: shipment.createdAt
+      };
+    } else {
+      console.log(`使用現有分組: ${groupKey}`);
+    }
+    
+    const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
+    const itemProfit = (shipment.amount || 0) - itemCost;
+    
+    console.log(`商品: ${shipment.partName}`);
+    console.log(`數量: ${shipment.quantity}`);
+    console.log(`金額: ${shipment.amount}`);
+    console.log(`成本: ${itemCost}`);
+    console.log(`利潤: ${itemProfit}`);
+    
+    const existingItem = grouped[groupKey].items.find(item => item.partName === shipment.partName);
+    
+    if (existingItem) {
+      console.log(`找到相同商品 ${shipment.partName}，進行累加`);
+      console.log('累加前:', JSON.parse(JSON.stringify(existingItem)));
+      existingItem.quantity += shipment.quantity || 0;
+      existingItem.amount += shipment.amount || 0;
+      existingItem.cost += itemCost;
+      existingItem.profit += itemProfit;
+      console.log('累加後:', JSON.parse(JSON.stringify(existingItem)));
+    } else {
+      console.log(`新增商品 ${shipment.partName}`);
+      const newItem = {
+        partName: shipment.partName || '未知商品',
+        quantity: shipment.quantity || 0,
+        price: shipment.price || 0,
+        amount: shipment.amount || 0,
+        cost: itemCost,
+        profit: itemProfit
+      };
+      grouped[groupKey].items.push(newItem);
+      console.log('新增的商品:', JSON.parse(JSON.stringify(newItem)));
+    }
+    
+    // 重新計算總計
+    const oldTotals = {
+      totalQuantity: grouped[groupKey].totalQuantity,
+      totalAmount: grouped[groupKey].totalAmount,
+      totalCost: grouped[groupKey].totalCost,
+      totalProfit: grouped[groupKey].totalProfit
+    };
+    
+    grouped[groupKey].totalQuantity = grouped[groupKey].items.reduce((sum, item) => sum + item.quantity, 0);
+    grouped[groupKey].totalAmount = grouped[groupKey].items.reduce((sum, item) => sum + item.amount, 0);
+    grouped[groupKey].totalCost = grouped[groupKey].items.reduce((sum, item) => sum + item.cost, 0);
+    grouped[groupKey].totalProfit = grouped[groupKey].items.reduce((sum, item) => sum + item.profit, 0);
+    
+    console.log('總計更新:');
+    console.log('更新前:', oldTotals);
+    console.log('更新後:', {
+      totalQuantity: grouped[groupKey].totalQuantity,
+      totalAmount: grouped[groupKey].totalAmount,
+      totalCost: grouped[groupKey].totalCost,
+      totalProfit: grouped[groupKey].totalProfit
+    });
+    
+    console.log(`分組 ${groupKey} 當前商品數量: ${grouped[groupKey].items.length}`);
+    console.log(`分組 ${groupKey} 當前總數量: ${grouped[groupKey].totalQuantity}`);
+  });
+  
+  console.log('\n=== 處理完成 ===');
+  console.log('所有分組鍵:', Object.keys(grouped));
+  console.log('分組數量:', Object.keys(grouped).length);
+  
+  Object.keys(grouped).forEach(key => {
+    console.log(`分組 ${key}:`);
+    console.log(`  商品數量: ${grouped[key].items.length}`);
+    console.log(`  總數量: ${grouped[key].totalQuantity}`);
+    console.log(`  商品列表:`, grouped[key].items.map(item => `${item.partName}(${item.quantity})`).join(', '));
+  });
+  
+  console.log('最終 grouped:', JSON.parse(JSON.stringify(grouped)));
+  const finalResult = Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  console.log('最終結果數量:', finalResult.length);
+  console.log('最終結果:', JSON.parse(JSON.stringify(finalResult)));
+  return finalResult;
+};

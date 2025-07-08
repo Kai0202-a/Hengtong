@@ -105,7 +105,7 @@ function App() {
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/inventory" element={<Inventory parts={parts} setParts={setParts} updatePart={updateSinglePart} />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/shipping" element={<ShippingStats parts={parts} updatePart={updateSinglePart} />} />
+            <Route path="/shipping" element={<ShippingStats parts={parts} setParts={setParts} updatePart={updateSinglePart} />} />
             <Route path="/register" element={<Register />} />
           </Routes>
         </div>

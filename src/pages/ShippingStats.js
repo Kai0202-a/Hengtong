@@ -21,6 +21,20 @@ function ShippingStats(props) {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
     if (!localUser || (localUser.role !== 'dealer' && localUser.role !== 'admin')) {
       navigate('/');
+      return;
+    }
+    
+    // 檢查通路商狀態
+    if (localUser.role === 'dealer' && localUser.status === 'pending') {
+      navigate('/pending');
+      return;
+    }
+    
+    if (localUser.role === 'dealer' && localUser.status === 'suspended') {
+      alert('您的帳號已被停用，請聯繫管理員');
+      localStorage.removeItem('user');
+      navigate('/');
+      return;
     }
   }, [user, navigate]);
   

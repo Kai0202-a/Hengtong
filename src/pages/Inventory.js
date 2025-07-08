@@ -15,6 +15,7 @@ function Inventory(props) {
     const localUser = user || JSON.parse(localStorage.getItem("user"));
     if (!localUser || localUser.role !== "admin") {
       navigate("/"); // 未登入或非管理員自動跳回首頁
+      return;
     }
   }, [user, navigate]);
 

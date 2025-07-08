@@ -41,22 +41,40 @@ function Home() {
       if (result.success) {
         const dealer = result.data.find(d => 
           d.username === username && 
-          d.password === password && 
-          (d.status === 'active' || d.status === 'pending')
+          d.password === password
         );
         
         if (dealer) {
-          const userObj = { 
-            username: dealer.username, 
-            role: "dealer", 
-            company: dealer.company || dealer.name 
-          };
-          localStorage.setItem("user", JSON.stringify(userObj));
-          setUser(userObj);
-          setLoginMsg("登入成功！");
-          setTimeout(() => navigate("/shipping"), 800);
+          // 檢查帳號狀態
+          if (dealer.status === 'pending') {
+            const userObj = { 
+              username: dealer.username, 
+              role: "dealer", 
+              status: "pending",
+              company: dealer.company || dealer.name 
+            };
+            localStorage.setItem("user", JSON.stringify(userObj));
+            setUser(userObj);
+            setLoginMsg("登入成功！帳號審核中，請等待管理員審核...");
+            setTimeout(() => navigate("/pending"), 800);
+          } else if (dealer.status === 'active') {
+            const userObj = { 
+              username: dealer.username, 
+              role: "dealer", 
+              status: "active",
+              company: dealer.company || dealer.name 
+            };
+            localStorage.setItem("user", JSON.stringify(userObj));
+            setUser(userObj);
+            setLoginMsg("登入成功！");
+            setTimeout(() => navigate("/shipping"), 800);
+          } else if (dealer.status === 'suspended') {
+            setLoginMsg("帳號已被停用，請聯繫管理員");
+          } else {
+            setLoginMsg("帳號狀態異常，請聯繫管理員");
+          }
         } else {
-          setLoginMsg("帳號或密碼錯誤，或帳號尚未審核通過");
+          setLoginMsg("帳號或密碼錯誤");
         }
       } else {
         setLoginMsg("登入驗證失敗，請稍後再試");

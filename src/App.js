@@ -8,6 +8,7 @@ import { partsData } from './pages/partsData';
 import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
+import Pending from './pages/Pending';
 
 function App() {
   const [parts, setParts] = useState(partsData); // 移除 localStorage 初始化
@@ -105,6 +106,7 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/shipping" element={<ShippingStats parts={parts} setParts={updateParts} />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/pending" element={<Pending />} />
           </Routes>
         </div>
       </Router>

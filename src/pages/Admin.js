@@ -120,14 +120,27 @@ function Admin() {
       const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
       const itemProfit = (shipment.amount || 0) - itemCost;
       
-      grouped[groupKey].items.push({
-        partName: shipment.partName || '未知商品',
-        quantity: shipment.quantity || 0,
-        price: shipment.price || 0,
-        amount: shipment.amount || 0,
-        cost: itemCost,
-        profit: itemProfit
-      });
+      // 檢查是否已有相同商品，如果有則累加數量
+      const existingItemIndex = grouped[groupKey].items.findIndex(item => item.partName === shipment.partName);
+      
+      if (existingItemIndex !== -1) {
+        // 相同商品存在，累加數量和金額
+        const existingItem = grouped[groupKey].items[existingItemIndex];
+        existingItem.quantity += shipment.quantity || 0;
+        existingItem.amount += shipment.amount || 0;
+        existingItem.cost += itemCost;
+        existingItem.profit += itemProfit;
+      } else {
+        // 新商品，直接加入
+        grouped[groupKey].items.push({
+          partName: shipment.partName || '未知商品',
+          quantity: shipment.quantity || 0,
+          price: shipment.price || 0,
+          amount: shipment.amount || 0,
+          cost: itemCost,
+          profit: itemProfit
+        });
+      }
       
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;

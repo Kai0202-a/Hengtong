@@ -311,16 +311,29 @@ function Admin() {
   };
 
   // 修改過濾邏輯：只顯示清空時間之後的資料
+  // 在 getFilteredOrders 函數後添加調試日誌
   const getFilteredOrders = () => {
-    if (!lastClearTime) {
-      return orders;
-    }
-    
-    const clearTime = new Date(lastClearTime);
-    return orders.filter(order => {
-      const orderTime = new Date(order.createdAt);
-      return orderTime > clearTime;
-    });
+  console.log('=== getFilteredOrders 調試 ===');
+  console.log('原始 orders 數量:', orders.length);
+  console.log('原始 orders:', orders);
+  console.log('lastClearTime:', lastClearTime);
+  
+  if (!lastClearTime) {
+    console.log('沒有清空時間，返回所有訂單');
+    return orders;
+  }
+  
+  const clearTime = new Date(lastClearTime);
+  const filtered = orders.filter(order => {
+    const orderTime = new Date(order.createdAt);
+    const shouldShow = orderTime > clearTime;
+    console.log(`訂單 ${order.company} ${order.time}: ${orderTime} > ${clearTime} = ${shouldShow}`);
+    return shouldShow;
+  });
+  
+  console.log('過濾後的訂單數量:', filtered.length);
+  console.log('過濾後的訂單:', filtered);
+  return filtered;
   };
 
   // 新增：檢查是否需要自動清空（每月1號）
@@ -471,19 +484,25 @@ function Admin() {
                     <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
                   </div>
                   
+                  // 在第488行 order.items.map 之前添加調試
                   <div style={{ marginLeft: 12, marginBottom: 8 }}>  
-                    {order.items.map((item, itemIdx) => (
-                      <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
-                        • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
-                        <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
-                        {item.amount > 0 && (
-                          <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
-                        )}
-                        <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
-                          (雲端庫存: {getStockByPartName(item.partName)})
-                        </span>
-                      </div>
-                    ))}
+                  {(() => {
+                  console.log(`渲染訂單 ${order.company} ${order.time}:`);
+                  console.log(`  items 數量: ${order.items.length}`);
+                  console.log(`  items 內容:`, order.items);
+                  return order.items.map((item, itemIdx) => (
+                  <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
+                  • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
+                  <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
+                  {item.amount > 0 && (
+                  <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
+                  )}
+                  <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
+                  (雲端庫存: {getStockByPartName(item.partName)})
+                  </span>
+                  </div>
+                  ));
+                  })()} 
                   </div>
                   
                   <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>

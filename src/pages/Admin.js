@@ -150,46 +150,8 @@ function Admin() {
       grouped[groupKey].totalProfit = grouped[groupKey].items.reduce((sum, item) => sum + item.profit, 0);
     });
     
-    // 按時間重新分組，合併相同公司和時間的訂單
-    const finalGrouped = {};
-    Object.values(grouped).forEach(order => {
-      const finalKey = `${order.company}-${order.time}`;
-      
-      if (!finalGrouped[finalKey]) {
-        finalGrouped[finalKey] = {
-          company: order.company,
-          time: order.time,
-          items: [...order.items],
-          totalQuantity: order.totalQuantity,
-          totalAmount: order.totalAmount,
-          totalCost: order.totalCost,
-          totalProfit: order.totalProfit,
-          createdAt: order.createdAt
-        };
-      } else {
-        // 合併相同時間的訂單時，檢查相同商品並累加
-        order.items.forEach(newItem => {
-          const existingItem = finalGrouped[finalKey].items.find(item => item.partName === newItem.partName);
-          if (existingItem) {
-            // 累加相同商品
-            existingItem.quantity += newItem.quantity;
-            existingItem.amount += newItem.amount;
-            existingItem.cost += newItem.cost;
-            existingItem.profit += newItem.profit;
-          } else {
-            // 添加新商品
-            finalGrouped[finalKey].items.push({...newItem});
-          }
-        });
-        // 修正：重新計算總計，而不是直接累加
-        finalGrouped[finalKey].totalQuantity = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.quantity, 0);
-        finalGrouped[finalKey].totalAmount = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.amount, 0);
-        finalGrouped[finalKey].totalCost = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.cost, 0);
-        finalGrouped[finalKey].totalProfit = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.profit, 0);
-      }
-    });
-    
-    return Object.values(finalGrouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // 直接對第一階段的結果進行排序並返回
+    return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   };
 
   // 獲取通路商數據

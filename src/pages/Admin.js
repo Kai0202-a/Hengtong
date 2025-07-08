@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../UserContext";
+import { partsData } from './partsData'; // 新增引入
 
 function Admin() {
   const navigate = useNavigate();
@@ -234,7 +235,7 @@ function Admin() {
                   <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
                 </div>
                 
-                <div style={{ marginLeft: 12, marginBottom: 8 }}>
+                <div style={{ marginLeft: 12, marginBottom: 8 }}>  
                   {order.items.map((item, itemIdx) => (
                     <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
                       • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
@@ -242,6 +243,9 @@ function Admin() {
                       {item.amount > 0 && (
                         <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
                       )}
+                      <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
+                        (庫存: {getStockByPartName(item.partName)})
+                      </span>
                     </div>
                   ))}
                 </div>

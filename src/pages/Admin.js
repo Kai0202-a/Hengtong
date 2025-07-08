@@ -178,6 +178,11 @@ function Admin() {
             finalGrouped[finalKey].items.push({...newItem});
           }
         });
+        // 修正：重新計算總計，而不是直接累加
+        finalGrouped[finalKey].totalQuantity = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.quantity, 0);
+        finalGrouped[finalKey].totalAmount = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.amount, 0);
+        finalGrouped[finalKey].totalCost = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.cost, 0);
+        finalGrouped[finalKey].totalProfit = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.profit, 0);
         finalGrouped[finalKey].totalQuantity += order.totalQuantity;
         finalGrouped[finalKey].totalAmount += order.totalAmount;
         finalGrouped[finalKey].totalCost += order.totalCost;

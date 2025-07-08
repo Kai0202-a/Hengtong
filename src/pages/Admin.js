@@ -276,6 +276,26 @@ function Admin() {
         
         {!loading && !error && (
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {/* 低庫存警告 */}
+            {cloudInventory.filter(item => item.stock < 10).length > 0 && (
+              <div style={{ 
+                background: '#ff6b6b20', 
+                border: '1px solid #ff6b6b', 
+                borderRadius: 8, 
+                padding: 12, 
+                marginBottom: 16,
+                color: '#ff6b6b'
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: 8 }}>⚠️ 低庫存警告</div>
+                {cloudInventory.filter(item => item.stock < 10).map(item => (
+                  <div key={item.id} style={{ fontSize: 14, marginBottom: 4 }}>
+                    {item.name}: 剩餘 {item.stock} 件
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* 出貨記錄 */}
             {orders.length === 0 ? (
               <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>暫無出貨紀錄</div>
             ) : (
@@ -308,17 +328,6 @@ function Admin() {
                 </div>
               ))
             )}
-          </div>
-        )}
-        
-        {!loading && !error && orders.length > 10 && (
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button 
-              onClick={() => navigate('/shipping')}
-              style={{ padding: '8px 16px', background: '#2196F3', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-            >
-              📊 查看完整記錄
-            </button>
           </div>
         )}
       </div>

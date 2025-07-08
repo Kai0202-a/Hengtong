@@ -141,10 +141,11 @@ function Admin() {
         });
       }
       
-      grouped[groupKey].totalQuantity += shipment.quantity || 0;
-      grouped[groupKey].totalAmount += shipment.amount || 0;
-      grouped[groupKey].totalCost += itemCost;
-      grouped[groupKey].totalProfit += itemProfit;
+      // 重新計算總計（確保金額正確累加）
+      grouped[groupKey].totalQuantity = grouped[groupKey].items.reduce((sum, item) => sum + item.quantity, 0);
+      grouped[groupKey].totalAmount = grouped[groupKey].items.reduce((sum, item) => sum + item.amount, 0);
+      grouped[groupKey].totalCost = grouped[groupKey].items.reduce((sum, item) => sum + item.cost, 0);
+      grouped[groupKey].totalProfit = grouped[groupKey].items.reduce((sum, item) => sum + item.profit, 0);
     });
     
     // 按時間重新分組，合併相同公司和時間的訂單
@@ -386,7 +387,7 @@ function Admin() {
         )}
         
         {!loading && !error && (
-          <ul style={{ paddingLeft: 0, maxHeight: 800, overflowY: 'auto', margin: 0, listStyle: 'none' }}>            
+          <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>            
             {(() => {
               const filteredOrders = getFilteredOrders();
               

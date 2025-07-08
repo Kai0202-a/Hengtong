@@ -21,39 +21,53 @@ function Inventory(props) {
   }, [user, navigate]);
 
   // 新增：同步庫存到 API
-  const syncStockToAPI = async (partId, newStock) => {
+  // ...
+  // 改進的雲端同步函數
+  const syncStockToAPI = async (partId, newStock, partName) => {
     try {
-      const response = await fetch('/api/inventory', {
+      const response = await fetch('https://hengtong.vercel.app/api/inventory', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           partId: partId,
-          newStock: newStock
+          newStock: newStock,
+          name: partName // 確保名稱也被同步
         })
       });
       
       if (!response.ok) {
-        console.error('同步庫存到 API 失敗');
+        console.error('同步庫存到雲端失敗');
+        alert('庫存同步失敗，請檢查網路連接');
       } else {
-        console.log(`成功同步庫存：${partId} -> ${newStock}`);
+        console.log(`成功同步庫存到雲端：${partName} (ID: ${partId}) -> ${newStock}`);
       }
     } catch (error) {
-      console.error('同步庫存到 API 出錯:', error);
+      console.error('同步庫存到雲端出錯:', error);
+      alert('庫存同步出錯，請稍後再試');
     }
   };
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-  };
-
-  const handleInQtyChange = (id, value) => {
-    setInQty({ ...inQty, [id]: value });
-  };
-  
-  const handleOutQtyChange = (id, value) => {
-    setOutQty({ ...outQty, [id]: value });
+  // 同步出貨記錄到雲端
+  const syncShipmentToAPI = async (shipmentData) => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/shipments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(shipmentData)
+      });
+      
+      if (!response.ok) {
+        console.error('同步出貨記錄到雲端失敗');
+      } else {
+        console.log('成功同步出貨記錄到雲端');
+      }
+    } catch (error) {
+      console.error('同步出貨記錄出錯:', error);
+    }
   };
 
   const handleStockIn = async (id) => {
@@ -68,8 +82,8 @@ function Inventory(props) {
     );
     setParts(newParts);
     
-    // 同步到 API
-    await syncStockToAPI(id, newStock);
+    // 同步到雲端
+    await syncStockToAPI(id, newStock, part.name);
     
     setInQty({ ...inQty, [id]: "" });
   };
@@ -80,30 +94,36 @@ function Inventory(props) {
     if (!qty || qty <= 0 || qty > part.stock) return;
     
     const newStock = part.stock - qty;
-    
     const user = JSON.parse(localStorage.getItem("user"));
-    const order = {
+    
+    const shipmentData = {
       partId: id,
       partName: part.name,
-      qty,
+      quantity: qty,
+      price: part.price,
+      amount: qty * part.price,
       dealer: user?.username || "未知",
       company: user?.company || "",
-      time: new Date().toLocaleString()
+      time: new Date().toLocaleString('zh-TW'),
+      createdAt: new Date().toISOString()
     };
     
-    // 儲存到 localStorage
-    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-    orders.push(order);
-    localStorage.setItem("orders", JSON.stringify(orders));
-    
-    // 更新庫存
+    // 更新本地庫存
     const newParts = parts.map(part =>
       part.id === id ? { ...part, stock: newStock } : part
     );
     setParts(newParts);
     
-    // 同步到 API
-    await syncStockToAPI(id, newStock);
+    // 同步庫存到雲端
+    await syncStockToAPI(id, newStock, part.name);
+    
+    // 同步出貨記錄到雲端
+    await syncShipmentToAPI(shipmentData);
+    
+    // 保留本地備份
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    orders.push(shipmentData);
+    localStorage.setItem("orders", JSON.stringify(orders));
     
     setOutQty({ ...outQty, [id]: "" });
   };

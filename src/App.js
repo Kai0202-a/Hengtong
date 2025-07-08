@@ -8,10 +8,9 @@ import { partsData } from './pages/partsData';
 import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
-// 移除這行：import Pending from './pages/Pending';
 
 function App() {
-  const [parts, setParts] = useState(partsData); // 移除 localStorage 初始化
+  const [parts, setParts] = useState(partsData);
   const [loading, setLoading] = useState(true);
 
   // 從雲端獲取庫存數據
@@ -21,7 +20,6 @@ function App() {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.length > 0) {
-          // 合併雲端數據和本地數據
           const updatedParts = partsData.map(part => {
             const cloudPart = result.data.find(cp => cp.id === part.id);
             return cloudPart ? { ...part, stock: cloudPart.stock } : part;
@@ -36,9 +34,17 @@ function App() {
     }
   };
 
-  // 更新庫存到雲端
-  const updateInventory = async (partId, newStock) => {
+  // 簡化版：更新單個庫存項目
+  const updateSinglePart = async (partId, newStock) => {
     try {
+      // 更新本地狀態
+      setParts(prevParts => 
+        prevParts.map(part => 
+          part.id === partId ? { ...part, stock: newStock } : part
+        )
+      );
+      
+      // 更新到雲端
       await fetch('https://hengtong.vercel.app/api/inventory', {
         method: 'PUT',
         headers: {
@@ -46,21 +52,11 @@ function App() {
         },
         body: JSON.stringify({ partId, newStock })
       });
+      
+      console.log(`庫存已更新：ID ${partId}, 新庫存：${newStock}`);
     } catch (error) {
       console.error('更新庫存失敗:', error);
     }
-  };
-
-  const updateParts = (newParts) => {
-    setParts(newParts);
-    
-    // 只更新到雲端，移除 localStorage
-    newParts.forEach(part => {
-      const oldPart = parts.find(p => p.id === part.id);
-      if (oldPart && oldPart.stock !== part.stock) {
-        updateInventory(part.id, part.stock);
-      }
-    });
   };
 
   useEffect(() => {
@@ -68,9 +64,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // 禁止右鍵
     const handleContextMenu = e => e.preventDefault();
-    // 禁止拖曳
     const handleDragStart = e => e.preventDefault();
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('dragstart', handleDragStart);
@@ -102,11 +96,10 @@ function App() {
           <Routes>
             <Route path="/home" element={<Home />} />
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/inventory" element={<Inventory parts={parts} setParts={updateParts} />} />
+            <Route path="/inventory" element={<Inventory parts={parts} updatePart={updateSinglePart} />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/shipping" element={<ShippingStats parts={parts} setParts={updateParts} />} />
+            <Route path="/shipping" element={<ShippingStats parts={parts} updatePart={updateSinglePart} />} />
             <Route path="/register" element={<Register />} />
-            {/* 移除這行：<Route path="/pending" element={<Pending />} /> */}
           </Routes>
         </div>
       </Router>

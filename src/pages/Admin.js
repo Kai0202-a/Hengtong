@@ -102,9 +102,7 @@ function Admin() {
       const company = shipment.company || '未知公司';
       const time = shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW');
       const timeKey = time.substring(0, 16);
-      // 添加唯一標識符以避免覆蓋
-      const uniqueId = shipment._id || shipment.id || Math.random().toString(36).substr(2, 9);
-      const groupKey = `${company}-${timeKey}-${uniqueId}`;
+      const groupKey = `${company}-${timeKey}`;
       
       if (!grouped[groupKey]) {
         grouped[groupKey] = {
@@ -122,15 +120,26 @@ function Admin() {
       const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
       const itemProfit = (shipment.amount || 0) - itemCost;
       
-      // 直接添加每個商品項目，不進行合併
-      grouped[groupKey].items.push({
-        partName: shipment.partName || '未知商品',
-        quantity: shipment.quantity || 0,
-        price: shipment.price || 0,
-        amount: shipment.amount || 0,
-        cost: itemCost,
-        profit: itemProfit
-      });
+      // 檢查是否已有相同商品
+      const existingItem = grouped[groupKey].items.find(item => item.partName === shipment.partName);
+      
+      if (existingItem) {
+        // 累加相同商品的數量和金額
+        existingItem.quantity += shipment.quantity || 0;
+        existingItem.amount += shipment.amount || 0;
+        existingItem.cost += itemCost;
+        existingItem.profit += itemProfit;
+      } else {
+        // 添加新商品項目
+        grouped[groupKey].items.push({
+          partName: shipment.partName || '未知商品',
+          quantity: shipment.quantity || 0,
+          price: shipment.price || 0,
+          amount: shipment.amount || 0,
+          cost: itemCost,
+          profit: itemProfit
+        });
+      }
       
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;

@@ -16,6 +16,7 @@ function ShippingStats(props) {
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // 新增防重複提交狀態
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -76,6 +77,13 @@ function ShippingStats(props) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 防止重複提交
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true); // 開始提交
     
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
@@ -149,6 +157,8 @@ function ShippingStats(props) {
     } catch (err) {
       console.error('發送失敗:', err);
       alert(`發送失敗：${err.message}`);
+    } finally {
+      setIsSubmitting(false); // 結束提交，恢復按鈕狀態
     }
   }
 
@@ -233,7 +243,22 @@ function ShippingStats(props) {
                 </tbody>
               </table>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <button type="submit" style={{ fontSize: 24, padding: '12px 32px' }}>送出</button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  style={{ 
+                    fontSize: 24, 
+                    padding: '12px 32px',
+                    opacity: isSubmitting ? 0.6 : 1,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    backgroundColor: isSubmitting ? '#ccc' : '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 4
+                  }}
+                >
+                  {isSubmitting ? '處理中...' : '送出'}
+                </button>
               </div>
             </form>
           </>

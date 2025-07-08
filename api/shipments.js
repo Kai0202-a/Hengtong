@@ -1,9 +1,14 @@
 import { MongoClient } from 'mongodb';
 
-// MongoDB 連接字串 - 請替換為你的實際連接字串
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const DB_NAME = 'hengtong'; // 資料庫名稱
-const COLLECTION_NAME = 'shipments'; // 集合名稱
+// MongoDB 連接字串 - 使用環境變數
+const MONGODB_URI = process.env.MONGODB_URI;
+const DB_NAME = 'hengtong';
+const COLLECTION_NAME = 'shipments';
+
+// 檢查環境變數
+if (!MONGODB_URI) {
+  console.error('MONGODB_URI 環境變數未設置');
+}
 
 let cachedClient = null;
 let cachedDb = null;
@@ -13,14 +18,20 @@ async function connectToDatabase() {
     return { client: cachedClient, db: cachedDb };
   }
 
-  const client = new MongoClient(MONGODB_URI);
-  await client.connect();
-  const db = client.db(DB_NAME);
+  try {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    const db = client.db(DB_NAME);
 
-  cachedClient = client;
-  cachedDb = db;
+    cachedClient = client;
+    cachedDb = db;
 
-  return { client, db };
+    console.log('MongoDB 連接成功');
+    return { client, db };
+  } catch (error) {
+    console.error('MongoDB 連接失敗:', error);
+    throw error;
+  }
 }
 
 export default async function handler(req, res) {
@@ -37,18 +48,32 @@ export default async function handler(req, res) {
     return;
   }
 
+  // 檢查環境變數
+  if (!MONGODB_URI) {
+    console.error('MONGODB_URI 未設置');
+    return res.status(500).json({ 
+      success: false, 
+      error: '服務器配置錯誤：資料庫連接字串未設置' 
+    });
+  }
+
   try {
+    console.log('嘗試連接資料庫...');
     const { db } = await connectToDatabase();
     const collection = db.collection(COLLECTION_NAME);
 
     if (req.method === 'POST') {
+      console.log('處理 POST 請求，請求體:', req.body);
+      
       // 添加資料驗證
       const { company, partId, partName, quantity, price, amount, time } = req.body;
       
       if (!company || !partId || !partName || !quantity || !price || !amount || !time) {
+        console.log('缺少必要欄位');
         return res.status(400).json({ 
           success: false, 
-          error: '缺少必要欄位' 
+          error: '缺少必要欄位',
+          received: req.body
         });
       }
       
@@ -64,9 +89,9 @@ export default async function handler(req, res) {
         createdAt: new Date()
       };
       
+      console.log('準備儲存資料:', shipmentData);
       const result = await collection.insertOne(shipmentData);
-      
-      console.log('出貨資料已儲存:', shipmentData);
+      console.log('資料儲存成功，ID:', result.insertedId);
       
       res.status(200).json({ 
         success: true,
@@ -103,11 +128,17 @@ export default async function handler(req, res) {
       res.status(405).json({ error: '不支援的請求方法' });
     }
   } catch (error) {
-    console.error('資料庫操作錯誤:', error);
+    console.error('詳細錯誤信息:', {
+      message: error.message,
+      stack: error.stack,
+      mongoUri: MONGODB_URI ? '已設置' : '未設置'
+    });
+    
     res.status(500).json({ 
       success: false,
       error: '資料庫操作失敗',
-      message: error.message 
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : '請檢查服務器日誌'
     });
   }
 }

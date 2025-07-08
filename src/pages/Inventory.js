@@ -20,24 +20,7 @@ function Inventory(props) {
     }
   }, [user, navigate]);
 
-  // 添加雲端庫存同步檢查
-  const syncWithCloud = async () => {
-    try {
-      const response = await fetch('https://hengtong.vercel.app/api/inventory');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data.length > 0) {
-          const updatedParts = parts.map(part => {
-            const cloudPart = result.data.find(cp => cp.id === part.id);
-            return cloudPart ? { ...part, stock: cloudPart.stock } : part;
-          });
-          setParts(updatedParts);
-        }
-      }
-    } catch (error) {
-      console.error('同步雲端庫存失敗:', error);
-    }
-  };
+  // 移除自動同步功能 - 不再需要 syncWithCloud 函數
 
   // 同步出貨記錄到 API
   const syncShipmentToAPI = async (shipmentData) => {
@@ -73,7 +56,7 @@ function Inventory(props) {
     setOutQty({ ...outQty, [id]: value });
   };
   
-  // 在操作完成後手動同步
+  // 入庫操作 - 直接上傳到 MongoDB
   const handleStockIn = async (id) => {
     const qty = parseInt(inQty[id], 10);
     if (!qty || qty <= 0) return;
@@ -81,15 +64,19 @@ function Inventory(props) {
     const part = parts.find(p => p.id === id);
     const newStock = part.stock + qty;
     
-    // 使用 updatePart 函數來確保同步
+    // 直接使用 updatePart 函數上傳到 MongoDB
     await updatePart(id, newStock);
     
-    // 操作完成後同步雲端數據
-    await syncWithCloud();
+    // 更新本地狀態
+    const updatedParts = parts.map(p => 
+      p.id === id ? { ...p, stock: newStock } : p
+    );
+    setParts(updatedParts);
     
     setInQty({ ...inQty, [id]: "" });
   };
   
+  // 出庫操作 - 直接上傳到 MongoDB
   const handleStockOut = async (id) => {
     const qty = parseInt(outQty[id], 10);
     const part = parts.find(p => p.id === id);
@@ -110,14 +97,17 @@ function Inventory(props) {
       createdAt: new Date().toISOString()
     };
     
-    // 使用 updatePart 函數來確保同步
+    // 直接使用 updatePart 函數上傳庫存到 MongoDB
     await updatePart(id, newStock);
     
-    // 同步出貨記錄到雲端
+    // 同步出貨記錄到 MongoDB
     await syncShipmentToAPI(shipmentData);
     
-    // 操作完成後同步雲端數據
-    await syncWithCloud();
+    // 更新本地狀態
+    const updatedParts = parts.map(p => 
+      p.id === id ? { ...p, stock: newStock } : p
+    );
+    setParts(updatedParts);
     
     // 保留本地備份
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");

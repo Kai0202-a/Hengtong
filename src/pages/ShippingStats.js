@@ -33,7 +33,7 @@ function ShippingStats(props) {
     setQuantities(newQuantities);
   };
 
-  // 获取历史记录
+  // 獲取歷史記錄
   const fetchHistory = async () => {
     setLoading(true);
     try {
@@ -46,17 +46,17 @@ function ShippingStats(props) {
       if (result.success) {
         setHistoryData(result.data);
       } else {
-        alert('获取历史记录失败：' + result.error);
+        alert('獲取歷史記錄失敗：' + result.error);
       }
     } catch (error) {
-      console.error('获取历史记录失败:', error);
-      alert('获取历史记录失败：' + error.message);
+      console.error('獲取歷史記錄失敗:', error);
+      alert('獲取歷史記錄失敗：' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // 切换历史记录显示
+  // 切換歷史記錄顯示
   const toggleHistory = () => {
     if (!showHistory) {
       fetchHistory();
@@ -113,7 +113,7 @@ function ShippingStats(props) {
       alert('發送完成！');
       setQuantities(Array(parts.length).fill(""));
       
-      // 如果历史记录正在显示，刷新数据
+      // 如果歷史記錄正在顯示，刷新數據
       if (showHistory) {
         fetchHistory();
       }
@@ -123,7 +123,7 @@ function ShippingStats(props) {
     }
   }
 
-  // 计算历史记录总金额
+  // 計算歷史記錄總金額
   const getTotalAmount = () => {
     return historyData.reduce((total, record) => total + (record.amount || 0), 0);
   };
@@ -133,7 +133,7 @@ function ShippingStats(props) {
       <img src="images/logo2.png" alt="Logo" style={{ height: 150 }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
         
-        {/* 功能切换按钮 */}
+        {/* 功能切換按鈕 */}
         <div style={{ marginBottom: 20 }}>
           <button 
             type="button" 
@@ -147,7 +147,7 @@ function ShippingStats(props) {
               border: '1px solid #007bff'
             }}
           >
-            新增出货
+            出貨頁面
           </button>
           <button 
             type="button" 
@@ -160,11 +160,11 @@ function ShippingStats(props) {
               border: '1px solid #007bff'
             }}
           >
-            历史记录
+            歷史記錄
           </button>
         </div>
 
-        {/* 新增出货界面 */}
+        {/* 新增出貨界面 */}
         {!showHistory && (
           <>
             <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28 }}>
@@ -210,49 +210,49 @@ function ShippingStats(props) {
           </>
         )}
 
-        {/* 历史记录界面 */}
+        {/* 歷史記錄界面 */}
         {showHistory && (
-          <>
-            <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28 }}>
-              出货历史记录
+          <div style={{ backgroundColor: '#2c3e50', padding: 20, borderRadius: 8 }}>
+            <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28, color: 'white' }}>
+              出貨歷史記錄
             </div>
             
             {loading ? (
-              <div style={{ textAlign: 'center', padding: 20 }}>加载中...</div>
+              <div style={{ textAlign: 'center', padding: 20, color: 'white' }}>載入中...</div>
             ) : (
               <>
                 {historyData.length > 0 ? (
                   <>
-                    <div style={{ marginBottom: 16, fontWeight: 'bold', fontSize: 18 }}>
-                      总记录数：{historyData.length} 条 | 总金额：NT$ {getTotalAmount().toLocaleString()}
+                    <div style={{ marginBottom: 16, fontWeight: 'bold', fontSize: 18, color: 'white' }}>
+                      總記錄數：{historyData.length} 條 | 總金額：NT$ {getTotalAmount().toLocaleString()}
                     </div>
-                    <div style={{ maxHeight: 500, overflowY: 'auto', border: '1px solid #ddd' }}>
+                    <div style={{ maxHeight: 500, overflowY: 'auto', border: '1px solid #34495e', borderRadius: 4 }}>
                       <table style={{ width: '100%', textAlign: 'center', borderCollapse: 'collapse' }}>
-                        <thead style={{ backgroundColor: '#f8f9fa', position: 'sticky', top: 0 }}>
+                        <thead style={{ backgroundColor: '#34495e', position: 'sticky', top: 0 }}>
                           <tr>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>日期时间</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>品号</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>数量</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>单价</th>
-                            <th style={{ padding: 8, border: '1px solid #ddd' }}>金额</th>
+                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>日期時間</th>
+                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>品號</th>
+                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>數量</th>
+                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>單價</th>
+                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>金額</th>
                           </tr>
                         </thead>
                         <tbody>
                           {historyData.map((record, index) => (
-                            <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : 'white' }}>
-                              <td style={{ padding: 8, border: '1px solid #ddd', fontSize: 12 }}>
+                            <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#34495e' : '#2c3e50' }}>
+                              <td style={{ padding: 8, border: '1px solid #34495e', fontSize: 12, color: 'white' }}>
                                 {record.time}
                               </td>
-                              <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
                                 {record.partName}
                               </td>
-                              <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
                                 {record.quantity}
                               </td>
-                              <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
                                 NT$ {record.price?.toLocaleString()}
                               </td>
-                              <td style={{ padding: 8, border: '1px solid #ddd' }}>
+                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
                                 NT$ {record.amount?.toLocaleString()}
                               </td>
                             </tr>
@@ -262,13 +262,13 @@ function ShippingStats(props) {
                     </div>
                   </>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#666' }}>
-                    暂无出货记录
+                  <div style={{ textAlign: 'center', padding: 40, color: '#bdc3c7' }}>
+                    暫無出貨記錄
                   </div>
                 )}
               </>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

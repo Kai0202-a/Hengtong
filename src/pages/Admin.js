@@ -20,11 +20,18 @@ function Admin() {
   // 雲端庫存狀態
   const [cloudInventory, setCloudInventory] = useState([]);
   
+  // 新增：提醒欄清空狀態
+  const [lastClearTime, setLastClearTime] = useState(null);
+  const [isCleared, setIsCleared] = useState(false);
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || user.role !== "admin") {
       navigate("/");
     }
+    
+    // 檢查自動清空狀態
+    checkAutoClearing();
   }, [navigate]);
   
   // 獲取雲端庫存數據
@@ -212,17 +219,89 @@ function Admin() {
     return () => clearInterval(interval);
   }, []);
 
+  // 新增：清空提醒欄功能
+  const clearAlerts = () => {
+    const confirmed = window.confirm('確定要清空貨況提醒欄嗎？\n\n注意：這只會清空本地顯示，雲端資料不會被刪除。');
+    if (confirmed) {
+      const now = new Date();
+      setIsCleared(true);
+      setLastClearTime(now);
+      localStorage.setItem('alertsClearTime', now.toISOString());
+      alert('提醒欄已清空！');
+    }
+  };
+
+  // 新增：檢查是否需要自動清空（每月1號）
+  const checkAutoClearing = () => {
+    const now = new Date();
+    const lastClear = localStorage.getItem('alertsClearTime');
+    
+    if (lastClear) {
+      const lastClearDate = new Date(lastClear);
+      const currentMonth = now.getMonth();
+      const lastClearMonth = lastClearDate.getMonth();
+      
+      // 如果是新的月份且今天是1號，自動清空
+      if (currentMonth !== lastClearMonth && now.getDate() === 1) {
+        setIsCleared(true);
+        setLastClearTime(now);
+        localStorage.setItem('alertsClearTime', now.toISOString());
+      } else {
+        // 檢查是否在清空狀態
+        const daysSinceCleared = (now - lastClearDate) / (1000 * 60 * 60 * 24);
+        if (daysSinceCleared < 30) {
+          setIsCleared(true);
+          setLastClearTime(lastClearDate);
+        }
+      }
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>      
       {/* 貨況提醒區塊 */}
       <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>        
-        <h3 style={{ marginTop: 0, color: '#f5f6fa' }}>
-          貨況提醒 
-          <span style={{ fontSize: 12, color: '#4CAF50' }}>(完全雲端化)</span>
-          {isRefreshing && (
-            <span style={{ fontSize: 10, color: '#ffa726', marginLeft: 8 }}>更新中...</span>
-          )}
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>          
+          <h3 style={{ margin: 0, color: '#f5f6fa' }}>
+            貨況提醒 
+            <span style={{ fontSize: 12, color: '#4CAF50' }}>(完全雲端化)</span>
+            {isRefreshing && (
+              <span style={{ fontSize: 10, color: '#ffa726', marginLeft: 8 }}>更新中...</span>
+            )}
+          </h3>
+          
+          <button 
+            onClick={clearAlerts}
+            style={{ 
+              padding: '6px 12px', 
+              background: '#ff9800', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 4, 
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 'bold'
+            }}
+          >
+            🗑️ 清空提醒欄
+          </button>
+        </div>
+        
+        {/* 顯示清空狀態 */}
+        {isCleared && lastClearTime && (
+          <div style={{ 
+            background: '#2d5016', 
+            color: '#81c784', 
+            padding: 8, 
+            borderRadius: 4, 
+            marginBottom: 12, 
+            fontSize: 12 
+          }}>
+            ✅ 提醒欄已於 {new Date(lastClearTime).toLocaleString('zh-TW')} 清空
+            <br />
+            <span style={{ fontSize: 10, color: '#aaa' }}>下次自動清空：每月1號</span>
+          </div>
+        )}
         
         {loading && (
           <div style={{ color: '#aaa', padding: 20 }}>
@@ -244,61 +323,94 @@ function Admin() {
         )}
         
         {!loading && !error && (
-          <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>
-            {orders.length === 0 && <li style={{ color: '#aaa' }}>暫無出貨紀錄</li>}
-            {orders.map((order, idx) => (
-              <li key={`${order.createdAt}-${idx}`} style={{ 
-                marginBottom: 12, 
-                fontSize: 14, 
-                color: '#f5f6fa',
-                padding: '12px',
-                borderBottom: idx < orders.length - 1 ? '1px solid #333' : 'none',
-                background: '#2a2e37',
-                borderRadius: 8,
-                textAlign: 'left'
-              }}>
-                <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 'bold' }}>
-                  <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
-                  <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
-                </div>
-                
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
-                </div>
-                
-                <div style={{ marginLeft: 12, marginBottom: 8 }}>  
-                  {order.items.map((item, itemIdx) => (
-                    <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
-                      • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
-                      <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
-                      {item.amount > 0 && (
-                        <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
-                      )}
-                      <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
-                        (雲端庫存: {getStockByPartName(item.partName)})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                
-                <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
-                  <span style={{ color: '#ffa726' }}>總計：</span>
-                  <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {order.totalQuantity}</span>
-                  {order.totalAmount > 0 && (
-                    <>
-                      <br />
-                      <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {order.totalAmount.toLocaleString()}</span>
-                      <br />
-                      <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {order.totalCost.toLocaleString()}</span>
-                      <br />
-                      <span style={{ color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
-                        淨利金額 NT$ {order.totalProfit.toLocaleString()}
-                      </span>
-                    </>
-                  )}
-                </div>
+          <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>            
+            {/* 如果已清空，顯示清空訊息 */}
+            {isCleared ? (
+              <li style={{ color: '#aaa', padding: 20 }}>
+                📭 提醒欄已清空
+                <br />
+                <span style={{ fontSize: 12 }}>雲端資料完整保留，如需查看請重新載入</span>
+                <br />
+                <button 
+                  onClick={() => {
+                    setIsCleared(false);
+                    setLastClearTime(null);
+                    localStorage.removeItem('alertsClearTime');
+                    fetchShipments(true);
+                  }}
+                  style={{ 
+                    marginTop: 8, 
+                    padding: '4px 8px', 
+                    background: '#4CAF50', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: 4, 
+                    cursor: 'pointer',
+                    fontSize: 10
+                  }}
+                >
+                  重新顯示提醒
+                </button>
               </li>
-            ))}
+            ) : (
+              // 原有的訂單顯示邏輯
+              <>
+                {orders.length === 0 && <li style={{ color: '#aaa' }}>暫無出貨紀錄</li>}
+                {orders.map((order, idx) => (
+                  <li key={`${order.createdAt}-${idx}`} style={{ 
+                    marginBottom: 12, 
+                    fontSize: 14, 
+                    color: '#f5f6fa',
+                    padding: '12px',
+                    borderBottom: idx < orders.length - 1 ? '1px solid #333' : 'none',
+                    background: '#2a2e37',
+                    borderRadius: 8,
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 'bold' }}>
+                      <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
+                      <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
+                    </div>
+                    
+                    <div style={{ marginBottom: 8 }}>
+                      <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
+                    </div>
+                    
+                    <div style={{ marginLeft: 12, marginBottom: 8 }}>  
+                      {order.items.map((item, itemIdx) => (
+                        <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
+                          • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
+                          <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
+                          {item.amount > 0 && (
+                            <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
+                          )}
+                          <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
+                            (雲端庫存: {getStockByPartName(item.partName)})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
+                      <span style={{ color: '#ffa726' }}>總計：</span>
+                      <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {order.totalQuantity}</span>
+                      {order.totalAmount > 0 && (
+                        <>
+                          <br />
+                          <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {order.totalAmount.toLocaleString()}</span>
+                          <br />
+                          <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {order.totalCost.toLocaleString()}</span>
+                          <br />
+                          <span style={{ color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
+                            淨利金額 NT$ {order.totalProfit.toLocaleString()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </>
+            )}
           </ul>
         )}
       </div>

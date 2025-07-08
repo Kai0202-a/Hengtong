@@ -187,7 +187,7 @@ function ShippingStats(props) {
                         {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
                       </td>
                       <td>{item.name}</td>
-                      <td>{item.price}</td>
+                      <td>NT$ {item.price}</td>
                       <td>
                         <input
                           type="number"
@@ -234,7 +234,7 @@ function ShippingStats(props) {
                             <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>品號</th>
                             <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>數量</th>
                             <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>單價</th>
-                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>金額</th>
+                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>總金額</th>
                           </tr>
                         </thead>
                         <tbody>

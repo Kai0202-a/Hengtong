@@ -30,19 +30,53 @@ function Inventory(props) {
     setOutQty({ ...outQty, [id]: value });
   };
 
-  const handleStockIn = (id) => {
+  // 新增：同步库存到 API
+  const syncStockToAPI = async (partId, newStock) => {
+    try {
+      const response = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          partId: partId,
+          newStock: newStock
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('同步库存到 API 失败');
+      }
+    } catch (error) {
+      console.error('同步库存到 API 出错:', error);
+    }
+  };
+
+  const handleStockIn = async (id) => {
     const qty = parseInt(inQty[id], 10);
     if (!qty || qty <= 0) return;
+    
+    const part = parts.find(p => p.id === id);
+    const newStock = part.stock + qty;
+    
     const newParts = parts.map(part =>
-      part.id === id ? { ...part, stock: part.stock + qty } : part
+      part.id === id ? { ...part, stock: newStock } : part
     );
     setParts(newParts);
+    
+    // 同步到 API
+    await syncStockToAPI(id, newStock);
+    
     setInQty({ ...inQty, [id]: "" });
   };
-  const handleStockOut = (id) => {
+  
+  const handleStockOut = async (id) => {
     const qty = parseInt(outQty[id], 10);
     const part = parts.find(p => p.id === id);
     if (!qty || qty <= 0 || qty > part.stock) return;
+    
+    const newStock = part.stock - qty;
+    
     const user = JSON.parse(localStorage.getItem("user"));
     const order = {
       partId: id,
@@ -52,16 +86,21 @@ function Inventory(props) {
       company: user?.company || "",
       time: new Date().toLocaleString()
     };
+    
     // 儲存到 localStorage
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     orders.push(order);
     localStorage.setItem("orders", JSON.stringify(orders));
+    
     // 更新庫存
     const newParts = parts.map(part =>
-      part.id === id ? { ...part, stock: part.stock - qty } : part
+      part.id === id ? { ...part, stock: newStock } : part
     );
     setParts(newParts);
-    // localStorage.setItem("parts", JSON.stringify(newParts)); // 移除這行
+    
+    // 同步到 API
+    await syncStockToAPI(id, newStock);
+    
     setOutQty({ ...outQty, [id]: "" });
   };
 

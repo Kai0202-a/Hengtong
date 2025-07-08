@@ -100,9 +100,8 @@ function Admin() {
     
     shipments.forEach(shipment => {
       const company = shipment.company || '未知公司';
-      const time = shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW');
-      // 修正 timeKey 的生成，使其忽略秒數，確保同一分鐘的訂單能被合併
-      const date = new Date(shipment.createdAt || shipment.time);
+      // 統一使用 createdAt 進行時間分組，確保時間格式一致
+      const date = new Date(shipment.createdAt);
       const timeKey = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
       const groupKey = `${company}-${timeKey}`;
       

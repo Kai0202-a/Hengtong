@@ -295,6 +295,45 @@ function Admin() {
               </div>
             )}
             
+            {/* 雲端庫存顯示 */}
+            {cloudInventory.length > 0 && (
+              <div style={{ 
+                background: '#4CAF5020', 
+                border: '1px solid #4CAF50', 
+                borderRadius: 8, 
+                padding: 12, 
+                marginBottom: 16,
+                color: '#4CAF50'
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>📦 雲端庫存狀態</span>
+                  <span style={{ fontSize: 12, color: '#aaa' }}>共 {cloudInventory.length} 項商品</span>
+                </div>
+                <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+                  {cloudInventory.map(item => (
+                    <div key={item.id} style={{ 
+                      fontSize: 14, 
+                      marginBottom: 6, 
+                      padding: 8,
+                      background: '#2a2e37',
+                      borderRadius: 4,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ color: '#f5f6fa' }}>{item.name}</span>
+                      <span style={{ 
+                        color: item.stock < 10 ? '#ff6b6b' : item.stock < 20 ? '#ffa726' : '#4CAF50',
+                        fontWeight: 'bold'
+                      }}>
+                        庫存: {item.stock} 件
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {/* 出貨記錄 */}
             {orders.length === 0 ? (
               <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>暫無出貨紀錄</div>

@@ -55,11 +55,12 @@ function Admin() {
   };
 
   // 根據零件名稱獲取成本
+  // 將 getCostByPartName 函數移到組件外部
   const getCostByPartName = (partName) => {
     const part = partsData.find(p => p.name === partName);
     return part ? part.cost : 0;
   };
-
+  
   // 獲取出貨數據
   const fetchShipments = async (isInitialLoad = false) => {
     try {
@@ -94,7 +95,7 @@ function Admin() {
     }
   };
 
-  // 整合同一經銷商同一時間的出貨記錄
+  // 整合同同商同一時間的出貨記錄
   const groupShipmentsByCompanyAndTime = (shipments) => {
     console.log('=== 開始處理 shipments ===');
     console.log('原始 shipments 數量:', shipments.length);
@@ -132,6 +133,12 @@ function Admin() {
       } else {
         console.log(`使用現有分組: ${groupKey}`);
       }
+      
+      // 移除組件內部的 getCostByPartName 函數定義
+      // const getCostByPartName = (partName) => {
+      //   const part = partsData.find(p => p.name === partName);
+      //   return part ? part.cost : 0;
+      // };
       
       const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
       const itemProfit = (shipment.amount || 0) - itemCost;

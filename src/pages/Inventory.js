@@ -11,6 +11,7 @@ function Inventory(props) {
   const [outQty, setOutQty] = useState({});
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
+  
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem("user"));
     if (!localUser || localUser.role !== "admin") {
@@ -19,18 +20,7 @@ function Inventory(props) {
     }
   }, [user, navigate]);
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-  };
-
-  const handleInQtyChange = (id, value) => {
-    setInQty({ ...inQty, [id]: value });
-  };
-  const handleOutQtyChange = (id, value) => {
-    setOutQty({ ...outQty, [id]: value });
-  };
-
-  // 新增：同步库存到 API
+  // 新增：同步庫存到 API
   const syncStockToAPI = async (partId, newStock) => {
     try {
       const response = await fetch('/api/inventory', {
@@ -45,11 +35,25 @@ function Inventory(props) {
       });
       
       if (!response.ok) {
-        console.error('同步库存到 API 失败');
+        console.error('同步庫存到 API 失敗');
+      } else {
+        console.log(`成功同步庫存：${partId} -> ${newStock}`);
       }
     } catch (error) {
-      console.error('同步库存到 API 出错:', error);
+      console.error('同步庫存到 API 出錯:', error);
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+  };
+
+  const handleInQtyChange = (id, value) => {
+    setInQty({ ...inQty, [id]: value });
+  };
+  
+  const handleOutQtyChange = (id, value) => {
+    setOutQty({ ...outQty, [id]: value });
   };
 
   const handleStockIn = async (id) => {

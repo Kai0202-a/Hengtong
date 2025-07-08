@@ -14,11 +14,16 @@ function Admin() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false); // 新增：區分初始載入和刷新
   
   // 從 MongoDB API 獲取出貨數據
-  const fetchShipments = async () => {
+  const fetchShipments = async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true); // 刷新時不顯示載入狀態
+      }
       setError(null);
       const response = await fetch('https://hengtong.vercel.app/api/shipments');
       if (response.ok) {
@@ -28,14 +33,17 @@ function Admin() {
         // 使用 result.data 獲取實際數據數組
         const shipments = result.data || [];
         
-        // 根據實際數據結構轉換格式
-        const formattedOrders = shipments.map(shipment => ({
-          company: shipment.company || '未知公司',
-          time: shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW'),
-          partName: shipment.partName || '未知商品',
-          quantity: shipment.quantity || 0,
-          poNumber: shipment.partName || `ID-${shipment._id?.slice(-6)}` // 使用 partName 或 ID 後6位
-        })).reverse(); // 最新的在前面
+        // 根據實際數據結構轉換格式，按時間排序（最新在前）
+        const formattedOrders = shipments
+          .map(shipment => ({
+            company: shipment.company || '未知公司',
+            time: shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW'),
+            partName: shipment.partName || '未知商品',
+            quantity: shipment.quantity || 0,
+            poNumber: shipment.partName || `ID-${shipment._id?.slice(-6)}`, // 使用 partName 或 ID 後6位
+            createdAt: shipment.createdAt || shipment.time // 用於排序
+          }))
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 最新的在前面
         
         setOrders(formattedOrders);
         console.log('轉換後數據:', formattedOrders); // 調試用
@@ -45,19 +53,25 @@ function Admin() {
     } catch (error) {
       console.error('獲取出貨數據失敗:', error);
       setError(error.message);
-      setOrders([]); // 清空數據
+      if (isInitialLoad) {
+        setOrders([]); // 只在初始載入失敗時清空數據
+      }
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   };
 
   useEffect(() => {
     // 初始載入
-    fetchShipments();
+    fetchShipments(true);
     
     // 定期更新數據（每10秒）
     const interval = setInterval(() => {
-      fetchShipments();
+      fetchShipments(false); // 背景刷新，不顯示載入狀態
     }, 10000);
     
     return () => clearInterval(interval);
@@ -70,6 +84,9 @@ function Admin() {
         <h3 style={{ marginTop: 0, color: '#f5f6fa' }}>
           貨況提醒 
           <span style={{ fontSize: 12, color: '#4CAF50' }}>(MongoDB)</span>
+          {isRefreshing && (
+            <span style={{ fontSize: 10, color: '#ffa726', marginLeft: 8 }}>更新中...</span>
+          )}
         </h3>
         
         {loading && (
@@ -83,7 +100,7 @@ function Admin() {
             ⚠️ 連接失敗: {error}
             <br />
             <button 
-              onClick={fetchShipments}
+              onClick={() => fetchShipments(true)}
               style={{ marginTop: 10, padding: '5px 10px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
             >
               重新載入
@@ -95,7 +112,13 @@ function Admin() {
           <ul style={{ paddingLeft: 0, maxHeight: 400, overflowY: 'auto', margin: 0, listStyle: 'none' }}>
             {orders.length === 0 && <li style={{ color: '#aaa' }}>暫無出貨紀錄</li>}
             {orders.map((o, idx) => (
-              <li key={idx} style={{ marginBottom: 8, fontSize: 15, color: '#f5f6fa' }}>
+              <li key={`${o.createdAt}-${idx}`} style={{ 
+                marginBottom: 8, 
+                fontSize: 15, 
+                color: '#f5f6fa',
+                padding: '8px 0',
+                borderBottom: idx < orders.length - 1 ? '1px solid #333' : 'none'
+              }}>
                 <b>{o.company}</b> 於 <span style={{ color: '#aaa' }}>{o.time}</span><br />
                 PO: <b>{o.poNumber}</b><br />
                 商品：<b>{o.partName}</b>，數量：<b>{o.quantity}</b>

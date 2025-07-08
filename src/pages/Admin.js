@@ -103,8 +103,9 @@ function Admin() {
       const company = shipment.company || '未知公司';
       const date = new Date(shipment.createdAt);
       
-      // 修改：將時間精度降低到分鐘級別，忽略秒數
-      const timeKey = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      // 修改：將時間精度降低到5分鐘間隔
+      const minutes = Math.floor(date.getMinutes() / 5) * 5;
+      const timeKey = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
       const groupKey = `${company}-${timeKey}`;
       
       console.log(`公司: ${company}`);

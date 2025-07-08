@@ -23,6 +23,12 @@ function Admin() {
   const [dealersLoading, setDealersLoading] = useState(false);
   const [dealersError, setDealersError] = useState(null);
   
+  // 新增獲取庫存的函數
+  const getStockByPartName = (partName) => {
+    const part = partsData.find(p => p.name === partName);
+    return part ? part.stock : 0;
+  };
+  
   // 整同一經銷商同一時間的出貨記錄
   const groupShipmentsByCompanyAndTime = (shipments) => {
     const grouped = {};

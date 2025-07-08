@@ -82,6 +82,9 @@ function Admin() {
   };
 
   // 整合同一經銷商同一時間的出貨記錄
+  // 首先需要導入 partsData 來獲取成本信息
+  import { partsData } from './partsData';
+  
   const groupShipmentsByCompanyAndTime = (shipments) => {
     const grouped = {};
     
@@ -199,7 +202,7 @@ function Admin() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>
       {/* 貨況提醒區塊 */}
-      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>        
         <h3 style={{ marginTop: 0, color: '#f5f6fa' }}>
           貨況提醒 
           <span style={{ fontSize: 12, color: '#4CAF50' }}>(完全雲端化)</span>
@@ -269,7 +272,28 @@ function Admin() {
                   <span style={{ color: '#ffa726' }}>總計：</span>
                   <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {order.totalQuantity}</span>
                   {order.totalAmount > 0 && (
-                    <span style={{ color: '#aaa', marginLeft: 8 }}>金額 NT$ {order.totalAmount.toLocaleString()}</span>
+                    <>
+                      <br />
+                      <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {order.totalAmount.toLocaleString()}</span>
+                      <br />
+                      <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {order.totalCost.toLocaleString()}</span>
+                      <br />
+                      <span style={{ 
+                        color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', 
+                        marginTop: 2, 
+                        display: 'inline-block',
+                        fontWeight: 'bold'
+                      }}>
+                        淨利金額 NT$ {order.totalProfit.toLocaleString()}
+                      </span>
+                      <span style={{ 
+                        color: '#aaa', 
+                        marginLeft: 8, 
+                        fontSize: 11 
+                      }}>
+                        (利潤率: {order.totalAmount > 0 ? ((order.totalProfit / order.totalAmount) * 100).toFixed(1) : 0}%)
+                      </span>
+                    </>
                   )}
                 </div>
               </li>
@@ -278,8 +302,209 @@ function Admin() {
         )}
       </div>
       
-      {/* 其餘組件保持不變 */}
-      {/* ... */}
+      {/* 通路商管理區塊 */}
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, color: '#f5f6fa' }}>通路商賬號管理</h3>
+          <button 
+            onClick={handleDealerManagement}
+            style={{ 
+              padding: '8px 16px', 
+              background: showDealerManagement ? '#f44336' : '#4CAF50', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 4, 
+              cursor: 'pointer' 
+            }}
+          >
+            {showDealerManagement ? '隱藏' : '顯示'}
+          </button>
+        </div>
+        
+        {showDealerManagement && (
+          <div>
+            {dealersLoading && <div style={{ color: '#aaa' }}>載入中...</div>}
+            {dealersError && <div style={{ color: '#ff6b6b' }}>錯誤: {dealersError}</div>}
+            
+            {!dealersLoading && !dealersError && (
+              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                {dealers.length === 0 ? (
+                  <div style={{ color: '#aaa' }}>暫無通路商數據</div>
+                ) : (
+                  dealers.map(dealer => {
+                    const statusInfo = getStatusDisplay(dealer.status);
+                    return (
+                      <div key={dealer.id} style={{ 
+                        background: '#2a2e37', 
+                        padding: 12, 
+                        marginBottom: 8, 
+                        borderRadius: 8,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>{dealer.name}</div>
+                          <div style={{ fontSize: 12, color: '#aaa' }}>帳號: {dealer.username}</div>
+                          <div style={{ fontSize: 12, color: '#aaa' }}>電話: {dealer.phone}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ 
+                            color: statusInfo.color, 
+                            fontWeight: 'bold', 
+                            marginBottom: 8 
+                          }}>
+                            {statusInfo.text}
+                          </div>
+                          <div>
+                            <button 
+                              onClick={() => updateDealerStatus(dealer.id, 'active')}
+                              style={{ 
+                                padding: '4px 8px', 
+                                background: '#4CAF50', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: 3, 
+                                cursor: 'pointer',
+                                marginRight: 4,
+                                fontSize: 10
+                              }}
+                            >
+                              啟用
+                            </button>
+                            <button 
+                              onClick={() => updateDealerStatus(dealer.id, 'suspended')}
+                              style={{ 
+                                padding: '4px 8px', 
+                                background: '#f44336', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: 3, 
+                                cursor: 'pointer',
+                                fontSize: 10
+                              }}
+                            >
+                              停用
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* 後台管理系統按鈕 */}
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
+        <h3 style={{ marginTop: 0, color: '#f5f6fa', textAlign: 'center' }}>後台管理系統</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+          <button 
+            onClick={() => navigate('/inventory')}
+            style={{ 
+              padding: '16px', 
+              background: '#4CAF50', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}
+          >
+            📦 庫存管理
+          </button>
+          
+          <button 
+            onClick={() => navigate('/shipping-stats')}
+            style={{ 
+              padding: '16px', 
+              background: '#2196F3', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}
+          >
+            📊 銷售記錄
+          </button>
+          
+          <button 
+            onClick={handleDealerManagement}
+            style={{ 
+              padding: '16px', 
+              background: '#FF9800', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}
+          >
+            👥 通路商賬號管理
+          </button>
+          
+          <button 
+            onClick={() => {
+              const confirmed = window.confirm('確定要備份數據嗎？');
+              if (confirmed) {
+                const data = {
+                  timestamp: new Date().toISOString(),
+                  orders: JSON.parse(localStorage.getItem('orders') || '[]'),
+                  cloudInventory: cloudInventory
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('數據備份完成！');
+              }
+            }}
+            style={{ 
+              padding: '16px', 
+              background: '#9C27B0', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}
+          >
+            💾 數據備份/還原
+          </button>
+        </div>
+        
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('user');
+              setUser(null);
+              navigate('/');
+            }}
+            style={{ 
+              padding: '12px 24px', 
+              background: '#f44336', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16
+            }}
+          >
+            🚪 登出
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

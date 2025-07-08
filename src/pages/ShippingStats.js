@@ -43,13 +43,14 @@ function ShippingStats(props) {
   };
 
   // 獲取歷史記錄
+  // 修復歷史記錄獲取
   const fetchHistory = async () => {
     setLoading(true);
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
       const company = userObj?.company || userObj?.username || 'admin';
       
-      const response = await fetch(`/api/shipments?company=${encodeURIComponent(company)}&limit=100`);
+      const response = await fetch(`https://hengtong.vercel.app/api/shipments?company=${encodeURIComponent(company)}&limit=100`);
       const result = await response.json();
       
       if (result.success) {
@@ -102,14 +103,14 @@ function ShippingStats(props) {
           
           console.log('準備發送數據:', shipmentData);
           
-          const res = await fetch('/api/shipments', {
+          // 修復出貨記錄提交
+          const res = await fetch('https://hengtong.vercel.app/api/shipments', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify(shipmentData)
           });
-          
           const result = await res.json();
           console.log('API 響應:', result);
           

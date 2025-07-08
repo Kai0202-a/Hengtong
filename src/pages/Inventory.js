@@ -174,7 +174,7 @@ function Inventory(props) {
 
 export default Inventory;
 
-// 在 syncWithCloud 函數後添加以下缺失的函數
+// 刪除第176-211行的所有函數定義，然後在 syncWithCloud 函數後面添加：
 
 // 同步出貨記錄到 API
 const syncShipmentToAPI = async (shipmentData) => {

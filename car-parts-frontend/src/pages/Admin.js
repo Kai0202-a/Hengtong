@@ -1,10 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../UserContext";
-// 刪除這行：
-// import { partsData } from './partsData';
 
-// 將 parts 宣告移到 Admin 函數內部，並在每次渲染時取得最新資料：
 function Admin() {
   const navigate = useNavigate();
   useEffect(() => {
@@ -16,12 +13,41 @@ function Admin() {
   const { setUser } = useContext(UserContext);
   const [orders, setOrders] = useState([]);
   const [parts, setParts] = useState([]);
+  
+  // 從 API 獲取出貨數據
+  const fetchShipments = async () => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/shipments');
+      if (response.ok) {
+        const shipments = await response.json();
+        // 轉換數據格式以符合現有的顯示邏輯
+        const formattedOrders = shipments.map(shipment => ({
+          company: shipment.dealer,
+          time: new Date(shipment.shippingDate).toLocaleString('zh-TW'),
+          partName: shipment.parts.map(part => `${part.name} (${part.quantity})`).join(', '),
+          quantity: shipment.parts.reduce((total, part) => total + part.quantity, 0)
+        })).reverse(); // 最新的在前面
+        setOrders(formattedOrders);
+      }
+    } catch (error) {
+      console.error('獲取出貨數據失敗:', error);
+      // 如果 API 失敗，回退到 localStorage
+      const localData = JSON.parse(localStorage.getItem("records") || "[]");
+      setOrders(localData.reverse());
+    }
+  };
+
   useEffect(() => {
+    // 初始載入
+    fetchShipments();
+    setParts(JSON.parse(localStorage.getItem('parts') || '[]'));
+    
+    // 定期更新數據
     const interval = setInterval(() => {
-      const data = JSON.parse(localStorage.getItem("records") || "[]");
-      setOrders(data.reverse());
+      fetchShipments();
       setParts(JSON.parse(localStorage.getItem('parts') || '[]'));
-    }, 1000);
+    }, 5000); // 每5秒更新一次
+    
     return () => clearInterval(interval);
   }, []);
   return (

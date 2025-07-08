@@ -184,11 +184,6 @@ function Admin() {
         finalGrouped[finalKey].totalAmount = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.amount, 0);
         finalGrouped[finalKey].totalCost = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.cost, 0);
         finalGrouped[finalKey].totalProfit = finalGrouped[finalKey].items.reduce((sum, item) => sum + item.profit, 0);
-        // 刪除以下四行重複累加的代碼
-        // finalGrouped[finalKey].totalQuantity += order.totalQuantity;
-        // finalGrouped[finalKey].totalAmount += order.totalAmount;
-        // finalGrouped[finalKey].totalCost += order.totalCost;
-        // finalGrouped[finalKey].totalProfit += order.totalProfit;
       }
     });
     

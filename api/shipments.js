@@ -35,8 +35,20 @@ async function connectToDatabase() {
 }
 
 export default async function handler(req, res) {
-  // 設定 CORS headers
-  res.setHeader('Access-Control-Allow-Origin', 'https://hengtong.vercel.app');
+  // 修改 CORS headers - 允許所有 Vercel 域名
+  const allowedOrigins = [
+    'https://hengtong.vercel.app',
+    'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
+    /^https:\/\/hengtong.*\.vercel\.app$/
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.some(allowed => 
+    typeof allowed === 'string' ? allowed === origin : allowed.test(origin)
+  )) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');

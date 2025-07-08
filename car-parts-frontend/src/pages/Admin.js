@@ -22,15 +22,19 @@ function Admin() {
       setError(null);
       const response = await fetch('https://hengtong.vercel.app/api/shipments');
       if (response.ok) {
-        const shipments = await response.json();
-        // 轉換數據格式以符合現有的顯示邏輯
+        const result = await response.json();
+        // 修正：使用 result.data 而不是直接使用 result
+        const shipments = result.data || [];
+        
+        // 根據實際 API 數據結構轉換
         const formattedOrders = shipments.map(shipment => ({
-          company: shipment.dealer,
-          time: new Date(shipment.shippingDate).toLocaleString('zh-TW'),
-          partName: shipment.parts.map(part => `${part.name} (${part.quantity})`).join(', '),
-          quantity: shipment.parts.reduce((total, part) => total + part.quantity, 0),
-          poNumber: shipment.poNumber
+          company: shipment.company || '未知公司',
+          time: shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW'),
+          partName: shipment.partName || '未知商品',
+          quantity: shipment.quantity || 0,
+          poNumber: shipment.partName || shipment.partId // 使用 partName 作為 PO 號
         })).reverse(); // 最新的在前面
+        
         setOrders(formattedOrders);
       } else {
         throw new Error(`API 請求失敗: ${response.status}`);

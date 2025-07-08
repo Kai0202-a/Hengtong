@@ -728,6 +728,13 @@ function Admin() {
 
 export default Admin;
 
+// 將 getCostByPartName 函數移到組件外部
+const getCostByPartName = (partName) => {
+  const part = partsData.find(p => p.name === partName);
+  return part ? part.cost : 0;
+};
+
+// groupShipmentsByCompanyAndTime 函數保持不變
 function groupShipmentsByCompanyAndTime(shipments) {
   console.log('=== 開始處理 shipments ===');
   console.log('原始 shipments 數量:', shipments.length);

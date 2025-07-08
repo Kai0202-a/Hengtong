@@ -40,75 +40,12 @@ function Inventory(props) {
   };
 
   // 頁面載入時同步一次雲端數據
-  useEffect(() => {
-    syncWithCloud();
-  }, []);
-
-  // 搜尋處理函數
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-  };
-
-  // 入庫數量變更處理函數
-  const handleInQtyChange = (partId, value) => {
-    setInQty({ ...inQty, [partId]: value });
-  };
-
-  // 出庫數量變更處理函數
-  const handleOutQtyChange = (partId, value) => {
-    setOutQty({ ...outQty, [partId]: value });
-  };
-
-  // 新增：同步庫存到 API
-  // ...
-  // 改進的雲端同步函數
-  const syncStockToAPI = async (partId, newStock, partName) => {
-    try {
-      const response = await fetch('https://hengtong.vercel.app/api/inventory', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          partId: partId,
-          newStock: newStock,
-          name: partName // 確保名稱也被同步
-        })
-      });
-      
-      if (!response.ok) {
-        console.error('同步庫存到雲端失敗');
-        alert('庫存同步失敗，請檢查網路連接');
-      } else {
-        console.log(`成功同步庫存到雲端：${partName} (ID: ${partId}) -> ${newStock}`);
-      }
-    } catch (error) {
-      console.error('同步庫存到雲端出錯:', error);
-      alert('庫存同步出錯，請稍後再試');
-    }
-  };
-
-  // 同步出貨記錄到雲端
-  const syncShipmentToAPI = async (shipmentData) => {
-    try {
-      const response = await fetch('https://hengtong.vercel.app/api/shipments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(shipmentData)
-      });
-      
-      if (!response.ok) {
-        console.error('同步出貨記錄到雲端失敗');
-      } else {
-        console.log('成功同步出貨記錄到雲端');
-      }
-    } catch (error) {
-      console.error('同步出貨記錄出錯:', error);
-    }
-  };
-
+  // 移除自動同步的 useEffect
+  // useEffect(() => {
+  //   syncWithCloud();
+  // }, []);
+  
+  // 在操作完成後手動同步
   const handleStockIn = async (id) => {
     const qty = parseInt(inQty[id], 10);
     if (!qty || qty <= 0) return;
@@ -118,6 +55,9 @@ function Inventory(props) {
     
     // 使用 updatePart 函數來確保同步
     await updatePart(id, newStock);
+    
+    // 操作完成後同步雲端數據
+    await syncWithCloud();
     
     setInQty({ ...inQty, [id]: "" });
   };
@@ -147,6 +87,9 @@ function Inventory(props) {
     
     // 同步出貨記錄到雲端
     await syncShipmentToAPI(shipmentData);
+    
+    // 操作完成後同步雲端數據
+    await syncWithCloud();
     
     // 保留本地備份
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");

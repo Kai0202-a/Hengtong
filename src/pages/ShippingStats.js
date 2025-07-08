@@ -96,6 +96,8 @@ function ShippingStats(props) {
                     <input
                       type="number"
                       min="0"
+                      id={`quantity-${item.id}`}
+                      name={`quantity-${item.id}`}
                       value={quantities[idx]}
                       onChange={e => handleQuantityChange(idx, e.target.value)}
                       style={{ width: 60 }}

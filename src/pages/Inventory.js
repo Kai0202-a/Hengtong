@@ -109,6 +109,8 @@ function Inventory(props) {
                 <input
                   type="number"
                   min="1"
+                  id={`stock-in-${part.id}`}
+                  name={`stockIn-${part.id}`}
                   style={{ width: 60, marginRight: 8 }}
                   value={inQty[part.id] || ""}
                   onChange={e => handleInQtyChange(part.id, e.target.value)}
@@ -118,6 +120,8 @@ function Inventory(props) {
                 <input
                   type="number"
                   min="1"
+                  id={`stock-out-${part.id}`}
+                  name={`stockOut-${part.id}`}
                   style={{ width: 60, margin: '0 8px' }}
                   value={outQty[part.id] || ""}
                   onChange={e => handleOutQtyChange(part.id, e.target.value)}

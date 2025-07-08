@@ -31,7 +31,7 @@ function Home() {
     } else {
       // 先查 dealersData
       let dealer = dealersData.find(d => d.username === username && d.password === password);
-      // 再查 localStorage 的 dealers
+      // 再查 localStorage 的ellers
       if (!dealer) {
         const localDealers = JSON.parse(localStorage.getItem("dealers") || "[]");
         dealer = localDealers.find(d => d.username === username && d.password === password);
@@ -79,6 +79,8 @@ function Home() {
           <div>
             <input
               type="text"
+              id="username"
+              name="username"
               placeholder="帳號"
               value={username}
               onChange={e => setUsername(e.target.value)}
@@ -88,6 +90,8 @@ function Home() {
           <div>
             <input
               type="password"
+              id="password"
+              name="password"
               placeholder="密碼"
               value={password}
               onChange={e => setPassword(e.target.value)}

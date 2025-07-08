@@ -35,7 +35,7 @@ function App() {
   };
 
   // 簡化版：更新單個庫存項目
-  const updateSinglePart = async (partId, newStock) => {
+  const updateSinglePart = async (partId, newStock, retries = 3) => {
     try {
       // 更新本地狀態
       setParts(prevParts => 
@@ -44,18 +44,36 @@ function App() {
         )
       );
       
-      // 更新到雲端
-      await fetch('https://hengtong.vercel.app/api/inventory', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ partId, newStock })
-      });
-      
-      console.log(`庫存已更新：ID ${partId}, 新庫存：${newStock}`);
+      // 更新到雲端（添加重試機制）
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch('https://hengtong.vercel.app/api/inventory', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ partId, newStock })
+          });
+          
+          if (response.ok) {
+            console.log(`庫存已更新：ID ${partId}, 新庫存：${newStock}`);
+            return; // 成功則退出
+          }
+          
+          if (i === retries - 1) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        } catch (error) {
+          if (i === retries - 1) {
+            throw error;
+          }
+          // 等待後重試
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      }
     } catch (error) {
       console.error('更新庫存失敗:', error);
+      // 可以選擇回滾本地狀態或顯示錯誤提示
     }
   };
 
@@ -115,3 +133,20 @@ function App() {
 }
 
 export default App;
+
+
+// 添加節流機制
+const updateQueue = [];
+let isProcessing = false;
+
+const processUpdateQueue = async () => {
+  if (isProcessing || updateQueue.length === 0) return;
+  
+  isProcessing = true;
+  while (updateQueue.length > 0) {
+    const { partId, newStock } = updateQueue.shift();
+    await updateSinglePart(partId, newStock);
+    await new Promise(resolve => setTimeout(resolve, 200)); // 200ms 間隔
+  }
+  isProcessing = false;
+};

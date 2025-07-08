@@ -20,6 +20,21 @@ function Inventory(props) {
     }
   }, [user, navigate]);
 
+  // 搜尋處理函數
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+  };
+
+  // 入庫數量變更處理函數
+  const handleInQtyChange = (partId, value) => {
+    setInQty({ ...inQty, [partId]: value });
+  };
+
+  // 出庫數量變更處理函數
+  const handleOutQtyChange = (partId, value) => {
+    setOutQty({ ...outQty, [partId]: value });
+  };
+
   // 新增：同步庫存到 API
   // ...
   // 改進的雲端同步函數

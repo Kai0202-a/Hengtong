@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../UserContext";
+import { partsData } from './partsData';
 
 function Admin() {
   const navigate = useNavigate();
@@ -47,6 +48,12 @@ function Admin() {
     return cloudPart ? cloudPart.stock : 0;
   };
 
+  // 根據零件名稱獲取成本
+  const getCostByPartName = (partName) => {
+    const part = partsData.find(p => p.name === partName);
+    return part ? part.cost : 0;
+  };
+
   // 獲取出貨數據
   const fetchShipments = async (isInitialLoad = false) => {
     try {
@@ -82,9 +89,6 @@ function Admin() {
   };
 
   // 整合同一經銷商同一時間的出貨記錄
-  // 首先需要導入 partsData 來獲取成本信息
-  import { partsData } from './partsData';
-  
   const groupShipmentsByCompanyAndTime = (shipments) => {
     const grouped = {};
     
@@ -101,19 +105,28 @@ function Admin() {
           items: [],
           totalQuantity: 0,
           totalAmount: 0,
+          totalCost: 0,
+          totalProfit: 0,
           createdAt: shipment.createdAt || shipment.time
         };
       }
+      
+      const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
+      const itemProfit = (shipment.amount || 0) - itemCost;
       
       grouped[groupKey].items.push({
         partName: shipment.partName || '未知商品',
         quantity: shipment.quantity || 0,
         price: shipment.price || 0,
-        amount: shipment.amount || 0
+        amount: shipment.amount || 0,
+        cost: itemCost,
+        profit: itemProfit
       });
       
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;
+      grouped[groupKey].totalCost += itemCost;
+      grouped[groupKey].totalProfit += itemProfit;
     });
     
     return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -278,20 +291,8 @@ function Admin() {
                       <br />
                       <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {order.totalCost.toLocaleString()}</span>
                       <br />
-                      <span style={{ 
-                        color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', 
-                        marginTop: 2, 
-                        display: 'inline-block',
-                        fontWeight: 'bold'
-                      }}>
+                      <span style={{ color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
                         淨利金額 NT$ {order.totalProfit.toLocaleString()}
-                      </span>
-                      <span style={{ 
-                        color: '#aaa', 
-                        marginLeft: 8, 
-                        fontSize: 11 
-                      }}>
-                        (利潤率: {order.totalAmount > 0 ? ((order.totalProfit / order.totalAmount) * 100).toFixed(1) : 0}%)
                       </span>
                     </>
                   )}

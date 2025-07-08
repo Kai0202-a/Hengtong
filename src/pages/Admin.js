@@ -422,7 +422,8 @@ function Admin() {
                     )}
                   </div>
                 </li>
-              ))}
+              ));  
+            })()}
           </ul>
         )}
       </div>

@@ -14,7 +14,45 @@ function Admin() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false); // 新增：區分初始載入和刷新
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // 整同一經銷商同一時間的出貨記錄
+  const groupShipmentsByCompanyAndTime = (shipments) => {
+    const grouped = {};
+    
+    shipments.forEach(shipment => {
+      const company = shipment.company || '未知公司';
+      const time = shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW');
+      
+      // 使用公司名稱和時間作為分組鍵（精確到分鐘）
+      const timeKey = time.substring(0, 16); // 只取到分鐘，忽略秒數
+      const groupKey = `${company}-${timeKey}`;
+      
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          company,
+          time: timeKey,
+          items: [],
+          totalQuantity: 0,
+          totalAmount: 0,
+          createdAt: shipment.createdAt || shipment.time
+        };
+      }
+      
+      grouped[groupKey].items.push({
+        partName: shipment.partName || '未知商品',
+        quantity: shipment.quantity || 0,
+        price: shipment.price || 0,
+        amount: shipment.amount || 0
+      });
+      
+      grouped[groupKey].totalQuantity += shipment.quantity || 0;
+      grouped[groupKey].totalAmount += shipment.amount || 0;
+    });
+    
+    // 轉換為陣列並按時間排序
+    return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  };
   
   // 從 MongoDB API 獲取出貨數據
   const fetchShipments = async (isInitialLoad = false) => {
@@ -22,31 +60,21 @@ function Admin() {
       if (isInitialLoad) {
         setLoading(true);
       } else {
-        setIsRefreshing(true); // 刷新時不顯示載入狀態
+        setIsRefreshing(true);
       }
       setError(null);
-      const response = await fetch('https://hengtong.vercel.app/api/shipments');
+      const response = await fetch('/api/shipments');
       if (response.ok) {
         const result = await response.json();
-        console.log('API 返回數據:', result); // 調試用
+        console.log('API 返回數據:', result);
         
-        // 使用 result.data 獲取實際數據數組
         const shipments = result.data || [];
         
-        // 根據實際數據結構轉換格式，按時間排序（最新在前）
-        const formattedOrders = shipments
-          .map(shipment => ({
-            company: shipment.company || '未知公司',
-            time: shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW'),
-            partName: shipment.partName || '未知商品',
-            quantity: shipment.quantity || 0,
-            poNumber: shipment.partName || `ID-${shipment._id?.slice(-6)}`, // 使用 partName 或 ID 後6位
-            createdAt: shipment.createdAt || shipment.time // 用於排序
-          }))
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // 最新的在前面
+        // 使用新的分組函數整合數據
+        const groupedOrders = groupShipmentsByCompanyAndTime(shipments);
         
-        setOrders(formattedOrders);
-        console.log('轉換後數據:', formattedOrders); // 調試用
+        setOrders(groupedOrders);
+        console.log('整合後數據:', groupedOrders);
       } else {
         throw new Error(`API 請求失敗: ${response.status}`);
       }
@@ -54,7 +82,7 @@ function Admin() {
       console.error('獲取出貨數據失敗:', error);
       setError(error.message);
       if (isInitialLoad) {
-        setOrders([]); // 只在初始載入失敗時清空數據
+        setOrders([]);
       }
     } finally {
       if (isInitialLoad) {
@@ -71,7 +99,7 @@ function Admin() {
     
     // 定期更新數據（每10秒）
     const interval = setInterval(() => {
-      fetchShipments(false); // 背景刷新，不顯示載入狀態
+      fetchShipments(false);
     }, 10000);
     
     return () => clearInterval(interval);
@@ -80,7 +108,7 @@ function Admin() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>
       {/* 置中提醒區塊 */}
-      <div style={{ width: '95vw', maxWidth: 500, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>
         <h3 style={{ marginTop: 0, color: '#f5f6fa' }}>
           貨況提醒 
           <span style={{ fontSize: 12, color: '#4CAF50' }}>(MongoDB)</span>
@@ -109,19 +137,47 @@ function Admin() {
         )}
         
         {!loading && !error && (
-          <ul style={{ paddingLeft: 0, maxHeight: 400, overflowY: 'auto', margin: 0, listStyle: 'none' }}>
+          <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>
             {orders.length === 0 && <li style={{ color: '#aaa' }}>暫無出貨紀錄</li>}
-            {orders.map((o, idx) => (
-              <li key={`${o.createdAt}-${idx}`} style={{ 
-                marginBottom: 8, 
-                fontSize: 15, 
+            {orders.map((order, idx) => (
+              <li key={`${order.createdAt}-${idx}`} style={{ 
+                marginBottom: 12, 
+                fontSize: 14, 
                 color: '#f5f6fa',
-                padding: '8px 0',
-                borderBottom: idx < orders.length - 1 ? '1px solid #333' : 'none'
+                padding: '12px',
+                borderBottom: idx < orders.length - 1 ? '1px solid #333' : 'none',
+                background: '#2a2e37',
+                borderRadius: 8,
+                textAlign: 'left'
               }}>
-                <b>{o.company}</b> 於 <span style={{ color: '#aaa' }}>{o.time}</span><br />
-                PO: <b>{o.poNumber}</b><br />
-                商品：<b>{o.partName}</b>，數量：<b>{o.quantity}</b>
+                <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 'bold' }}>
+                  <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
+                  <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
+                </div>
+                
+                <div style={{ marginBottom: 8 }}>
+                  <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
+                </div>
+                
+                <div style={{ marginLeft: 12, marginBottom: 8 }}>
+                  {order.items.map((item, itemIdx) => (
+                    <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
+                      • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
+                      <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
+                      {item.amount > 0 && (
+                        <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
+                  <span style={{ color: '#ffa726' }}>總計：</span>
+                  <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {order.totalQuantity}</span>
+                  {order.totalAmount > 0 && (
+                    <span style={{ color: '#aaa', marginLeft: 8 }}>金額 NT$ {order.totalAmount.toLocaleString()}</span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

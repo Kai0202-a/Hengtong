@@ -102,7 +102,9 @@ function Admin() {
       const company = shipment.company || '未知公司';
       const time = shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW');
       const timeKey = time.substring(0, 16);
-      const groupKey = `${company}-${timeKey}`;
+      // 添加唯一標識符以避免覆蓋
+      const uniqueId = shipment._id || shipment.id || Math.random().toString(36).substr(2, 9);
+      const groupKey = `${company}-${timeKey}-${uniqueId}`;
       
       if (!grouped[groupKey]) {
         grouped[groupKey] = {
@@ -120,27 +122,15 @@ function Admin() {
       const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
       const itemProfit = (shipment.amount || 0) - itemCost;
       
-      // 檢查是否已有相同商品，如果有則累加數量
-      const existingItemIndex = grouped[groupKey].items.findIndex(item => item.partName === shipment.partName);
-      
-      if (existingItemIndex !== -1) {
-        // 相同商品存在，累加數量和金額
-        const existingItem = grouped[groupKey].items[existingItemIndex];
-        existingItem.quantity += shipment.quantity || 0;
-        existingItem.amount += shipment.amount || 0;
-        existingItem.cost += itemCost;
-        existingItem.profit += itemProfit;
-      } else {
-        // 新商品，直接加入
-        grouped[groupKey].items.push({
-          partName: shipment.partName || '未知商品',
-          quantity: shipment.quantity || 0,
-          price: shipment.price || 0,
-          amount: shipment.amount || 0,
-          cost: itemCost,
-          profit: itemProfit
-        });
-      }
+      // 直接添加每個商品項目，不進行合併
+      grouped[groupKey].items.push({
+        partName: shipment.partName || '未知商品',
+        quantity: shipment.quantity || 0,
+        price: shipment.price || 0,
+        amount: shipment.amount || 0,
+        cost: itemCost,
+        profit: itemProfit
+      });
       
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;
@@ -148,7 +138,33 @@ function Admin() {
       grouped[groupKey].totalProfit += itemProfit;
     });
     
-    return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // 按時間重新分組，合併相同公司和時間的訂單
+    const finalGrouped = {};
+    Object.values(grouped).forEach(order => {
+      const finalKey = `${order.company}-${order.time}`;
+      
+      if (!finalGrouped[finalKey]) {
+        finalGrouped[finalKey] = {
+          company: order.company,
+          time: order.time,
+          items: [...order.items],
+          totalQuantity: order.totalQuantity,
+          totalAmount: order.totalAmount,
+          totalCost: order.totalCost,
+          totalProfit: order.totalProfit,
+          createdAt: order.createdAt
+        };
+      } else {
+        // 合併相同時間的訂單
+        finalGrouped[finalKey].items.push(...order.items);
+        finalGrouped[finalKey].totalQuantity += order.totalQuantity;
+        finalGrouped[finalKey].totalAmount += order.totalAmount;
+        finalGrouped[finalKey].totalCost += order.totalCost;
+        finalGrouped[finalKey].totalProfit += order.totalProfit;
+      }
+    });
+    
+    return Object.values(finalGrouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   };
 
   // 獲取通路商數據

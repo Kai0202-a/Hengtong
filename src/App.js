@@ -77,6 +77,42 @@ function App() {
     }
   };
 
+  // 新增：批量更新庫存
+  const updateMultipleParts = async (updates) => {
+    try {
+      // 先更新本地狀態
+      setParts(prevParts => {
+        const updatedParts = [...prevParts];
+        updates.forEach(({ partId, newStock }) => {
+          const index = updatedParts.findIndex(part => part.id === partId);
+          if (index !== -1) {
+            updatedParts[index] = { ...updatedParts[index], stock: newStock };
+          }
+        });
+        return updatedParts;
+      });
+      
+      // 批量更新到雲端
+      const response = await fetch('https://hengtong.vercel.app/api/inventory', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ batchUpdates: updates })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('批量庫存更新成功:', result.message);
+        return true;
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (error) {
+      console.error('批量更新庫存失敗:', error);
+      return false;
+    }
+  };
   useEffect(() => {
     fetchInventory();
     
@@ -123,7 +159,7 @@ function App() {
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/inventory" element={<Inventory parts={parts} setParts={setParts} updatePart={updateSinglePart} />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/shipping" element={<ShippingStats parts={parts} setParts={setParts} updatePart={updateSinglePart} />} />
+            <Route path="/shipping" element={<ShippingStats parts={parts} setParts={setParts} updatePart={updateSinglePart} updateMultipleParts={updateMultipleParts} />} />
             <Route path="/register" element={<Register />} />
           </Routes>
         </div>

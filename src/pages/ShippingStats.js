@@ -10,7 +10,7 @@ function getToday() {
 }
 
 function ShippingStats(props) {
-  const { parts, setParts, updatePart } = props;
+  const { parts, setParts, updatePart, updateMultipleParts } = props;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [showHistory, setShowHistory] = useState(false);
@@ -81,17 +81,23 @@ function ShippingStats(props) {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
       console.log('當前用戶:', userObj);
       
-      // 先處理出貨記錄和庫存更新
+      // 收集所有需要更新的庫存和出貨記錄
+      const inventoryUpdates = [];
+      const shipmentRecords = [];
+      
       for (let idx = 0; idx < parts.length; idx++) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          // 更新雲端庫存
+          // 準備庫存更新數據
           const newStock = part.stock - qty;
-          await updatePart(part.id, newStock);
+          inventoryUpdates.push({
+            partId: part.id,
+            newStock: newStock
+          });
           
-          // 發送出貨記錄
-          const shipmentData = {
+          // 準備出貨記錄數據
+          shipmentRecords.push({
             company: userObj?.company || userObj?.username || 'admin',
             partId: part.id,
             partName: part.name,
@@ -99,24 +105,37 @@ function ShippingStats(props) {
             price: part.price,
             amount: qty * part.price,
             time: today
-          };
-          
-          console.log('準備發送數據:', shipmentData);
-          
-          // 修復出貨記錄提交
-          const res = await fetch('https://hengtong.vercel.app/api/shipments', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(shipmentData)
           });
-          const result = await res.json();
-          console.log('API 響應:', result);
-          
-          if (!res.ok) {
-            throw new Error(`API 錯誤: ${result.error || res.status}`);
-          }
+        }
+      }
+      
+      if (inventoryUpdates.length === 0) {
+        alert('請輸入出貨數量');
+        return;
+      }
+      
+      // 批量更新庫存（一次性更新所有庫存）
+      const inventorySuccess = await updateMultipleParts(inventoryUpdates);
+      if (!inventorySuccess) {
+        throw new Error('庫存更新失敗');
+      }
+      
+      // 批量發送出貨記錄
+      for (const shipmentData of shipmentRecords) {
+        console.log('準備發送數據:', shipmentData);
+        
+        const res = await fetch('https://hengtong.vercel.app/api/shipments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(shipmentData)
+        });
+        const result = await res.json();
+        console.log('API 響應:', result);
+        
+        if (!res.ok) {
+          throw new Error(`API 錯誤: ${result.error || res.status}`);
         }
       }
       

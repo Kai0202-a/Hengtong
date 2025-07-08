@@ -39,11 +39,39 @@ function Inventory(props) {
     }
   };
 
-  // 頁面載入時同步一次雲端數據
-  // 移除自動同步的 useEffect
-  // useEffect(() => {
-  //   syncWithCloud();
-  // }, []);
+  // 同步出貨記錄到 API
+  const syncShipmentToAPI = async (shipmentData) => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/shipments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(shipmentData)
+      });
+      
+      if (!response.ok) {
+        console.error('同步出貨記錄失敗:', response.statusText);
+      }
+    } catch (error) {
+      console.error('同步出貨記錄到 API 失敗:', error);
+    }
+  };
+
+  // 處理搜尋輸入
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+  };
+
+  // 處理入庫數量變更
+  const handleInQtyChange = (id, value) => {
+    setInQty({ ...inQty, [id]: value });
+  };
+
+  // 處理出庫數量變更
+  const handleOutQtyChange = (id, value) => {
+    setOutQty({ ...outQty, [id]: value });
+  };
   
   // 在操作完成後手動同步
   const handleStockIn = async (id) => {
@@ -173,39 +201,3 @@ function Inventory(props) {
 }
 
 export default Inventory;
-
-// 刪除第176-211行的所有函數定義，然後在 syncWithCloud 函數後面添加：
-
-// 同步出貨記錄到 API
-const syncShipmentToAPI = async (shipmentData) => {
-  try {
-    const response = await fetch('https://hengtong.vercel.app/api/shipments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(shipmentData)
-    });
-    
-    if (!response.ok) {
-      console.error('同步出貨記錄失敗:', response.statusText);
-    }
-  } catch (error) {
-    console.error('同步出貨記錄到 API 失敗:', error);
-  }
-};
-
-// 處理搜尋輸入
-const handleSearch = (e) => {
-  setSearch(e.target.value);
-};
-
-// 處理入庫數量變更
-const handleInQtyChange = (id, value) => {
-  setInQty({ ...inQty, [id]: value });
-};
-
-// 處理出庫數量變更
-const handleOutQtyChange = (id, value) => {
-  setOutQty({ ...outQty, [id]: value });
-};

@@ -113,6 +113,7 @@ function App() {
       return false;
     }
   };
+
   useEffect(() => {
     fetchInventory();
     

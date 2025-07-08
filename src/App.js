@@ -10,19 +10,61 @@ import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
 
 function App() {
-  const [parts, setParts] = useState(() => {
-    const saved = localStorage.getItem('parts');
-    return saved ? JSON.parse(saved) : partsData;
-  });
+  const [parts, setParts] = useState(partsData); // 移除 localStorage 初始化
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    localStorage.setItem("parts", JSON.stringify(parts));
-  }, [parts]);
+  // 從雲端獲取庫存數據
+  const fetchInventory = async () => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/inventory');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.length > 0) {
+          // 合併雲端數據和本地數據
+          const updatedParts = partsData.map(part => {
+            const cloudPart = result.data.find(cp => cp.id === part.id);
+            return cloudPart ? { ...part, stock: cloudPart.stock } : part;
+          });
+          setParts(updatedParts);
+        }
+      }
+    } catch (error) {
+      console.error('獲取庫存數據失敗:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 更新庫存到雲端
+  const updateInventory = async (partId, newStock) => {
+    try {
+      await fetch('https://hengtong.vercel.app/api/inventory', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ partId, newStock })
+      });
+    } catch (error) {
+      console.error('更新庫存失敗:', error);
+    }
+  };
 
   const updateParts = (newParts) => {
     setParts(newParts);
-    localStorage.setItem('parts', JSON.stringify(newParts));
+    
+    // 只更新到雲端，移除 localStorage
+    newParts.forEach(part => {
+      const oldPart = parts.find(p => p.id === part.id);
+      if (oldPart && oldPart.stock !== part.stock) {
+        updateInventory(part.id, part.stock);
+      }
+    });
   };
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
   useEffect(() => {
     // 禁止右鍵
@@ -36,6 +78,14 @@ function App() {
       document.removeEventListener('dragstart', handleDragStart);
     };
   }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        載入中...
+      </div>
+    );
+  }
 
   return (
     <UserProvider>
@@ -55,7 +105,6 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/shipping" element={<ShippingStats parts={parts} setParts={updateParts} />} />
             <Route path="/register" element={<Register />} />
-            {/* <Route path="/admin-login" element={<AdminLogin />} /> 這行刪除 */}
           </Routes>
         </div>
       </Router>
@@ -64,4 +113,3 @@ function App() {
 }
 
 export default App;
-// ... existing code ...

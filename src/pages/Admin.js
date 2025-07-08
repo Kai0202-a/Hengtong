@@ -247,7 +247,81 @@ function Admin() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#1a1e26', color: '#f5f6fa', padding: 20 }}>
-      {/* ... existing code ... */}
+      {/* 貨況提醒區塊 - 新增 */}
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
+        <h3 style={{ marginTop: 0, color: '#f5f6fa', textAlign: 'center' }}>
+          📦 貨況提醒
+          <span style={{ fontSize: 12, color: '#4CAF50', marginLeft: 8 }}>(即時更新)</span>
+          {isRefreshing && <span style={{ fontSize: 12, color: '#ffa726', marginLeft: 8 }}>🔄 更新中...</span>}
+        </h3>
+        
+        {loading && (
+          <div style={{ color: '#aaa', padding: 20, textAlign: 'center' }}>
+            載入中...
+          </div>
+        )}
+        
+        {error && (
+          <div style={{ color: '#ff6b6b', padding: 20, background: '#2d1b1b', borderRadius: 8, margin: '10px 0', textAlign: 'center' }}>
+            ⚠️ 連接失敗: {error}
+            <br />
+            <button 
+              onClick={() => fetchShipments(true)}
+              style={{ marginTop: 10, padding: '8px 16px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            >
+              🔄 重新載入
+            </button>
+          </div>
+        )}
+        
+        {!loading && !error && (
+          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {orders.length === 0 ? (
+              <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>暫無出貨紀錄</div>
+            ) : (
+              orders.slice(0, 10).map((order, idx) => (
+                <div key={idx} style={{ 
+                  marginBottom: 12, 
+                  padding: 16, 
+                  background: '#2a2e37', 
+                  borderRadius: 8, 
+                  border: '1px solid #444'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontWeight: 'bold', color: '#4CAF50' }}>{order.company}</div>
+                    <div style={{ fontSize: 12, color: '#aaa' }}>{order.time}</div>
+                  </div>
+                  
+                  <div style={{ fontSize: 14 }}>
+                    {order.items.map((item, itemIdx) => (
+                      <div key={itemIdx} style={{ marginBottom: 4 }}>
+                        <span style={{ color: '#f5f6fa' }}>📦 {item.partName}</span>
+                        <span style={{ color: '#ffa726', marginLeft: 8 }}>數量: {item.quantity}</span>
+                        <span style={{ color: '#4CAF50', marginLeft: 8 }}>金額: ${item.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div style={{ marginTop: 8, fontSize: 12, color: '#aaa', borderTop: '1px solid #444', paddingTop: 8 }}>
+                    總數量: {order.totalQuantity} | 總金額: ${order.totalAmount} | 利潤: ${order.totalProfit}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+        
+        {!loading && !error && orders.length > 10 && (
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button 
+              onClick={() => navigate('/shipping')}
+              style={{ padding: '8px 16px', background: '#2196F3', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            >
+              📊 查看完整記錄
+            </button>
+          </div>
+        )}
+      </div>
       
       {/* 通路商詳細資料管理區塊 */}
       {showDealerData && (

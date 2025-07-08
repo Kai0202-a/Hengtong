@@ -44,7 +44,7 @@ function ShippingStats(props) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          const res = await fetch('https://hengtong-515b4uhyv-kais-projects-975b317e.vercel.app/api/shipments', {
+          const res = await fetch('https://hengtong-git-master-kais-projects-975b317e.vercel.app/api/shipments', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

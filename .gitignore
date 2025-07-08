@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/car-parts-frontend/node_modules
 /.pnp
 .pnp.js
 

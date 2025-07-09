@@ -501,7 +501,7 @@ function Admin() {
                           <span style={{ color: '#aaa' }}>NT$ {item.amount.toLocaleString()}</span>
                         )}
                         <span style={{ color: '#64b5f6', fontSize: 12 }}>
-                          雲端庫存: {getInventoryByPartName(item.name)}
+                          雲端庫存: {getStockByPartName(item.name)}
                         </span>
                       </div>
                     </div>

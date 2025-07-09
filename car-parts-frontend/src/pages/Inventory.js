@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "../../../src/UserContext";
+import { partsData } from "./partsData";
+import { UserContext } from "../UserContext";
+import partsData from "./partsData";
 
 function Inventory(props) {
   const { parts, setParts, updatePart } = props;

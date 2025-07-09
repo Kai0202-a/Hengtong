@@ -384,7 +384,7 @@ function Admin() {
         )}
         
         {!loading && !error && (
-          <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>            
+          <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none' }}>            
             {(() => {
               const filteredOrders = getFilteredOrders();
               

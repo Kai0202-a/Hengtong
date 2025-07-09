@@ -15,34 +15,30 @@ function App() {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 完全從雲端獲取庫存數據
+  // 完全從雲端獲取商品和庫存數據
   const fetchInventory = async () => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/inventory');
+      // 使用新的商品 API 獲取完整數據
+      const response = await fetch('https://hengtong.vercel.app/api/products');
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.length > 0) {
-          // 合併本地零件資訊與雲端庫存
-          const updatedParts = partsData.map(part => {
-            const cloudPart = result.data.find(cp => cp.id === part.id);
-            return {
-              ...part,
-              stock: cloudPart ? cloudPart.stock : 0 // 完全使用雲端庫存
-            };
-          });
-          setParts(updatedParts);
+          setParts(result.data);
         } else {
-          // 如果雲端沒有數據，使用本地數據但庫存設為0
+          // 如果雲端沒有數據，使用本地 partsData 並同步到雲端
           const partsWithZeroStock = partsData.map(part => ({
             ...part,
             stock: 0
           }));
           setParts(partsWithZeroStock);
+          
+          // 同步 partsData 到雲端
+          await syncPartsDataToCloud();
         }
       }
     } catch (error) {
-      console.error('獲取庫存數據失敗:', error);
-      // 錯誤時使用本地數據但庫存設為0
+      console.error('獲取商品數據失敗:', error);
+      // 錯誤時使用本地數據
       const partsWithZeroStock = partsData.map(part => ({
         ...part,
         stock: 0
@@ -50,6 +46,20 @@ function App() {
       setParts(partsWithZeroStock);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 同步 partsData 到雲端的函數
+  const syncPartsDataToCloud = async () => {
+    try {
+      await fetch('https://hengtong.vercel.app/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync_partsdata' })
+      });
+      console.log('partsData 已同步到雲端');
+    } catch (error) {
+      console.error('同步 partsData 失敗:', error);
     }
   };
 

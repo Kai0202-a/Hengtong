@@ -109,19 +109,21 @@ function Admin() {
   }, [navigate]);
   
   // 獲取雲端庫存數據
+  // 將第 95 行的 inventory API 改為 products API
   const fetchCloudInventory = useCallback(async () => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/inventory');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setCloudInventory(result.data);
-        }
+    // 改用 products API 獲取完整商品和庫存數據
+    const response = await fetch('https://hengtong.vercel.app/api/products');
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data) {
+        setCloudInventory(result.data);
       }
-    } catch (error) {
-      console.error('獲取雲端庫存數據失敗:', error);
     }
-  }, []);
+  } catch (error) {
+    console.error('獲取雲端庫存數據失敗:', error);
+  }
+}, []);
   
   // 完全雲端化的庫存查詢函數
   const getStockByPartName = (partName) => {

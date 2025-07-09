@@ -43,28 +43,26 @@ function ShippingStats(props) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 防止多次點擊
-    if (submitting) {
-      return;
-    }
-    
-    setSubmitting(true); // 開始提交，禁用按鈕
+    if (submitting) return;
+    setSubmitting(true);
     
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
-      console.log('當前用戶:', userObj);
       
-      // 先處理出貨記錄和庫存更新
+      // 收集所有需要處理的項目
+      const updates = [];
+      const shipments = [];
+      
       for (let idx = 0; idx < parts.length; idx++) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          // 更新雲端庫存
-          const newStock = part.stock - qty;
-          await updatePart(part.id, newStock);
+          updates.push({
+            partId: part.id,
+            newStock: part.stock - qty
+          });
           
-          // 發送出貨記錄
-          const shipmentData = {
+          shipments.push({
             company: userObj?.company || userObj?.username || 'admin',
             partId: part.id,
             partName: part.name,
@@ -72,26 +70,37 @@ function ShippingStats(props) {
             price: part.price,
             amount: qty * part.price,
             time: today
-          };
-          
-          console.log('準備發送數據:', shipmentData);
-          
-          const res = await fetch('/api/shipments', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(shipmentData)
           });
-          
-          const result = await res.json();
-          console.log('API 響應:', result);
-          
-          if (!res.ok) {
-            throw new Error(`API 錯誤: ${result.error || res.status}`);
-          }
         }
       }
+      
+      // 並行處理庫存更新和出貨記錄
+      const promises = [];
+      
+      // 批次更新庫存
+      if (updates.length > 0) {
+        promises.push(
+          fetch('/api/inventory', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batchUpdates: updates })
+          })
+        );
+      }
+      
+      // 批次新增出貨記錄
+      if (shipments.length > 0) {
+        promises.push(
+          fetch('/api/shipments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batchShipments: shipments })
+          })
+        );
+      }
+      
+      // 等待所有請求完成
+      await Promise.all(promises);
       
       alert('發送完成！');
       setQuantities(Array(parts.length).fill(""));
@@ -100,7 +109,7 @@ function ShippingStats(props) {
       console.error('發送失敗:', err);
       alert(`發送失敗：${err.message}`);
     } finally {
-      setSubmitting(false); // 完成提交，重新啟用按鈕
+      setSubmitting(false);
     }
   }
 

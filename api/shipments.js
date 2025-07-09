@@ -32,22 +32,42 @@ export default async function handler(req, res) {
     const collection = db.collection(COLLECTION_NAME);
 
     if (req.method === 'POST') {
-      const { company, partId, partName, quantity, price, amount, time } = req.body;
-      if (!company || !partId || !partName || !quantity || !price || !amount || !time) {
-        return res.status(400).json({ success: false, error: '缺少必要欄位', received: req.body });
+      // 檢查是否為批次處理
+      if (req.body.batchShipments && Array.isArray(req.body.batchShipments)) {
+        // 批次處理出貨記錄
+        const shipmentData = req.body.batchShipments.map(item => ({
+          ...item,
+          quantity: parseInt(item.quantity),
+          price: parseFloat(item.price),
+          amount: parseFloat(item.amount),
+          createdAt: new Date()
+        }));
+        
+        const result = await collection.insertMany(shipmentData);
+        res.status(200).json({ 
+          success: true, 
+          message: '批次出貨資料儲存成功', 
+          count: result.insertedCount 
+        });
+      } else {
+        // 原有的單筆處理邏輯
+        const { company, partId, partName, quantity, price, amount, time } = req.body;
+        if (!company || !partId || !partName || !quantity || !price || !amount || !time) {
+          return res.status(400).json({ success: false, error: '缺少必要欄位', received: req.body });
+        }
+        const shipmentData = {
+          company,
+          partId,
+          partName,
+          quantity: parseInt(quantity),
+          price: parseFloat(price),
+          amount: parseFloat(amount),
+          time,
+          createdAt: new Date()
+        };
+        const result = await collection.insertOne(shipmentData);
+        res.status(200).json({ success: true, message: '出貨資料儲存成功', id: result.insertedId, data: shipmentData });
       }
-      const shipmentData = {
-        company,
-        partId,
-        partName,
-        quantity: parseInt(quantity),
-        price: parseFloat(price),
-        amount: parseFloat(amount),
-        time,
-        createdAt: new Date()
-      };
-      const result = await collection.insertOne(shipmentData);
-      res.status(200).json({ success: true, message: '出貨資料儲存成功', id: result.insertedId, data: shipmentData });
     } else if (req.method === 'GET') {
       const { company, startDate, endDate, page = 1, limit = 50 } = req.query;
       let query = {};

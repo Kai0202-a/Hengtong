@@ -261,56 +261,32 @@ function Admin() {
   };
 
   // 移除定時刷新，改用 SSE
+  // 將 SSE 邏輯替換為輪詢機制
   useEffect(() => {
     // 初始載入
     fetchCloudInventory();
+    fetchShipments(true); // 初始載入
     
-    // 建立 SSE 連接
-    const eventSource = new EventSource('https://hengtong.vercel.app/api/shipments-stream');
+    // 設定輪詢，每 30 秒檢查一次
+    const pollInterval = setInterval(() => {
+      console.log('輪詢更新貨況數據...');
+      fetchShipments(false); // 靜默更新，不顯示載入狀態
+      fetchCloudInventory(); // 同時更新庫存
+    }, 30000); // 30 秒
     
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        
-        switch (data.type) {
-          case 'initial':
-            // 處理初始數據
-            const groupedOrders = groupShipmentsByCompanyAndTime(data.data);
-            setOrders(groupedOrders);
-            setLoading(false);
-            break;
-            
-          case 'change':
-            // 處理即時變更
-            console.log('收到即時更新:', data.operationType);
-            // 重新獲取數據
-            fetchShipments(false);
-            fetchCloudInventory(); // <--- 新增這一行
-            break;
-            
-          case 'heartbeat':
-            // 心跳包，保持連接
-            console.log('SSE 心跳:', data.timestamp);
-            break;
-            
-          case 'error':
-            console.error('SSE 錯誤:', data.message);
-            setError(data.message);
-            break;
-        }
-      } catch (error) {
-        console.error('解析 SSE 數據錯誤:', error);
-      }
+    // 頁面焦點事件：當用戶切換回頁面時自動刷新
+    const handleFocus = () => {
+      console.log('頁面重新獲得焦點，刷新數據...');
+      fetchShipments(false);
+      fetchCloudInventory();
     };
     
-    eventSource.onerror = (error) => {
-      console.error('SSE 連接錯誤:', error);
-      setError('即時連接中斷，請重新載入頁面');
-    };
+    window.addEventListener('focus', handleFocus);
     
     // 清理函數
     return () => {
-      eventSource.close();
+      clearInterval(pollInterval);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 

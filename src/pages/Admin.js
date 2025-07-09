@@ -29,6 +29,8 @@ function Admin() {
       navigate("/");
     }
     
+    fetchCloudInventory(); // 獲取雲端庫存
+
     // 檢查自動清空狀態
     checkAutoClearing();
   }, [navigate]);
@@ -493,7 +495,7 @@ function Admin() {
                       borderBottom: itemIndex < order.items.length - 1 ? '1px solid #333' : 'none'
                     }}>
                       <div style={{ flex: 1 }}>
-                        <span style={{ color: '#e0e0e0', fontWeight: 'bold' }}>{item.name}</span>
+                        <span style={{ color: '#e0e0e0', fontWeight: 'bold' }}>{item.partName}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <span style={{ color: '#81c784', fontWeight: 'bold' }}>數量: {item.quantity}</span>
@@ -501,7 +503,7 @@ function Admin() {
                           <span style={{ color: '#aaa' }}>NT$ {item.amount.toLocaleString()}</span>
                         )}
                         <span style={{ color: '#64b5f6', fontSize: 12 }}>
-                          雲端庫存: {getStockByPartName(item.name)}
+                          雲端庫存: {getStockByPartName(item.partName)}
                         </span>
                       </div>
                     </div>

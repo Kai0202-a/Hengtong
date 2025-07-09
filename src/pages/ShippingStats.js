@@ -10,13 +10,12 @@ function getToday() {
 }
 
 function ShippingStats(props) {
-  const { parts, setParts, updatePart, updateMultipleParts } = props;
+  const { parts, setParts, updatePart } = props;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 新增防重複提交狀態
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -44,14 +43,13 @@ function ShippingStats(props) {
   };
 
   // 獲取歷史記錄
-  // 修復歷史記錄獲取
   const fetchHistory = async () => {
     setLoading(true);
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
       const company = userObj?.company || userObj?.username || 'admin';
       
-      const response = await fetch(`https://hengtong.vercel.app/api/shipments?company=${encodeURIComponent(company)}&limit=100`);
+      const response = await fetch(`/api/shipments?company=${encodeURIComponent(company)}&limit=100`);
       const result = await response.json();
       
       if (result.success) {
@@ -78,34 +76,21 @@ function ShippingStats(props) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 防止重複提交
-    if (isSubmitting) {
-      return;
-    }
-    
-    setIsSubmitting(true); // 開始提交
-    
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
       console.log('當前用戶:', userObj);
       
-      // 收集所有需要更新的庫存和出貨記錄
-      const inventoryUpdates = [];
-      const shipmentRecords = [];
-      
+      // 先處理出貨記錄和庫存更新
       for (let idx = 0; idx < parts.length; idx++) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          // 準備庫存更新數據
+          // 更新雲端庫存
           const newStock = part.stock - qty;
-          inventoryUpdates.push({
-            partId: part.id,
-            newStock: newStock
-          });
+          await updatePart(part.id, newStock);
           
-          // 準備出貨記錄數據
-          shipmentRecords.push({
+          // 發送出貨記錄
+          const shipmentData = {
             company: userObj?.company || userObj?.username || 'admin',
             partId: part.id,
             partName: part.name,
@@ -113,37 +98,24 @@ function ShippingStats(props) {
             price: part.price,
             amount: qty * part.price,
             time: today
+          };
+          
+          console.log('準備發送數據:', shipmentData);
+          
+          const res = await fetch('/api/shipments', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(shipmentData)
           });
-        }
-      }
-      
-      if (inventoryUpdates.length === 0) {
-        alert('請輸入出貨數量');
-        return;
-      }
-      
-      // 批量更新庫存（一次性更新所有庫存）
-      const inventorySuccess = await updateMultipleParts(inventoryUpdates);
-      if (!inventorySuccess) {
-        throw new Error('庫存更新失敗');
-      }
-      
-      // 批量發送出貨記錄
-      for (const shipmentData of shipmentRecords) {
-        console.log('準備發送數據:', shipmentData);
-        
-        const res = await fetch('https://hengtong.vercel.app/api/shipments', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(shipmentData)
-        });
-        const result = await res.json();
-        console.log('API 響應:', result);
-        
-        if (!res.ok) {
-          throw new Error(`API 錯誤: ${result.error || res.status}`);
+          
+          const result = await res.json();
+          console.log('API 響應:', result);
+          
+          if (!res.ok) {
+            throw new Error(`API 錯誤: ${result.error || res.status}`);
+          }
         }
       }
       
@@ -157,8 +129,6 @@ function ShippingStats(props) {
     } catch (err) {
       console.error('發送失敗:', err);
       alert(`發送失敗：${err.message}`);
-    } finally {
-      setIsSubmitting(false); // 結束提交，恢復按鈕狀態
     }
   }
 
@@ -243,22 +213,7 @@ function ShippingStats(props) {
                 </tbody>
               </table>
               <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  style={{ 
-                    fontSize: 24, 
-                    padding: '12px 32px',
-                    opacity: isSubmitting ? 0.6 : 1,
-                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                    backgroundColor: isSubmitting ? '#ccc' : '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 4
-                  }}
-                >
-                  {isSubmitting ? '處理中...' : '送出'}
-                </button>
+                <button type="submit" style={{ fontSize: 24, padding: '12px 32px' }}>送出</button>
               </div>
             </form>
           </>

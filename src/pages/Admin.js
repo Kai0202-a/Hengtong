@@ -443,17 +443,17 @@ function Admin() {
                   }}>
                     {/* 訂單標題 - 可點選展開/收起 */}
                     <div 
-                      onClick={() => openOrderModal(orderKey)}
-                      style={{ 
-                        marginBottom: 8, 
-                        fontSize: 16, 
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
+                        onClick={() => openOrderModal(order)} // 傳入 order 物件而不是 orderKey
+                        style={{ 
+                          marginBottom: 8, 
+                          fontSize: 16, 
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                      >
                       <div>
                         <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
                         <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
@@ -549,10 +549,11 @@ function Admin() {
                 {dealers.length === 0 ? (
                   <div style={{ color: '#aaa' }}>暫無通路商數據</div>
                 ) : (
-                  dealers.map(dealer => {
+                  (dealers || []).map(dealer => {
                     const statusInfo = getStatusDisplay(dealer.status);
                     const userStatus = onlineStatus[dealer.username] || {};
                     const isOnline = userStatus.isOnline || false;
+                    // ... existing code ...
                     const lastSeen = formatLastSeen(userStatus.lastSeen);
                     
                     return (

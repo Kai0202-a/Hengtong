@@ -785,11 +785,3 @@ function Admin() {
 }
 
 export default Admin;
-
-// 移除這部分 - 不要在組件外部定義函數
-// const toggleOrderDetails = (orderKey) => {
-//   setExpandedOrders(prev => ({
-//     ...prev,
-//     [orderKey]: !prev[orderKey]
-//   }));
-// };

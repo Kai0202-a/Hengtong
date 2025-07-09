@@ -21,6 +21,19 @@ function Admin() {
   const [dealersError, setDealersError] = useState(null);
   const [onlineStatus, setOnlineStatus] = useState({}); // 新增：用戶上線狀態
 
+    // 新增：獲取用戶上線狀態
+  const fetchOnlineStatus = useCallback(async (dealersList) => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/user-status');
+      if (response.ok) {
+        const result = await response.json();
+        setOnlineStatus(result.data || {});
+      }
+    } catch (error) {
+      console.error('獲取上線狀態失敗:', error);
+    }
+  }, []);
+
   // 獲取通路商數據
   const fetchDealers = useCallback(async () => {
     try {
@@ -43,19 +56,6 @@ function Admin() {
     }
   }, [fetchOnlineStatus]);
 
-  // 新增：獲取用戶上線狀態
-  const fetchOnlineStatus = useCallback(async (dealersList) => {
-    try {
-      const response = await fetch('https://hengtong.vercel.app/api/user-status');
-      if (response.ok) {
-        const result = await response.json();
-        setOnlineStatus(result.data || {});
-      }
-    } catch (error) {
-      console.error('獲取上線狀態失敗:', error);
-    }
-  }, []);
-
   // 新增：格式化最後上線時間
   const formatLastSeen = (lastSeen) => {
     if (!lastSeen) return '從未登入';
@@ -77,6 +77,26 @@ function Admin() {
   
   // 提醒欄清空狀態 - 只保留 lastClearTime
   const [lastClearTime, setLastClearTime] = useState(null);
+
+   const checkAutoClearing = () => {
+    const now = new Date();
+    const lastClear = localStorage.getItem('alertsClearTime');
+    
+    if (lastClear) {
+      const lastClearDate = new Date(lastClear);
+      const currentMonth = now.getMonth();
+      const lastClearMonth = lastClearDate.getMonth();
+      
+      // 如果是新的月份且今天是1號，自動清空
+      if (currentMonth !== lastClearMonth && now.getDate() === 1) {
+        setLastClearTime(now);
+        localStorage.setItem('alertsClearTime', now.toISOString());
+      } else {
+        // 恢復上次的清空時間
+        setLastClearTime(lastClearDate);
+      }
+    }
+  };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -192,6 +212,7 @@ function Admin() {
     
     return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   };
+  
   
   // 更新通路商狀態
   const updateDealerStatus = async (dealerId, newStatus) => {
@@ -318,31 +339,11 @@ function Admin() {
 
   // 新增：檢查是否需要自動清空（每月1號）
   // 修改自動清空檢查邏輯
-  const checkAutoClearing = () => {
-    const now = new Date();
-    const lastClear = localStorage.getItem('alertsClearTime');
-    
-    if (lastClear) {
-      const lastClearDate = new Date(lastClear);
-      const currentMonth = now.getMonth();
-      const lastClearMonth = lastClearDate.getMonth();
-      
-      // 如果是新的月份且今天是1號，自動清空
-      if (currentMonth !== lastClearMonth && now.getDate() === 1) {
-        setLastClearTime(now);
-        localStorage.setItem('alertsClearTime', now.toISOString());
-      } else {
-        // 恢復上次的清空時間
-        setLastClearTime(lastClearDate);
-      }
-    }
-  };
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>      
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>
       {/* 貨況提醒區塊 */}
-      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>          
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h3 style={{ margin: 0, color: '#f5f6fa' }}>
             貨況提醒 
             <span style={{ fontSize: 12, color: '#4CAF50' }}>(完全雲端化)</span>
@@ -765,128 +766,8 @@ function Admin() {
   );
 }
 
+export default Admin;
 
-  
-  // 更新通路商狀態
-  const updateDealerStatus = async (dealerId, newStatus) => {
-    try {
-      const response = await fetch('https://hengtong.vercel.app/api/dealers', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: dealerId,
-          status: newStatus
-        })
-      });
-      
-      if (response.ok) {
-        fetchDealers();
-        alert(`狀態更新成功！`);
-      } else {
-        throw new Error('更新失敗');
-      }
-    } catch (error) {
-      console.error('更新通路商狀態失敗:', error);
-      alert('更新失敗，請稍後再試');
-    }
-  };
-  
-  const getStatusDisplay = (status) => {
-    switch (status) {
-      case 'pending':
-        return { text: '待審核', color: '#ffa726' };
-      case 'active':
-        return { text: '已啟用', color: '#4CAF50' };
-      case 'suspended':
-        return { text: '已停用', color: '#f44336' };
-      default:
-        return { text: '未知', color: '#999' };
-    }
-  };
-  
-  const handleDealerManagement = () => {
-    setShowDealerManagement(!showDealerManagement);
-    if (!showDealerManagement) {
-      fetchDealers();
-    }
-  };
-
-  useEffect(() => {
-    // 初始載入
-    fetchShipments(true);
-    fetchCloudInventory();
-    
-    // 定期更新數據（每10秒）
-    const interval = setInterval(() => {
-      fetchShipments(false);
-      fetchCloudInventory();
-    }, 10000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // 修改清空提醒欄功能
-  const clearAlerts = () => {
-    const confirmed = window.confirm('確定要清空貨況提醒欄嗎？\n\n注意：這只會清空本地顯示，雲端資料不會被刪除。');
-    if (confirmed) {
-      const now = new Date();
-      setLastClearTime(now);
-      localStorage.setItem('alertsClearTime', now.toISOString());
-      alert('提醒欄已清空！');
-    }
-  };
-
-  // 修改過濾邏輯：只顯示清空時間之後的資料
-  const getFilteredOrders = () => {
-    if (!lastClearTime) {
-      return orders;
-    }
-    
-    const clearTime = new Date(lastClearTime);
-    return orders.filter(order => {
-      const orderTime = new Date(order.createdAt);
-      return orderTime > clearTime;
-    });
-  };
-
-  // 新增：檢查是否需要自動清空（每月1號）
-  // 修改自動清空檢查邏輯
-  const checkAutoClearing = () => {
-    const now = new Date();
-    const lastClear = localStorage.getItem('alertsClearTime');
-    
-    if (lastClear) {
-      const lastClearDate = new Date(lastClear);
-      const currentMonth = now.getMonth();
-      const lastClearMonth = lastClearDate.getMonth();
-      
-      // 如果是新的月份且今天是1號，自動清空
-      if (currentMonth !== lastClearMonth && now.getDate() === 1) {
-        setLastClearTime(now);
-        localStorage.setItem('alertsClearTime', now.toISOString());
-      } else {
-        // 恢復上次的清空時間
-        setLastClearTime(lastClearDate);
-      }
-    }
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', minHeight: '100vh', background: '#181a20' }}>      
-      {/* 貨況提醒區塊 */}
-      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '32px auto 24px auto', boxShadow: '0 2px 12px #0002', textAlign: 'center' }}>        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>          
-          <h3 style={{ margin: 0, color: '#f5f6fa' }}>
-            貨況提醒 
-            <span style={{ fontSize: 12, color: '#4CAF50' }}>(完全雲端化)</span>
-            {isRefreshing && (
-              <span style={{ fontSize: 10, color: '#ffa726', marginLeft: 8 }}>更新中...</span>
-            )}
-          </h3>
-          
-          <button 
             onClick={clearAlerts}
             style={{ 
               padding: '6px 12px', 
@@ -1317,6 +1198,7 @@ function Admin() {
       </div>
     </div>
   );
+}
 
 
 export default Admin;

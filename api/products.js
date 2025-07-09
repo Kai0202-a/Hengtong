@@ -3,10 +3,42 @@ import { MongoClient } from 'mongodb';
 // MongoDB 連接字串
 const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
-// 直接在這裡定義 partsData，避免引入問題
+// 商品數據
 const partsData = [
-  // 將您的 partsData.js 內容複製到這裡
-  // 或者使用動態引入
+  { id: 1, name: "PO-9001", stock: 50, cost: 170, price: 260, image: "images/PO-9001.jpg" },
+  { id: 2, name: "PO-9002", stock: 50, cost: 170, price: 260, image: "images/PO-9002.jpg" },
+  { id: 3, name: "PO-9003", stock: 50, cost: 170, price: 260, image: "images/PO-9003.jpg" },
+  { id: 4, name: "PO-9004", stock: 50, cost: 170, price: 260, image: "images/PO-9004.jpg" },
+  { id: 5, name: "PO-9005", stock: 50, cost: 170, price: 260, image: "images/PO-9005.jpg" },
+  { id: 6, name: "PO-9006", stock: 50, cost: 170, price: 260, image: "images/PO-9006.jpg" },
+  { id: 7, name: "PO-9008", stock: 50, cost: 130, price: 220, image: "images/PO-9008.jpg" },
+  { id: 8, name: "PO-9009", stock: 50, cost: 170, price: 260, image: "images/PO-9009.jpg" },
+  { id: 9, name: "PO-9010", stock: 50, cost: 170, price: 260, image: "images/PO-9010.jpg" },
+  { id: 10, name: "PO-9011", stock: 50, cost: 130, price: 220, image: "images/PO-9011.jpg" },
+  { id: 11, name: "PO-9013", stock: 50, cost: 170, price: 260, image: "images/PO-9013.jpg" },
+  { id: 12, name: "PO-9015", stock: 50, cost: 170, price: 260, image: "images/PO-9015.jpg" },
+  { id: 13, name: "PO-9016", stock: 50, cost: 130, price: 220, image: "images/PO-9016.jpg" },
+  { id: 14, name: "PO-9018", stock: 50, cost: 130, price: 220, image: "images/PO-9018.jpg" },
+  { id: 15, name: "PO-9021", stock: 50, cost: 130, price: 220, image: "images/PO-9021.jpg" },
+  { id: 16, name: "PO-9022", stock: 50, cost: 130, price: 220, image: "images/PO-9022.jpg" },
+  { id: 17, name: "PO-9024", stock: 50, cost: 130, price: 220, image: "images/PO-9024.jpg" },
+  { id: 18, name: "PO-9025", stock: 50, cost: 130, price: 220, image: "images/PO-9025.png" },
+  { id: 19, name: "PO-9026", stock: 50, cost: 130, price: 220, image: "images/PO-9026.jpg" },
+  { id: 20, name: "PO-9027", stock: 50, cost: 130, price: 220, image: "images/PO-9027.jpg" },
+  { id: 21, name: "PO-9028", stock: 50, cost: 130, price: 220, image: "images/PO-9028.jpg" },
+  { id: 22, name: "PO-9029", stock: 50, cost: 130, price: 220, image: "images/PO-9029.png" },
+  { id: 23, name: "PO-9030", stock: 50, cost: 130, price: 220, image: "images/PO-9030.jpg" },
+  { id: 24, name: "PO-9031", stock: 50, cost: 130, price: 220, image: "images/PO-9031.jpg" },
+  { id: 25, name: "PO-9032", stock: 50, cost: 130, price: 220, image: "images/PO-9032.jpg" },
+  { id: 26, name: "PO-9033", stock: 50, cost: 130, price: 220, image: "images/PO-9033.jpg" },
+  { id: 27, name: "PO-9034", stock: 50, cost: 130, price: 220, image: "images/PO-9034.jpg" },
+  { id: 28, name: "5W30賽用機油", stock: 50, cost: 300, price: 370, image: "" },
+  { id: 29, name: "5W40賽用機油", stock: 50, cost: 330, price: 400, image: "" },
+  { id: 30, name: "20W50賽用機油", stock: 50, cost: 370, price: 430, image: "" },
+  { id: 31, name: "K&N辛烷值提升劑99-2020", stock: 50, cost: 350, price: 400, image: "" },
+  { id: 32, name: "K&N燃油系統清潔99-2050", stock: 50, cost: 350, price: 400, image: "" },
+  { id: 33, name: "K&N柴油辛烷值提升劑99-2030", stock: 50, cost: 350, price: 400, image: "" },
+  { id: 34, name: "EI賽用級全取代水箱精", stock: 50, cost: 480, price: 600, image: "" }
 ];
 
 export default async function handler(req, res) {

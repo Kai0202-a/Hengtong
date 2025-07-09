@@ -15,6 +15,20 @@ function Admin() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState({});
   const [showDealerManagement, setShowDealerManagement] = useState(false);
+    // 新增：訂單單據相關狀態
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+    // 新增：開啟訂單單據的函數
+  const openOrderModal = (order) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+  };
+
+  // 新增：關閉訂單單據的函數
+  const closeOrderModal = () => {
+    setSelectedOrder(null);
+    setShowOrderModal(false);
+  };
   const [dealers, setDealers] = useState([]);
   const [dealersLoading, setDealersLoading] = useState(false);
   const [dealersError, setDealersError] = useState(null);
@@ -429,7 +443,7 @@ function Admin() {
                   }}>
                     {/* 訂單標題 - 可點選展開/收起 */}
                     <div 
-                      onClick={() => toggleOrderDetails(orderKey)}
+                      onClick={() => openOrderModal(orderKey)}
                       style={{ 
                         marginBottom: 8, 
                         fontSize: 16, 
@@ -771,204 +785,161 @@ function Admin() {
               navigate('/');
             }}
             style={{ 
-              padding: '12px 24px', 
-              background: '#f44336', 
+              padding: '6px 12px', 
+              background: '#ff9800', 
               color: 'white', 
               border: 'none', 
-              borderRadius: 8, 
+              borderRadius: 4, 
               cursor: 'pointer',
-              fontSize: 16
+              fontSize: 12,
+              fontWeight: 'bold'
             }}
           >
             🚪 登出
           </button>
         </div>
       </div>
+      
+      {/* 訂單單據彈出視窗 */}
+      {showOrderModal && selectedOrder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff',
+            width: '90vw',
+            maxWidth: 600,
+            maxHeight: '90vh',
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+          }}>
+            {/* 單據標題 */}
+            <div style={{
+              background: '#2196F3',
+              color: 'white',
+              padding: '16px 20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h3 style={{ margin: 0 }}>📋 出貨單據</h3>
+              <button 
+                onClick={closeOrderModal}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: 20,
+                  cursor: 'pointer'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* 單據內容 */}
+            <div style={{ padding: 20, maxHeight: 'calc(90vh - 80px)', overflowY: 'auto' }}>
+              {/* 公司資訊 */}
+              <div style={{ marginBottom: 20, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
+                <h4 style={{ margin: '0 0 8px 0', color: '#333' }}>客戶資訊</h4>
+                <div style={{ color: '#666' }}>
+                  <strong>公司名稱：</strong>{selectedOrder.company}<br/>
+                  <strong>出貨時間：</strong>{selectedOrder.time}
+                </div>
+              </div>
+              
+              {/* 商品明細表格 */}
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>商品明細</h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
+                  <thead>
+                    <tr style={{ background: '#f8f9fa' }}>
+                      <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>商品名稱</th>
+                      <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>數量</th>
+                      <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>單價</th>
+                      <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>小計</th>
+                      <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>庫存</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedOrder.items.map((item, idx) => (
+                      <tr key={idx}>
+                        <td style={{ padding: 8, border: '1px solid #ddd' }}>{item.partName}</td>
+                        <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>{item.quantity}</td>
+                        <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>
+                          {item.amount > 0 ? `NT$ ${(item.amount / item.quantity).toLocaleString()}` : '-'}
+                        </td>
+                        <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>
+                          {item.amount > 0 ? `NT$ ${item.amount.toLocaleString()}` : '-'}
+                        </td>
+                        <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center', color: '#ff9800' }}>
+                          {getStockByPartName(item.partName)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* 總計資訊 */}
+              <div style={{ padding: 16, background: '#f8f9fa', borderRadius: 8, border: '2px solid #2196F3' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>總計資訊</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div><strong>總數量：</strong>{selectedOrder.totalQuantity}</div>
+                  <div><strong>總金額：</strong>NT$ {selectedOrder.totalAmount.toLocaleString()}</div>
+                  <div><strong>總成本：</strong>NT$ {selectedOrder.totalCost.toLocaleString()}</div>
+                  <div style={{ color: selectedOrder.totalProfit >= 0 ? '#4CAF50' : '#f44336' }}>
+                    <strong>淨利潤：</strong>NT$ {selectedOrder.totalProfit.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              
+              {/* 操作按鈕 */}
+              <div style={{ marginTop: 20, textAlign: 'center' }}>
+                <button 
+                  onClick={() => window.print()}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#4CAF50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    marginRight: 10
+                  }}
+                >
+                  🖨️ 列印單據
+                </button>
+                <button 
+                  onClick={closeOrderModal}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#666',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: 'pointer'
+                  }}
+                >
+                  關閉
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default Admin;
-
-// 新增：訂單單據相關狀態
-const [selectedOrder, setSelectedOrder] = useState(null);
-const [showOrderModal, setShowOrderModal] = useState(false);
-
-// 新增：開啟訂單單據的函數
-const openOrderModal = (order) => {
-  setSelectedOrder(order);
-  setShowOrderModal(true);
-};
-
-// 新增：關閉訂單單據的函數
-const closeOrderModal = () => {
-  setSelectedOrder(null);
-  setShowOrderModal(false);
-};
-
-// 修改貨況提醒中的訂單點擊事件
-<div 
-  onClick={() => openOrderModal(order)}
-  style={{ 
-    marginBottom: 8, 
-    fontSize: 16, 
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '8px',
-    background: '#3a3e47',
-    borderRadius: 6,
-    transition: 'background 0.2s'
-  }}
-  onMouseEnter={(e) => e.target.style.background = '#4a4e57'}
-  onMouseLeave={(e) => e.target.style.background = '#3a3e47'}
->
-  <div>
-    <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
-    <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
-  </div>
-  <span style={{ color: '#ffa726', fontSize: 14 }}>
-    📋 查看單據
-  </span>
-</div>
-
-// 新增：訂單單據彈出視窗
-{showOrderModal && selectedOrder && (
-  <div style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    background: 'rgba(0,0,0,0.8)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000
-  }}>
-    <div style={{
-      background: '#fff',
-      width: '90vw',
-      maxWidth: 600,
-      maxHeight: '90vh',
-      borderRadius: 12,
-      overflow: 'hidden',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-    }}>
-      {/* 單據標題 */}
-      <div style={{
-        background: '#2196F3',
-        color: 'white',
-        padding: '16px 20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h3 style={{ margin: 0 }}>📋 出貨單據</h3>
-        <button 
-          onClick={closeOrderModal}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: 'white',
-            fontSize: 20,
-            cursor: 'pointer'
-          }}
-        >
-          ✕
-        </button>
-      </div>
-      
-      {/* 單據內容 */}
-      <div style={{ padding: 20, maxHeight: 'calc(90vh - 80px)', overflowY: 'auto' }}>
-        {/* 公司資訊 */}
-        <div style={{ marginBottom: 20, padding: 16, background: '#f5f5f5', borderRadius: 8 }}>
-          <h4 style={{ margin: '0 0 8px 0', color: '#333' }}>客戶資訊</h4>
-          <div style={{ color: '#666' }}>
-            <strong>公司名稱：</strong>{selectedOrder.company}<br/>
-            <strong>出貨時間：</strong>{selectedOrder.time}
-          </div>
-        </div>
-        
-        {/* 商品明細表格 */}
-        <div style={{ marginBottom: 20 }}>
-          <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>商品明細</h4>
-          <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
-            <thead>
-              <tr style={{ background: '#f8f9fa' }}>
-                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'left' }}>商品名稱</th>
-                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>數量</th>
-                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>單價</th>
-                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>小計</th>
-                <th style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>庫存</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedOrder.items.map((item, idx) => (
-                <tr key={idx}>
-                  <td style={{ padding: 8, border: '1px solid #ddd' }}>{item.partName}</td>
-                  <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center' }}>{item.quantity}</td>
-                  <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>
-                    {item.amount > 0 ? `NT$ ${(item.amount / item.quantity).toLocaleString()}` : '-'}
-                  </td>
-                  <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'right' }}>
-                    {item.amount > 0 ? `NT$ ${item.amount.toLocaleString()}` : '-'}
-                  </td>
-                  <td style={{ padding: 8, border: '1px solid #ddd', textAlign: 'center', color: '#ff9800' }}>
-                    {getStockByPartName(item.partName)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* 總計資訊 */}
-        <div style={{ padding: 16, background: '#f8f9fa', borderRadius: 8, border: '2px solid #2196F3' }}>
-          <h4 style={{ margin: '0 0 12px 0', color: '#333' }}>總計資訊</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div><strong>總數量：</strong>{selectedOrder.totalQuantity}</div>
-            <div><strong>總金額：</strong>NT$ {selectedOrder.totalAmount.toLocaleString()}</div>
-            <div><strong>總成本：</strong>NT$ {selectedOrder.totalCost.toLocaleString()}</div>
-            <div style={{ color: selectedOrder.totalProfit >= 0 ? '#4CAF50' : '#f44336' }}>
-              <strong>淨利潤：</strong>NT$ {selectedOrder.totalProfit.toLocaleString()}
-            </div>
-          </div>
-        </div>
-        
-        {/* 操作按鈕 */}
-        <div style={{ marginTop: 20, textAlign: 'center' }}>
-          <button 
-            onClick={() => window.print()}
-            style={{
-              padding: '10px 20px',
-              background: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              marginRight: 10
-            }}
-          >
-            🖨️ 列印單據
-          </button>
-          <button 
-            onClick={closeOrderModal}
-            style={{
-              padding: '10px 20px',
-              background: '#666',
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer'
-            }}
-          >
-            關閉
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}

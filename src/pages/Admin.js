@@ -14,6 +14,9 @@ function Admin() {
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  // 新增：控制每個訂單明細的展開狀態
+  const [expandedOrders, setExpandedOrders] = useState({});
+  
   // 通路商管理相關狀態
   const [showDealerManagement, setShowDealerManagement] = useState(false);
   const [dealers, setDealers] = useState([]);
@@ -384,7 +387,7 @@ function Admin() {
         )}
         
         {!loading && !error && (
-          <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none' }}>            
+          <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>            
             {(() => {
               const filteredOrders = getFilteredOrders();
               
@@ -404,60 +407,96 @@ function Admin() {
                 return <li style={{ color: '#aaa' }}>暫無出貨紀錄</li>;
               }
               
-              return filteredOrders.map((order, idx) => (
-                <li key={`${order.createdAt}-${idx}`} style={{ 
-                  marginBottom: 12, 
-                  fontSize: 14, 
-                  color: '#f5f6fa',
-                  padding: '12px',
-                  borderBottom: idx < filteredOrders.length - 1 ? '1px solid #333' : 'none',
-                  background: '#2a2e37',
-                  borderRadius: 8,
-                  textAlign: 'left'
-                }}>
-                  {/* 原有的訂單顯示邏輯保持不變 */}
-                  <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 'bold' }}>
-                    <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
-                    <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
-                  </div>
-                  
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
-                  </div>
-                  
-                  <div style={{ marginLeft: 12, marginBottom: 8 }}>  
-                    {order.items.map((item, itemIdx) => (
-                      <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
-                        • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
-                        <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
-                        {item.amount > 0 && (
-                          <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
-                        )}
-                        <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
-                          (雲端庫存: {getStockByPartName(item.partName)})
-                        </span>
+              // 修正第 410 行的 map 函數
+              return filteredOrders.map((order, idx) => {
+                const orderKey = `${order.createdAt}-${idx}`;
+                const isExpanded = expandedOrders[orderKey];
+                
+                return (
+                  <li key={orderKey} style={{ 
+                    marginBottom: 12, 
+                    fontSize: 14, 
+                    color: '#f5f6fa',
+                    padding: '12px',
+                    borderBottom: idx < filteredOrders.length - 1 ? '1px solid #333' : 'none',
+                    background: '#2a2e37',
+                    borderRadius: 8,
+                    textAlign: 'left'
+                  }}>
+                    {/* 訂單標題 - 可點選展開/收起 */}
+                    <div 
+                      onClick={() => toggleOrderDetails(orderKey)}
+                      style={{ 
+                        marginBottom: 8, 
+                        fontSize: 16, 
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <span style={{ color: '#4CAF50' }}>{order.company}</span> 於 
+                        <span style={{ color: '#aaa', marginLeft: 4 }}>{order.time}</span>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
-                    <span style={{ color: '#ffa726' }}>總計：</span>
-                    <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {order.totalQuantity}</span>
-                    {order.totalAmount > 0 && (
+                      <span style={{ color: '#ffa726', fontSize: 14 }}>
+                        {isExpanded ? '▼' : '▶'} 點選查看明細
+                      </span>
+                    </div>
+                    
+                    {/* 簡要資訊 - 始終顯示 */}
+                    <div style={{ marginBottom: 8, fontSize: 13 }}>
+                      <span style={{ color: '#81c784', fontWeight: 'bold' }}>總數量: {order.totalQuantity}</span>
+                      {order.totalAmount > 0 && (
+                        <span style={{ color: '#aaa', marginLeft: 16 }}>總金額: NT$ {order.totalAmount.toLocaleString()}</span>
+                      )}
+                    </div>
+                    
+                    {/* 詳細明細 - 可展開/收起 */}
+                    {isExpanded && (
                       <>
-                        <br />
-                        <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {order.totalAmount.toLocaleString()}</span>
-                        <br />
-                        <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {order.totalCost.toLocaleString()}</span>
-                        <br />
-                        <span style={{ color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
-                          淨利金額 NT$ {order.totalProfit.toLocaleString()}
-                        </span>
+                        <div style={{ marginBottom: 8 }}>
+                          <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
+                        </div>
+                        
+                        <div style={{ marginLeft: 12, marginBottom: 8 }}>  
+                          {order.items.map((item, itemIdx) => (
+                            <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
+                              • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
+                              <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
+                              {item.amount > 0 && (
+                                <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
+                              )}
+                              <span style={{ color: '#ff9800', marginLeft: 8, fontSize: 12 }}>
+                                (雲端庫存: {getStockByPartName(item.partName)})
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
+                          <span style={{ color: '#ffa726' }}>詳細總計：</span>
+                          <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {order.totalQuantity}</span>
+                          {order.totalAmount > 0 && (
+                            <>
+                              <br />
+                              <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {order.totalAmount.toLocaleString()}</span>
+                              <br />
+                              <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {order.totalCost.toLocaleString()}</span>
+                              <br />
+                              <span style={{ color: order.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
+                                淨利金額 NT$ {order.totalProfit.toLocaleString()}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </>
                     )}
-                  </div>
-                </li>
-              ));  
+                  </li>
+                );
+              });
+              
             })()}
           </ul>
         )}
@@ -744,4 +783,14 @@ function Admin() {
     </div>
   );
 }
+
 export default Admin;
+
+
+// 新增：切換訂單明細展開狀態的函數
+const toggleOrderDetails = (orderKey) => {
+  setExpandedOrders(prev => ({
+    ...prev,
+    [orderKey]: !prev[orderKey]
+  }));
+};

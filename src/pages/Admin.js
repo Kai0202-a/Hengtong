@@ -456,7 +456,7 @@ function Admin() {
                 
                   {/* 新增：顯示詳細的訂單時間記錄 */}
                   {order.orderTimes && order.orderTimes.length > 0 && (
-                    <div style={{ marginBottom: 12, padding: 8, backgroundColor: '#1a1e25', borderRadius: 4, border: '1px solid #333' }}>
+                    <div style={{ marginBottom: 12, padding: 8, backgroundColor: '#2a2e37', borderRadius: 6 }}>
                       <div style={{ color: '#ffa726', fontWeight: 'bold', marginBottom: 6, fontSize: 14 }}>
                         📅 訂單時間記錄（用於對帳）：
                       </div>
@@ -483,7 +483,29 @@ function Admin() {
                     <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
                   </div>
                   
-                  
+                  {/* 商品列表顯示 */}
+                  {order.items && order.items.map((item, itemIndex) => (
+                    <div key={itemIndex} style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '6px 0',
+                      borderBottom: itemIndex < order.items.length - 1 ? '1px solid #333' : 'none'
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ color: '#e0e0e0', fontWeight: 'bold' }}>{item.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ color: '#81c784', fontWeight: 'bold' }}>數量: {item.quantity}</span>
+                        {item.amount > 0 && (
+                          <span style={{ color: '#aaa' }}>NT$ {item.amount.toLocaleString()}</span>
+                        )}
+                        <span style={{ color: '#64b5f6', fontSize: 12 }}>
+                          雲端庫存: {getInventoryByPartName(item.name)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                   
                   <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
                     <span style={{ color: '#ffa726' }}>總計：</span>

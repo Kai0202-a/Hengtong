@@ -37,8 +37,8 @@ function Inventory(props) {
       const outNum = parseInt(outQty[part.id], 10) || 0;
       if (inNum === 0 && outNum === 0) return null;
       return {
-        id: part.id,
-        stock: part.stock + inNum - outNum
+        partId: part.id,  // 改為 partId
+        newStock: part.stock + inNum - outNum  // 改為 newStock
       };
     }).filter(Boolean);
     if (updates.length === 0) {
@@ -46,10 +46,11 @@ function Inventory(props) {
       return;
     }
     try {
-      await axios.put("/api/inventory", { updates });
+      // 改為 batchUpdates
+      await axios.put("/api/inventory", { batchUpdates: updates });
       const newParts = parts.map(part => {
-        const update = updates.find(u => u.id === part.id);
-        return update ? { ...part, stock: update.stock } : part;
+        const update = updates.find(u => u.partId === part.id);  // 改為 partId
+        return update ? { ...part, stock: update.newStock } : part;  // 改為 newStock
       });
       setParts(newParts);
       setInQty({});

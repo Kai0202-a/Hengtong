@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       const result = await collection.insertOne(shipmentData);
       res.status(200).json({ success: true, message: '出貨資料儲存成功', id: result.insertedId, data: shipmentData });
     } else if (req.method === 'GET') {
-      const { company, startDate, endDate, limit = 50 } = req.query;
+      const { company, startDate, endDate, page = 1, limit = 50 } = req.query;
       let query = {};
       if (company) query.company = company;
       if (startDate || endDate) {
@@ -57,8 +57,26 @@ export default async function handler(req, res) {
         if (startDate) query.time.$gte = startDate;
         if (endDate) query.time.$lte = endDate;
       }
-      const shipments = await collection.find(query).sort({ createdAt: -1 }).limit(parseInt(limit)).toArray();
-      res.status(200).json({ success: true, data: shipments, count: shipments.length });
+      
+      // 計算總記錄數
+      const total = await collection.countDocuments(query);
+      
+      // 計算分頁
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const shipments = await collection.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .toArray();
+        
+      res.status(200).json({ 
+        success: true, 
+        data: shipments, 
+        count: shipments.length,
+        total: total,  // 添加總記錄數
+        page: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit))
+      });
     } else {
       res.status(405).json({ error: '不支援的請求方法' });
     }

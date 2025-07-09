@@ -1,70 +1,77 @@
-import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import React, { useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { partsData } from "./partsData";
-import { UserContext } from "../UserContext";
+import { UserContext } from "../../../src/UserContext";
 
 function Inventory(props) {
-  const { parts, setParts } = props;
+  const { parts, setParts, updatePart } = props;
   const [search, setSearch] = useState("");
   const [inQty, setInQty] = useState({});
   const [outQty, setOutQty] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
+
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem("user"));
     if (!localUser || localUser.role !== "admin") {
-      navigate("/"); // 未登入或非管理員自動跳回首頁
+      navigate("/");
+      return;
     }
   }, [user, navigate]);
 
-  const handleSearch = (e) => {
+  const filteredParts = useMemo(() => {
+    if (!search) return parts;
+    const searchLower = search.toLowerCase();
+    return parts.filter(
+      (part) =>
+        part.name.toLowerCase().includes(searchLower) ||
+        (part.type && part.type.toLowerCase().includes(searchLower))
+    );
+  }, [parts, search]);
+
+  const handleSearch = useCallback((e) => {
     setSearch(e.target.value);
-  };
+  }, []);
 
-  const handleInQtyChange = (id, value) => {
-    setInQty({ ...inQty, [id]: value });
-  };
-  const handleOutQtyChange = (id, value) => {
-    setOutQty({ ...outQty, [id]: value });
-  };
+  const handleInQtyChange = useCallback((id, value) => {
+    setInQty((prev) => ({ ...prev, [id]: value }));
+  }, []);
 
+  const handleOutQtyChange = useCallback((id, value) => {
+    setOutQty((prev) => ({ ...prev, [id]: value }));
+  }, []);
+
+  // 批次送出
   const handleBatchSubmit = async () => {
-    setSubmitting(true);
-    const updates = parts.map(part => {
-      const inNum = parseInt(inQty[part.id], 10) || 0;
-      const outNum = parseInt(outQty[part.id], 10) || 0;
-      if (inNum === 0 && outNum === 0) return null;
-      return {
-        id: part.id,
-        stock: part.stock + inNum - outNum
-      };
-    }).filter(Boolean);
-    if (updates.length === 0) {
-      setSubmitting(false);
-      return;
-    }
+    if (isLoading) return;
+    setIsLoading(true);
     try {
-      await axios.put("/api/inventory", { updates });
-      const newParts = parts.map(part => {
-        const update = updates.find(u => u.id === part.id);
-        return update ? { ...part, stock: update.stock } : part;
+      const updates = [];
+      filteredParts.forEach((part) => {
+        const inValue = parseInt(inQty[part.id], 10) || 0;
+        const outValue = parseInt(outQty[part.id], 10) || 0;
+        if (inValue > 0 || outValue > 0) {
+          let newStock = part.stock + inValue - outValue;
+          if (newStock < 0) newStock = 0;
+          updates.push({ id: part.id, newStock });
+        }
       });
-      setParts(newParts);
+      // 樂觀更新 UI
+      const updatedParts = parts.map((part) => {
+        const update = updates.find((u) => u.id === part.id);
+        return update ? { ...part, stock: update.newStock } : part;
+      });
+      setParts(updatedParts);
       setInQty({});
       setOutQty({});
-    } catch (e) {
-      alert("送出失敗，請稍後再試");
+      // 批次送出到後端
+      await Promise.all(updates.map((u) => updatePart(u.id, u.newStock)));
+    } catch (error) {
+      alert("批次送出失敗，請重試");
+    } finally {
+      setIsLoading(false);
     }
-    setSubmitting(false);
   };
-
-  const filteredParts = parts.filter(
-    (part) =>
-      part.name.toLowerCase().includes(search.toLowerCase()) ||
-      (part.type && part.type.toLowerCase().includes(search.toLowerCase()))
-  );
 
   return (
     <div>
@@ -81,6 +88,11 @@ function Inventory(props) {
           style={{ marginBottom: 16, padding: 8, width: 300 }}
         />
       </div>
+      {isLoading && (
+        <div style={{ textAlign: 'center', margin: '10px 0', color: '#666' }}>
+          處理中...
+        </div>
+      )}
       <table border="1" cellPadding="8" style={{ width: "100%", marginTop: 16 }}>
         <thead>
           <tr>
@@ -88,7 +100,8 @@ function Inventory(props) {
             <th>庫存數量</th>
             <th>進價</th>
             <th>售價</th>
-            <th>操作</th>
+            <th>入庫</th>
+            <th>出庫</th>
           </tr>
         </thead>
         <tbody>
@@ -105,17 +118,21 @@ function Inventory(props) {
                 <input
                   type="number"
                   min="0"
-                  style={{ width: 60, marginRight: 8 }}
                   value={inQty[part.id] || ""}
                   onChange={e => handleInQtyChange(part.id, e.target.value)}
+                  style={{ width: 60 }}
+                  disabled={isLoading}
                   placeholder="入庫"
                 />
+              </td>
+              <td>
                 <input
                   type="number"
                   min="0"
-                  style={{ width: 60, marginLeft: 8 }}
                   value={outQty[part.id] || ""}
                   onChange={e => handleOutQtyChange(part.id, e.target.value)}
+                  style={{ width: 60 }}
+                  disabled={isLoading}
                   placeholder="出庫"
                 />
               </td>
@@ -126,10 +143,10 @@ function Inventory(props) {
       <div style={{ display: 'flex', justifyContent: 'center', margin: '32px 0' }}>
         <button
           onClick={handleBatchSubmit}
-          disabled={submitting}
-          style={{ fontSize: '1.2rem', padding: '12px 48px', borderRadius: 8 }}
+          disabled={isLoading}
+          style={{ fontSize: '1.2rem', padding: '12px 48px', borderRadius: 8, background: '#1976d2', color: '#fff', border: 'none', cursor: 'pointer' }}
         >
-          {submitting ? '送出中...' : '送出'}
+          送出
         </button>
       </div>
     </div>

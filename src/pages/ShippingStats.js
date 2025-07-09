@@ -13,9 +13,7 @@ function ShippingStats(props) {
   const { parts, setParts, updatePart } = props;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
-  const [showHistory, setShowHistory] = useState(false);
-  const [historyData, setHistoryData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -42,39 +40,15 @@ function ShippingStats(props) {
     setQuantities(newQuantities);
   };
 
-  // 獲取歷史記錄
-  const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const userObj = user || JSON.parse(localStorage.getItem('user'));
-      const company = userObj?.company || userObj?.username || 'admin';
-      
-      const response = await fetch(`/api/shipments?company=${encodeURIComponent(company)}&limit=100`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setHistoryData(result.data);
-      } else {
-        alert('獲取歷史記錄失敗：' + result.error);
-      }
-    } catch (error) {
-      console.error('獲取歷史記錄失敗:', error);
-      alert('獲取歷史記錄失敗：' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 切換歷史記錄顯示
-  const toggleHistory = () => {
-    if (!showHistory) {
-      fetchHistory();
-    }
-    setShowHistory(!showHistory);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // 防止多次點擊
+    if (submitting) {
+      return;
+    }
+    
+    setSubmitting(true); // 開始提交，禁用按鈕
     
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
@@ -122,163 +96,95 @@ function ShippingStats(props) {
       alert('發送完成！');
       setQuantities(Array(parts.length).fill(""));
       
-      // 如果歷史記錄正在顯示，刷新數據
-      if (showHistory) {
-        fetchHistory();
-      }
     } catch (err) {
       console.error('發送失敗:', err);
       alert(`發送失敗：${err.message}`);
+    } finally {
+      setSubmitting(false); // 完成提交，重新啟用按鈕
     }
   }
-
-  // 計算歷史記錄總金額
-  const getTotalAmount = () => {
-    return historyData.reduce((total, record) => total + (record.amount || 0), 0);
-  };
 
   return (
     <div style={{ textAlign: 'center', marginBottom: 16 }}>
       <img src="images/logo2.png" alt="Logo" style={{ height: 150 }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
         
-        {/* 功能切換按鈕 */}
+        {/* 功能按鈕 */}
         <div style={{ marginBottom: 20 }}>
           <button 
             type="button" 
-            onClick={() => setShowHistory(false)}
-            style={{ 
-              fontSize: 18, 
-              padding: '8px 16px', 
-              marginRight: 10,
-              backgroundColor: !showHistory ? '#007bff' : '#f8f9fa',
-              color: !showHistory ? 'white' : 'black',
-              border: '1px solid #007bff'
-            }}
-          >
-            出貨頁面
-          </button>
-          <button 
-            type="button" 
-            onClick={toggleHistory}
+            onClick={() => navigate('/shipping-history')}
             style={{ 
               fontSize: 18, 
               padding: '8px 16px',
-              backgroundColor: showHistory ? '#007bff' : '#f8f9fa',
-              color: showHistory ? 'white' : 'black',
-              border: '1px solid #007bff'
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
             }}
           >
-            歷史記錄
+            📊 查看歷史記錄
           </button>
         </div>
 
-        {/* 新增出貨界面 */}
-        {!showHistory && (
-          <>
-            <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28 }}>
-              出貨日期：{today}
-            </div>
-            <form onSubmit={handleSubmit}>
-              <table style={{ width: '100%', textAlign: 'center', verticalAlign: 'middle', tableLayout: 'fixed' }} className="center-table">
-                <thead>
-                  <tr>
-                    <th>圖片</th>
-                    <th>品號</th>
-                    <th>售價</th>
-                    <th>出貨數量</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parts.map((item, idx) => (
-                    <tr key={item.id}>
-                      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                        {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
-                      </td>
-                      <td>{item.name}</td>
-                      <td>NT$ {item.price}</td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          id={`quantity-${item.id}`}
-                          name={`quantity-${item.id}`}
-                          value={quantities[idx]}
-                          onChange={e => handleQuantityChange(idx, e.target.value)}
-                          style={{ width: 60 }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <button type="submit" style={{ fontSize: 24, padding: '12px 32px' }}>送出</button>
-              </div>
-            </form>
-          </>
-        )}
-
-        {/* 歷史記錄界面 */}
-        {showHistory && (
-          <div style={{ backgroundColor: '#2c3e50', padding: 20, borderRadius: 8 }}>
-            <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28, color: 'white' }}>
-              出貨歷史記錄
-            </div>
-            
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 20, color: 'white' }}>載入中...</div>
-            ) : (
-              <>
-                {historyData.length > 0 ? (
-                  <>
-                    <div style={{ marginBottom: 16, fontWeight: 'bold', fontSize: 18, color: 'white' }}>
-                      總記錄數：{historyData.length} 條 | 總金額：NT$ {getTotalAmount().toLocaleString()}
-                    </div>
-                    <div style={{ maxHeight: 500, overflowY: 'auto', border: '1px solid #34495e', borderRadius: 4 }}>
-                      <table style={{ width: '100%', textAlign: 'center', borderCollapse: 'collapse' }}>
-                        <thead style={{ backgroundColor: '#34495e', position: 'sticky', top: 0 }}>
-                          <tr>
-                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>日期時間</th>
-                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>品號</th>
-                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>數量</th>
-                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>單價</th>
-                            <th style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>總金額</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {historyData.map((record, index) => (
-                            <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#34495e' : '#2c3e50' }}>
-                              <td style={{ padding: 8, border: '1px solid #34495e', fontSize: 12, color: 'white' }}>
-                                {record.time}
-                              </td>
-                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
-                                {record.partName}
-                              </td>
-                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
-                                {record.quantity}
-                              </td>
-                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
-                                NT$ {record.price?.toLocaleString()}
-                              </td>
-                              <td style={{ padding: 8, border: '1px solid #34495e', color: 'white' }}>
-                                NT$ {record.amount?.toLocaleString()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#bdc3c7' }}>
-                    暫無出貨記錄
-                  </div>
-                )}
-              </>
-            )}
+        {/* 出貨界面 */}
+        <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28 }}>
+          出貨日期：{today}
+        </div>
+        <form onSubmit={handleSubmit}>
+          <table style={{ width: '100%', textAlign: 'center', verticalAlign: 'middle', tableLayout: 'fixed' }} className="center-table">
+            <thead>
+              <tr>
+                <th>圖片</th>
+                <th>品號</th>
+                <th>售價</th>
+                <th>出貨數量</th>
+              </tr>
+            </thead>
+            <tbody>
+              {parts.map((item, idx) => (
+                <tr key={item.id}>
+                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                    {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
+                  </td>
+                  <td>{item.name}</td>
+                  <td>NT$ {item.price}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      id={`quantity-${item.id}`}
+                      name={`quantity-${item.id}`}
+                      value={quantities[idx]}
+                      onChange={e => handleQuantityChange(idx, e.target.value)}
+                      style={{ width: 60 }}
+                      disabled={submitting}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button 
+              type="submit" 
+              disabled={submitting}
+              style={{ 
+                fontSize: 24, 
+                padding: '12px 32px',
+                backgroundColor: submitting ? '#6c757d' : '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.6 : 1
+              }}
+            >
+              {submitting ? '處理中...' : '送出'}
+            </button>
           </div>
-        )}
+        </form>
       </div>
     </div>
   );

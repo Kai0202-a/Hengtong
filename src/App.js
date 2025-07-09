@@ -8,6 +8,7 @@ import { partsData } from './pages/partsData';
 import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
+import ShippingHistory from './pages/ShippingHistory';
 
 function App() {
   const [parts, setParts] = useState(partsData);
@@ -162,6 +163,8 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/shipping" element={<ShippingStats parts={parts} setParts={setParts} updatePart={updateSinglePart} updateMultipleParts={updateMultipleParts} />} />
             <Route path="/register" element={<Register />} />
+            // 在路由配置中添加：
+            <Route path="/shipping-history" element={<ShippingHistory />} />
           </Routes>
         </div>
       </Router>

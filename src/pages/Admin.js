@@ -790,7 +790,7 @@ function Admin() {
 
 export default Admin;
 
-// 在 Admin 組件中新增狀態
+// 新增：訂單單據相關狀態
 const [selectedOrder, setSelectedOrder] = useState(null);
 const [showOrderModal, setShowOrderModal] = useState(false);
 
@@ -806,7 +806,7 @@ const closeOrderModal = () => {
   setShowOrderModal(false);
 };
 
-// 修改訂單列表的點擊事件
+// 修改貨況提醒中的訂單點擊事件
 <div 
   onClick={() => openOrderModal(order)}
   style={{ 

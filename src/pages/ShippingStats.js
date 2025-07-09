@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { partsData } from "./partsData";
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../UserContext';
 
@@ -9,8 +8,7 @@ function getToday() {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-function ShippingStats(props) {
-  const { parts, setParts, updatePart } = props;
+function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
@@ -22,7 +20,6 @@ function ShippingStats(props) {
       return;
     }
     
-    // 檢查通路商狀態 - 只允許 active 狀態的 dealer 進入
     if (localUser.role === 'dealer' && localUser.status !== 'active') {
       alert('您的帳號尚未審核通過或已被停用，請聯繫管理員');
       localStorage.removeItem('user');
@@ -57,9 +54,16 @@ function ShippingStats(props) {
         const part = parts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
+          // 檢查庫存是否足夠
+          if (part.stock < qty) {
+            alert(`${part.name} 庫存不足！當前庫存：${part.stock}，需要：${qty}`);
+            setSubmitting(false);
+            return;
+          }
+          
           updates.push({
             partId: part.id,
-            newStock: part.stock - qty
+            newStock: part.stock - qty // 基於當前雲端庫存計算
           });
           
           shipments.push({
@@ -74,21 +78,19 @@ function ShippingStats(props) {
         }
       }
       
+      if (updates.length === 0) {
+        alert('請輸入出貨數量');
+        setSubmitting(false);
+        return;
+      }
+      
       // 並行處理庫存更新和出貨記錄
       const promises = [];
       
-      // 批次更新庫存
-      if (updates.length > 0) {
-        promises.push(
-          fetch('/api/inventory', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ batchUpdates: updates })
-          })
-        );
-      }
+      // 更新庫存
+      promises.push(updateInventory(updates, false));
       
-      // 批次新增出貨記錄
+      // 新增出貨記錄
       if (shipments.length > 0) {
         promises.push(
           fetch('/api/shipments', {
@@ -99,15 +101,23 @@ function ShippingStats(props) {
         );
       }
       
-      // 等待所有請求完成
-      await Promise.all(promises);
+      const results = await Promise.all(promises);
       
-      alert('發送完成！');
-      setQuantities(Array(parts.length).fill(""));
+      // 檢查結果
+      if (results[0] && (results[1]?.ok !== false)) {
+        // 刷新庫存數據
+        await refreshInventory();
+        alert('發送完成！');
+        setQuantities(Array(parts.length).fill(""));
+      } else {
+        throw new Error('部分操作失敗');
+      }
       
     } catch (err) {
       console.error('發送失敗:', err);
       alert(`發送失敗：${err.message}`);
+      // 發生錯誤時刷新庫存以確保數據一致性
+      await refreshInventory();
     } finally {
       setSubmitting(false);
     }
@@ -118,7 +128,6 @@ function ShippingStats(props) {
       <img src="images/logo2.png" alt="Logo" style={{ height: 150 }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
         
-        {/* 功能按鈕 */}
         <div style={{ marginBottom: 20 }}>
           <button 
             type="button" 
@@ -130,23 +139,41 @@ function ShippingStats(props) {
               color: 'white',
               border: 'none',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              marginRight: 16
             }}
           >
             📊 查看歷史記錄
           </button>
+          
+          <button 
+            type="button" 
+            onClick={refreshInventory}
+            style={{ 
+              fontSize: 18, 
+              padding: '8px 16px',
+              backgroundColor: '#17a2b8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            🔄 刷新庫存
+          </button>
         </div>
 
-        {/* 出貨界面 */}
         <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28 }}>
-          出貨日期：{today}
+          出貨日期：{today} <span style={{ fontSize: 14, color: '#4CAF50' }}>(雲端庫存)</span>
         </div>
+        
         <form onSubmit={handleSubmit}>
           <table style={{ width: '100%', textAlign: 'center', verticalAlign: 'middle', tableLayout: 'fixed' }} className="center-table">
             <thead>
               <tr>
                 <th>圖片</th>
                 <th>品號</th>
+                <th>雲端庫存</th>
                 <th>售價</th>
                 <th>出貨數量</th>
               </tr>
@@ -158,23 +185,29 @@ function ShippingStats(props) {
                     {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
                   </td>
                   <td>{item.name}</td>
+                  <td style={{ fontWeight: 'bold', color: item.stock > 0 ? '#4CAF50' : '#f44336' }}>
+                    {item.stock}
+                  </td>
                   <td>NT$ {item.price}</td>
                   <td>
                     <input
                       type="number"
                       min="0"
+                      max={item.stock}
                       id={`quantity-${item.id}`}
                       name={`quantity-${item.id}`}
                       value={quantities[idx]}
                       onChange={e => handleQuantityChange(idx, e.target.value)}
                       style={{ width: 60 }}
-                      disabled={submitting}
+                      disabled={submitting || item.stock === 0}
+                      placeholder={item.stock === 0 ? "缺貨" : "數量"}
                     />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <button 
               type="submit" 

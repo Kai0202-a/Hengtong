@@ -11,89 +11,51 @@ import { UserProvider, UserContext } from './UserContext';
 import ShippingHistory from './pages/ShippingHistory';
 
 function App() {
-  const [parts, setParts] = useState(partsData);
+  // 移除本地庫存，只保留零件基本資訊
+  const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 從雲端獲取庫存數據
+  // 完全從雲端獲取庫存數據
   const fetchInventory = async () => {
     try {
       const response = await fetch('https://hengtong.vercel.app/api/inventory');
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.length > 0) {
+          // 合併本地零件資訊與雲端庫存
           const updatedParts = partsData.map(part => {
             const cloudPart = result.data.find(cp => cp.id === part.id);
-            return cloudPart ? { ...part, stock: cloudPart.stock } : part;
+            return {
+              ...part,
+              stock: cloudPart ? cloudPart.stock : 0 // 完全使用雲端庫存
+            };
           });
           setParts(updatedParts);
+        } else {
+          // 如果雲端沒有數據，使用本地數據但庫存設為0
+          const partsWithZeroStock = partsData.map(part => ({
+            ...part,
+            stock: 0
+          }));
+          setParts(partsWithZeroStock);
         }
       }
     } catch (error) {
       console.error('獲取庫存數據失敗:', error);
+      // 錯誤時使用本地數據但庫存設為0
+      const partsWithZeroStock = partsData.map(part => ({
+        ...part,
+        stock: 0
+      }));
+      setParts(partsWithZeroStock);
     } finally {
       setLoading(false);
     }
   };
 
-  // 簡化版：更新單個庫存項目
-  const updateSinglePart = async (partId, newStock, retries = 3) => {
+  // 統一的庫存更新函數 - 所有更新都同步到雲端
+  const updateInventory = async (updates, shouldRefresh = true) => {
     try {
-      // 更新本地狀態
-      setParts(prevParts => 
-        prevParts.map(part => 
-          part.id === partId ? { ...part, stock: newStock } : part
-        )
-      );
-      
-      // 更新到雲端（添加重試機制）
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetch('https://hengtong.vercel.app/api/inventory', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ partId, newStock })
-          });
-          
-          if (response.ok) {
-            console.log(`庫存已更新：ID ${partId}, 新庫存：${newStock}`);
-            return; // 成功則退出
-          }
-          
-          if (i === retries - 1) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-        } catch (error) {
-          if (i === retries - 1) {
-            throw error;
-          }
-          // 等待後重試
-          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-        }
-      }
-    } catch (error) {
-      console.error('更新庫存失敗:', error);
-      // 可以選擇回滾本地狀態或顯示錯誤提示
-    }
-  };
-
-  // 新增：批量更新庫存
-  const updateMultipleParts = async (updates) => {
-    try {
-      // 先更新本地狀態
-      setParts(prevParts => {
-        const updatedParts = [...prevParts];
-        updates.forEach(({ partId, newStock }) => {
-          const index = updatedParts.findIndex(part => part.id === partId);
-          if (index !== -1) {
-            updatedParts[index] = { ...updatedParts[index], stock: newStock };
-          }
-        });
-        return updatedParts;
-      });
-      
-      // 批量更新到雲端
       const response = await fetch('https://hengtong.vercel.app/api/inventory', {
         method: 'PUT',
         headers: {
@@ -103,14 +65,16 @@ function App() {
       });
       
       if (response.ok) {
-        const result = await response.json();
-        console.log('批量庫存更新成功:', result.message);
+        if (shouldRefresh) {
+          // 更新成功後重新獲取最新數據
+          await fetchInventory();
+        }
         return true;
       } else {
         throw new Error(`HTTP ${response.status}`);
       }
     } catch (error) {
-      console.error('批量更新庫存失敗:', error);
+      console.error('更新庫存失敗:', error);
       return false;
     }
   };
@@ -118,7 +82,7 @@ function App() {
   useEffect(() => {
     fetchInventory();
     
-    // 添加定期同步機制（每30秒同步一次，避免過於頻繁）
+    // 定期同步雲端庫存（每30秒）
     const interval = setInterval(() => {
       fetchInventory();
     }, 30000);
@@ -140,7 +104,7 @@ function App() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        載入中...
+        載入雲端庫存中...
       </div>
     );
   }
@@ -159,11 +123,10 @@ function App() {
           <Routes>
             <Route path="/home" element={<Home />} />
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/inventory" element={<Inventory parts={parts} setParts={setParts} updatePart={updateSinglePart} />} />
+            <Route path="/inventory" element={<Inventory parts={parts} updateInventory={updateInventory} refreshInventory={fetchInventory} />} />
             <Route path="/admin" element={<Admin />} />
-            <Route path="/shipping" element={<ShippingStats parts={parts} setParts={setParts} updatePart={updateSinglePart} updateMultipleParts={updateMultipleParts} />} />
+            <Route path="/shipping" element={<ShippingStats parts={parts} updateInventory={updateInventory} refreshInventory={fetchInventory} />} />
             <Route path="/register" element={<Register />} />
-            // 在路由配置中添加：
             <Route path="/shipping-history" element={<ShippingHistory />} />
           </Routes>
         </div>

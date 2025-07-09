@@ -34,41 +34,38 @@ function Home() {
     setLoginMsg("");
 
     try {
-      // 從雲端 API 獲取經銷商數據進行驗證
-      const response = await fetch('https://hengtong.vercel.app/api/dealers');
+      // 使用新的登入 API
+      const response = await fetch('https://hengtong.vercel.app/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password })
+      });
+      
       const result = await response.json();
       
       if (result.success) {
-        const dealer = result.data.find(d => 
-          d.username === username && 
-          d.password === password
-        );
-        
-        if (dealer) {
-          // 檢查帳號狀態
-          if (dealer.status === 'pending') {
-            setLoginMsg("您的帳號正在審核中，請等待管理員審核通過後再登入。");
-          } else if (dealer.status === 'active') {
-            const userObj = { 
-              username: dealer.username, 
-              role: "dealer", 
-              status: "active",
-              company: dealer.company || dealer.name 
-            };
-            localStorage.setItem("user", JSON.stringify(userObj));
-            setUser(userObj);
-            setLoginMsg("登入成功！");
-            setTimeout(() => navigate("/shipping"), 800);
-          } else if (dealer.status === 'suspended') {
-            setLoginMsg("您的帳號已被停用，請聯繫管理員。");
-          } else {
-            setLoginMsg("帳號狀態異常，請聯繫管理員。");
-          }
-        } else {
-          setLoginMsg("帳號或密碼錯誤");
-        }
+        // 登入成功
+        const userObj = {
+          username: result.data.username,
+          role: "dealer",
+          status: "active",
+          company: result.data.company || result.data.name
+        };
+        localStorage.setItem("user", JSON.stringify(userObj));
+        setUser(userObj);
+        setLoginMsg("登入成功！");
+        setTimeout(() => navigate("/shipping"), 800);
       } else {
-        setLoginMsg("登入驗證失敗，請稍後再試");
+        // 根據不同狀態顯示不同訊息
+        if (result.status === 'pending') {
+          setLoginMsg(result.message || "您的帳號正在審核中，請等待管理員審核通過後再登入。");
+        } else if (result.status === 'suspended') {
+          setLoginMsg(result.message || "您的帳號已被停用，請聯繫管理員。");
+        } else {
+          setLoginMsg(result.error || "登入失敗");
+        }
       }
     } catch (error) {
       console.error('登入錯誤:', error);

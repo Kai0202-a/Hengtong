@@ -26,52 +26,47 @@ export default async function handler(req, res) {
     return;
   }
 
+  let client; // 移到外層宣告
+
   if (req.method === 'GET') {
     // 獲取所有用戶的上線狀態
     try {
-      let client;
-      try {
-        client = new MongoClient(uri);
-        await client.connect();
-        const db = client.db('hengtong');
-        const collection = db.collection('user_sessions');
+      client = new MongoClient(uri);
+      await client.connect();
+      const db = client.db('hengtong');
+      const collection = db.collection('user_sessions');
+      
+      const sessions = await collection.find({}).toArray();
+      const statusMap = {};
+      
+      sessions.forEach(session => {
+        const now = new Date();
+        const lastActivity = new Date(session.lastActivity);
+        const diffMinutes = (now - lastActivity) / (1000 * 60);
         
-        const sessions = await collection.find({}).toArray();
-        const statusMap = {};
-        
-        sessions.forEach(session => {
-          const now = new Date();
-          const lastActivity = new Date(session.lastActivity);
-          const diffMinutes = (now - lastActivity) / (1000 * 60);
-          
-          statusMap[session.username] = {
-            isOnline: diffMinutes < 5, // 5分鐘內算在線
-            lastSeen: session.lastActivity,
-            sessionCount: session.sessionCount || 0
-          };
-        });
-        
-        res.status(200).json({
-          success: true,
-          data: statusMap
-        });
-      } catch (error) {
-        if (client) await client.close();
-        res.status(500).json({ success: false, error: error.message });
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
+        statusMap[session.username] = {
+          isOnline: diffMinutes < 5, // 5分鐘內算在線
+          lastSeen: session.lastActivity,
+          sessionCount: session.sessionCount || 0
+        };
       });
+      
+      res.status(200).json({
+        success: true,
+        data: statusMap
+      });
+    } catch (error) {
+      console.error('獲取狀態錯誤:', error);
+      res.status(500).json({ success: false, error: error.message });
     } finally {
-      await client.close();
+      if (client) await client.close();
     }
   }
   
   else if (req.method === 'POST') {
     // 更新用戶活動狀態
     try {
+      client = new MongoClient(uri);
       await client.connect();
       const db = client.db('hengtong');
       const collection = db.collection('user_sessions');
@@ -128,12 +123,13 @@ export default async function handler(req, res) {
         message: '狀態更新成功'
       });
     } catch (error) {
+      console.error('更新狀態錯誤:', error);
       res.status(500).json({
         success: false,
         error: error.message
       });
     } finally {
-      await client.close();
+      if (client) await client.close();
     }
   }
   

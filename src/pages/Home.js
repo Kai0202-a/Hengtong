@@ -55,6 +55,25 @@ function Home() {
         };
         localStorage.setItem("user", JSON.stringify(userObj));
         setUser(userObj);
+        
+        // 新增：更新用戶上線狀態
+        try {
+          await fetch('https://hengtong.vercel.app/api/user-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              username: result.data.username, 
+              action: 'login' 
+            })
+          });
+          console.log('上線狀態更新成功');
+        } catch (statusError) {
+          console.error('上線狀態更新失敗:', statusError);
+          // 不影響登入流程，只記錄錯誤
+        }
+        
         setLoginMsg("登入成功！");
         setTimeout(() => navigate("/shipping"), 800);
       } else {

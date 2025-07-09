@@ -16,6 +16,9 @@ function Register() {
     setIsSubmitting(true);
     setMsg("");
     
+    // 加入詳細 log
+    console.log('準備送出資料:', form);
+    
     try {
       const response = await fetch('https://hengtong.vercel.app/api/dealers', {
         method: 'POST',
@@ -25,16 +28,19 @@ function Register() {
         body: JSON.stringify(form)
       });
       
+      console.log('API 回應狀態:', response.status);
       const result = await response.json();
+      console.log('API 回應內容:', result);
       
       if (result.success) {
         setMsg("申請成功，請等待審核或直接登入");
         setTimeout(() => navigate("/"), 1200);
       } else {
         setMsg(result.error || "申請失敗，請稍後再試");
+        console.error('申請失敗原因:', result.error);
       }
     } catch (error) {
-      console.error('申請失敗:', error);
+      console.error('網路錯誤詳情:', error);
       setMsg("網路錯誤，請稍後再試");
     } finally {
       setIsSubmitting(false);

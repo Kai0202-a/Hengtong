@@ -303,10 +303,20 @@ export default async function handler(req, res) {
         // 同步 partsData 到 MongoDB products 集合
         await productsCollection.deleteMany({}); // 清空現有數據
         await productsCollection.insertMany(partsData);
+        
+        // 同步庫存數據到 inventory 集合
+        await inventoryCollection.deleteMany({}); // 清空現有庫存數據
+        const inventoryData = partsData.map(part => ({
+          id: part.id,
+          stock: part.stock || 0
+        }));
+        await inventoryCollection.insertMany(inventoryData);
+        
         res.status(200).json({ 
           success: true, 
-          message: '商品數據同步成功',
-          count: partsData.length 
+          message: '商品和庫存數據同步成功',
+          productsCount: partsData.length,
+          inventoryCount: inventoryData.length
         });
       } else {
         // 新增單個商品

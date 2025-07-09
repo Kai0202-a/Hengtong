@@ -407,7 +407,7 @@ function Admin() {
                 return <li style={{ color: '#aaa' }}>暫無出貨紀錄</li>;
               }
               
-              // 修正第 410 行的 map 函數
+              // 在 return 語句中的 filteredOrders.map() 部分需要修正
               return filteredOrders.map((order, idx) => {
                 const orderKey = `${order.createdAt}-${idx}`;
                 const isExpanded = expandedOrders[orderKey];
@@ -786,11 +786,10 @@ function Admin() {
 
 export default Admin;
 
-
-// 新增：切換訂單明細展開狀態的函數
-const toggleOrderDetails = (orderKey) => {
-  setExpandedOrders(prev => ({
-    ...prev,
-    [orderKey]: !prev[orderKey]
-  }));
-};
+// 移除這部分 - 不要在組件外部定義函數
+// const toggleOrderDetails = (orderKey) => {
+//   setExpandedOrders(prev => ({
+//     ...prev,
+//     [orderKey]: !prev[orderKey]
+//   }));
+// };

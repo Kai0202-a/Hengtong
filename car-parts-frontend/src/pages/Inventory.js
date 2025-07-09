@@ -1,8 +1,7 @@
 import React, { useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { partsData } from "./partsData";
 import { UserContext } from "../UserContext";
-import partsData from "./partsData";
+// import partsData from "./partsData"; // 只有需要時才加
 
 function Inventory(props) {
   const { parts, setParts, updatePart } = props;

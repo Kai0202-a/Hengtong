@@ -265,6 +265,14 @@ function Admin() {
     }
   };
 
+  // 新增：切換訂單明細展開/收起的函數
+  const toggleOrderDetails = (orderKey) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderKey]: !prev[orderKey]
+    }));
+  };
+
   // 移除定時刷新，改用 SSE
   // 將 SSE 邏輯替換為輪詢機制
   useEffect(() => {

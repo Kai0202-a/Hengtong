@@ -1,38 +1,8 @@
 import { MongoClient } from 'mongodb';
 
-// MongoDB 連接字串 - 使用環境變數
-const MONGODB_URI = process.env.MONGODB_URI;
+const uri = 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'hengtong';
 const COLLECTION_NAME = 'shipments';
-
-// 檢查環境變數
-if (!MONGODB_URI) {
-  console.error('MONGODB_URI 環境變數未設置');
-}
-
-let cachedClient = null;
-let cachedDb = null;
-
-async function connectToDatabase() {
-  if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb };
-  }
-
-  try {
-    const client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    const db = client.db(DB_NAME);
-
-    cachedClient = client;
-    cachedDb = db;
-
-    console.log('MongoDB 連接成功');
-    return { client, db };
-  } catch (error) {
-    console.error('MongoDB 連接失敗:', error);
-    throw error;
-  }
-}
 
 export default async function handler(req, res) {
   // 修改 CORS headers - 允許所有 Vercel 域名
@@ -153,4 +123,5 @@ export default async function handler(req, res) {
       details: process.env.NODE_ENV === 'development' ? error.stack : '請檢查服務器日誌'
     });
   }
+  await client.close();
 }

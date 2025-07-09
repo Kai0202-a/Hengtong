@@ -1,10 +1,9 @@
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+const uri = 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 export default async function handler(req, res) {
-  // CORS 設置
+  // CORS 設定
   const allowedOrigins = [
     'https://hengtong.vercel.app',
     'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
@@ -30,29 +29,36 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     // 獲取所有用戶的上線狀態
     try {
-      await client.connect();
-      const db = client.db('hengtong');
-      const collection = db.collection('user_sessions');
-      
-      const sessions = await collection.find({}).toArray();
-      const statusMap = {};
-      
-      sessions.forEach(session => {
-        const now = new Date();
-        const lastActivity = new Date(session.lastActivity);
-        const diffMinutes = (now - lastActivity) / (1000 * 60);
+      let client;
+      try {
+        client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('hengtong');
+        const collection = db.collection('user_sessions');
         
-        statusMap[session.username] = {
-          isOnline: diffMinutes < 5, // 5分鐘內算在線
-          lastSeen: session.lastActivity,
-          sessionCount: session.sessionCount || 0
-        };
-      });
-      
-      res.status(200).json({
-        success: true,
-        data: statusMap
-      });
+        const sessions = await collection.find({}).toArray();
+        const statusMap = {};
+        
+        sessions.forEach(session => {
+          const now = new Date();
+          const lastActivity = new Date(session.lastActivity);
+          const diffMinutes = (now - lastActivity) / (1000 * 60);
+          
+          statusMap[session.username] = {
+            isOnline: diffMinutes < 5, // 5分鐘內算在線
+            lastSeen: session.lastActivity,
+            sessionCount: session.sessionCount || 0
+          };
+        });
+        
+        res.status(200).json({
+          success: true,
+          data: statusMap
+        });
+      } catch (error) {
+        if (client) await client.close();
+        res.status(500).json({ success: false, error: error.message });
+      }
     } catch (error) {
       res.status(500).json({
         success: false,

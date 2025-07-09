@@ -18,32 +18,21 @@ function App() {
   // 完全從雲端獲取商品和庫存數據
   const fetchInventory = async () => {
     try {
-      // 使用新的商品 API 獲取完整數據
       const response = await fetch('https://hengtong.vercel.app/api/products');
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data.length > 0) {
+        if (result.success && result.data && result.data.length > 0) {
           setParts(result.data);
         } else {
-          // 如果雲端沒有數據，使用本地 partsData 並同步到雲端
-          const partsWithZeroStock = partsData.map(part => ({
-            ...part,
-            stock: 0
-          }));
-          setParts(partsWithZeroStock);
-          
-          // 同步 partsData 到雲端
-          await syncPartsDataToCloud();
+          console.warn('雲端數據為空，保持當前狀態');
+          // 移除重置邏輯，避免覆蓋現有庫存
         }
+      } else {
+        console.error('API 請求失敗:', response.status);
       }
     } catch (error) {
       console.error('獲取商品數據失敗:', error);
-      // 錯誤時使用本地數據
-      const partsWithZeroStock = partsData.map(part => ({
-        ...part,
-        stock: 0
-      }));
-      setParts(partsWithZeroStock);
+      // 錯誤時不要重置數據
     } finally {
       setLoading(false);
     }

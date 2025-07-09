@@ -1,8 +1,13 @@
 import { MongoClient } from 'mongodb';
-import partsData from '../src/pages/partsData.js';
 
 // MongoDB 連接字串
 const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+
+// 直接在這裡定義 partsData，避免引入問題
+const partsData = [
+  // 將您的 partsData.js 內容複製到這裡
+  // 或者使用動態引入
+];
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -23,16 +28,32 @@ export default async function handler(req, res) {
     const inventoryCollection = db.collection('inventory');
 
     if (req.method === 'GET') {
-      // 獲取完整商品資訊（合併 partsData 和 MongoDB 庫存）
-      const inventory = await inventoryCollection.find({}).toArray();
-      const inventoryMap = new Map(inventory.map(item => [item.id, item.stock]));
+      // 優先從 MongoDB products 集合獲取數據
+      const products = await productsCollection.find({}).toArray();
       
-      const productsWithStock = partsData.map(part => ({
-        ...part,
-        stock: inventoryMap.get(part.id) || 0
-      }));
-      
-      res.status(200).json({ success: true, data: productsWithStock });
+      if (products.length > 0) {
+        // 如果 MongoDB 中有商品數據，合併庫存資訊
+        const inventory = await inventoryCollection.find({}).toArray();
+        const inventoryMap = new Map(inventory.map(item => [item.id, item.stock]));
+        
+        const productsWithStock = products.map(product => ({
+          ...product,
+          stock: inventoryMap.get(product.id) || 0
+        }));
+        
+        res.status(200).json({ success: true, data: productsWithStock });
+      } else {
+        // 如果 MongoDB 中沒有商品數據，使用 partsData 並合併庫存
+        const inventory = await inventoryCollection.find({}).toArray();
+        const inventoryMap = new Map(inventory.map(item => [item.id, item.stock]));
+        
+        const productsWithStock = partsData.map(part => ({
+          ...part,
+          stock: inventoryMap.get(part.id) || 0
+        }));
+        
+        res.status(200).json({ success: true, data: productsWithStock });
+      }
     } else if (req.method === 'POST') {
       const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       

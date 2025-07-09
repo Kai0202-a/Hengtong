@@ -5,10 +5,24 @@ import { UserContext } from "../UserContext";
 function Admin() {
   const navigate = useNavigate();
   useEffect(() => {
+    // 原本的權限檢查
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || user.role !== "admin") {
-      navigate("/"); // 非管理員自動跳回首頁
+      navigate("/");
     }
+    // 新增 SSE 監聽
+    const eventSource = new EventSource("https://hengtong.vercel.app/api/shipments-stream");
+    eventSource.onmessage = (event) => {
+      // 每當有資料變動時自動刷新貨況
+      fetchShipments();
+    };
+    eventSource.onerror = (err) => {
+      console.error("SSE 連線錯誤", err);
+      eventSource.close();
+    };
+    return () => {
+      eventSource.close();
+    };
   }, [navigate]);
   const { setUser } = useContext(UserContext);
   const [orders, setOrders] = useState([]);

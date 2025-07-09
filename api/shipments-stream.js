@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   try {
     client = new MongoClient(uri);
     await client.connect();
-    const db = client.db('car-parts');
+    const db = client.db('hengtong');
     const collection = db.collection('shipments');
     changeStream = collection.watch([
       { $match: { operationType: { $in: ['insert', 'update', 'replace'] } } }

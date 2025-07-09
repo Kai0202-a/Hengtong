@@ -285,6 +285,7 @@ function Admin() {
             console.log('收到即時更新:', data.operationType);
             // 重新獲取數據
             fetchShipments(false);
+            fetchCloudInventory(); // <--- 新增這一行
             break;
             
           case 'heartbeat':

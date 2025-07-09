@@ -302,21 +302,31 @@ export default async function handler(req, res) {
       if (body.action === 'sync_partsdata') {
         // 同步 partsData 到 MongoDB products 集合
         await productsCollection.deleteMany({}); // 清空現有數據
-        await productsCollection.insertMany(partsData);
         
-        // 同步庫存數據到 inventory 集合
-        await inventoryCollection.deleteMany({}); // 清空現有庫存數據
-        const inventoryData = partsData.map(part => ({
-          id: part.id,
-          stock: part.stock || 0
-        }));
-        await inventoryCollection.insertMany(inventoryData);
+        // 移除庫存資訊，只同步商品基本資料
+        const productsOnly = partsData.map(part => {
+          const { stock, ...productData } = part;
+          return productData;
+        });
+        await productsCollection.insertMany(productsOnly);
+        
+        // 檢查庫存集合是否為空，只在完全沒有庫存數據時才初始化
+        const existingInventory = await inventoryCollection.countDocuments();
+        if (existingInventory === 0) {
+          console.log('初始化庫存數據...');
+          const inventoryData = partsData.map(part => ({
+            id: part.id,
+            stock: 0  // 初始化為 0，而不是 50
+          }));
+          await inventoryCollection.insertMany(inventoryData);
+        } else {
+          console.log('保留現有庫存數據');
+        }
         
         res.status(200).json({ 
           success: true, 
-          message: '商品和庫存數據同步成功',
-          productsCount: partsData.length,
-          inventoryCount: inventoryData.length
+          message: '商品數據同步成功，庫存數據已保留',
+          productsCount: productsOnly.length
         });
       } else {
         // 新增單個商品

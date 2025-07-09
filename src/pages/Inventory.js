@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { partsData } from "../../car-parts-frontend/src/pages/partsData";
-import { UserContext } from "../../car-parts-frontend/src/UserContext";
+import { partsData } from "./partsData";
+import { UserContext } from "../UserContext";
 
 function Inventory(props) {
   const { parts, setParts } = props;

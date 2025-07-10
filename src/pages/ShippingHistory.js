@@ -232,7 +232,7 @@ function ShippingHistory() {
       <div style={{ 
         maxWidth: isMobile ? '100%' : 1200, 
         margin: '0 auto', 
-        padding: isMobile ? '0 20px' : 16  // 手機端左右增加到20px padding
+        padding: isMobile ? '0 24px' : 16  // 手機端增加到24px
       }}>
         
         {/* 返回按鈕 */}
@@ -398,7 +398,7 @@ function ShippingHistory() {
         {/* 歷史記錄表格 */}
         <div style={{ 
           backgroundColor: '#1a202c', 
-          padding: isMobile ? '10px 16px' : 20,  // 手機端調整padding
+          padding: isMobile ? '8px 12px' : 20,  // 手機端減少內部padding
           borderRadius: 8,
           border: '1px solid #2d3748',
           boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',
@@ -422,13 +422,15 @@ function ShippingHistory() {
                     overflowY: 'auto', 
                     border: '1px solid #2d3748', 
                     borderRadius: 4,
-                    minWidth: isMobile ? '500px' : 'auto'
+                    minWidth: isMobile ? '320px' : 'auto',  // 減少最小寬度
+                    width: '100%'
                   }}>
                     <table style={{ 
                       width: '100%', 
                       textAlign: 'center', 
                       borderCollapse: 'collapse',
-                      fontSize: isMobile ? '12px' : '14px'
+                      fontSize: isMobile ? '11px' : '14px',  // 手機端字體更小
+                      tableLayout: isMobile ? 'fixed' : 'auto'  // 固定表格佈局
                     }}>
                       <thead style={{ 
                         backgroundColor: '#2d3748', 
@@ -437,24 +439,27 @@ function ShippingHistory() {
                       }}>
                         <tr>
                           <th style={{ 
-                            padding: isMobile ? 8 : 12, 
+                            padding: isMobile ? 6 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: isMobile ? 100 : 150,
+                            minWidth: isMobile ? 80 : 150,  // 減少最小寬度
+                            width: isMobile ? '25%' : 'auto',  // 設定百分比寬度
                             backgroundColor: '#2d3748'
                           }}>日期時間</th>
                           <th style={{ 
-                            padding: isMobile ? 8 : 12, 
+                            padding: isMobile ? 6 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: isMobile ? 200 : 300,
+                            minWidth: isMobile ? 150 : 300,
+                            width: isMobile ? '50%' : 'auto',
                             backgroundColor: '#2d3748'
                           }}>出貨明細</th>
                           <th style={{ 
-                            padding: isMobile ? 8 : 12, 
+                            padding: isMobile ? 6 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: isMobile ? 80 : 120,
+                            minWidth: isMobile ? 60 : 120,
+                            width: isMobile ? '25%' : 'auto',
                             backgroundColor: '#2d3748'
                           }}>總金額</th>
                         </tr>

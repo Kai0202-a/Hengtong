@@ -95,6 +95,37 @@ function ShippingHistory() {
     return date.toLocaleString('zh-TW');
   };
 
+  // 新增：將同一時間的記錄分組合併
+  const groupRecordsByTime = (records) => {
+    const grouped = {};
+    
+    records.forEach(record => {
+      const timeKey = formatDate(record.time || record.createdAt);
+      
+      if (!grouped[timeKey]) {
+        grouped[timeKey] = {
+          time: record.time || record.createdAt,
+          items: [],
+          totalAmount: 0
+        };
+      }
+      
+      grouped[timeKey].items.push({
+        partName: record.partName,
+        quantity: record.quantity,
+        price: record.price,
+        amount: record.amount
+      });
+      
+      grouped[timeKey].totalAmount += (record.amount || 0);
+    });
+    
+    return Object.values(grouped);
+  };
+
+  // 處理分組後的數據
+  const groupedData = groupRecordsByTime(historyData);
+
   // 添加響應式檢測
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
@@ -338,23 +369,9 @@ function ShippingHistory() {
                             padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: isMobile ? 80 : 120,
+                            minWidth: isMobile ? 200 : 300,
                             backgroundColor: '#2d3748'
-                          }}>品號</th>
-                          <th style={{ 
-                            padding: isMobile ? 8 : 12, 
-                            border: '1px solid #4a5568', 
-                            color: '#e2e8f0', 
-                            minWidth: isMobile ? 50 : 80,
-                            backgroundColor: '#2d3748'
-                          }}>數量</th>
-                          <th style={{ 
-                            padding: isMobile ? 8 : 12, 
-                            border: '1px solid #4a5568', 
-                            color: '#e2e8f0', 
-                            minWidth: isMobile ? 70 : 100,
-                            backgroundColor: '#2d3748'
-                          }}>單價</th>
+                          }}>出貨明細</th>
                           <th style={{ 
                             padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
@@ -365,7 +382,7 @@ function ShippingHistory() {
                         </tr>
                       </thead>
                       <tbody>
-                        {historyData.map((record, index) => (
+                        {groupedData.map((group, index) => (
                           <tr key={index} style={{ 
                             backgroundColor: index % 2 === 0 ? '#2d3748' : '#1a202c',
                             transition: 'background-color 0.2s'
@@ -378,46 +395,78 @@ function ShippingHistory() {
                               border: '1px solid #4a5568', 
                               fontSize: isMobile ? 11 : 13, 
                               color: '#cbd5e0',
-                              wordBreak: 'break-word'
+                              wordBreak: 'break-word',
+                              verticalAlign: 'top'
                             }}>
                               {isMobile ? 
-                                formatDate(record.time || record.createdAt).split(' ')[0] + '\n' + formatDate(record.time || record.createdAt).split(' ')[1] :
-                                formatDate(record.time || record.createdAt)
+                                formatDate(group.time).split(' ')[0] + '\n' + formatDate(group.time).split(' ')[1] :
+                                formatDate(group.time)
                               }
                             </td>
                             <td style={{ 
                               padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
-                              color: '#e2e8f0', 
-                              fontWeight: 'bold',
-                              wordBreak: 'break-word'
+                              color: '#e2e8f0',
+                              wordBreak: 'break-word',
+                              verticalAlign: 'top'
                             }}>
-                              {record.partName}
-                            </td>
-                            <td style={{ 
-                              padding: isMobile ? 6 : 10, 
-                              border: '1px solid #4a5568', 
-                              color: '#63b3ed',
-                              fontWeight: 'bold'
-                            }}>
-                              {record.quantity}
-                            </td>
-                            <td style={{ 
-                              padding: isMobile ? 6 : 10, 
-                              border: '1px solid #4a5568', 
-                              color: '#cbd5e0',
-                              fontSize: isMobile ? '11px' : '14px'
-                            }}>
-                              {isMobile ? `$${record.price?.toLocaleString()}` : `NT$ ${record.price?.toLocaleString()}`}
+                              <div style={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                gap: '4px' 
+                              }}>
+                                {group.items.map((item, itemIndex) => (
+                                  <div key={itemIndex} style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '2px 0',
+                                    borderBottom: itemIndex < group.items.length - 1 ? '1px solid #4a5568' : 'none',
+                                    fontSize: isMobile ? '10px' : '12px'
+                                  }}>
+                                    <span style={{ 
+                                      fontWeight: 'bold', 
+                                      color: '#e2e8f0',
+                                      flex: 1
+                                    }}>
+                                      {item.partName}
+                                    </span>
+                                    <span style={{ 
+                                      color: '#63b3ed', 
+                                      fontWeight: 'bold',
+                                      margin: '0 8px'
+                                    }}>
+                                      x{item.quantity}
+                                    </span>
+                                    <span style={{ 
+                                      color: '#cbd5e0',
+                                      fontSize: isMobile ? '9px' : '11px'
+                                    }}>
+                                      {isMobile ? `$${item.price?.toLocaleString()}` : `NT$ ${item.price?.toLocaleString()}`}
+                                    </span>
+                                    <span style={{ 
+                                      color: '#68d391', 
+                                      fontWeight: 'bold',
+                                      marginLeft: '8px',
+                                      minWidth: isMobile ? '50px' : '70px',
+                                      textAlign: 'right'
+                                    }}>
+                                      {isMobile ? `$${item.amount?.toLocaleString()}` : `NT$ ${item.amount?.toLocaleString()}`}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </td>
                             <td style={{ 
                               padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
                               color: '#68d391', 
                               fontWeight: 'bold',
-                              fontSize: isMobile ? '11px' : '14px'
+                              fontSize: isMobile ? '12px' : '16px',
+                              textAlign: 'center',
+                              verticalAlign: 'middle'
                             }}>
-                              {isMobile ? `$${record.amount?.toLocaleString()}` : `NT$ ${record.amount?.toLocaleString()}`}
+                              {isMobile ? `$${group.totalAmount?.toLocaleString()}` : `NT$ ${group.totalAmount?.toLocaleString()}`}
                             </td>
                           </tr>
                         ))}

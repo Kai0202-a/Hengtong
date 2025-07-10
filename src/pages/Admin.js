@@ -809,37 +809,37 @@ function Admin() {
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(0,0,0,0.6)', // 降低背景透明度
+          background: 'rgba(0,0,0,0.8)', // 增加背景透明度
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 1000
         }}>
           <div style={{
-            background: '#fafafa', // 改為更柔和的淺灰色背景
+            background: '#2c3e50', // 深色背景
             width: '90vw',
             maxWidth: 600,
             maxHeight: '90vh',
             borderRadius: 12,
             overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)' // 降低陰影強度
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)' // 增強陰影
           }}>
             {/* 單據標題 */}
             <div style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // 更柔和的漸變色
-              color: 'white',
+              background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)', // 深色漸變
+              color: '#ecf0f1',
               padding: '16px 20px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <h3 style={{ margin: 0 }}>📋 出貨單據</h3>
+              <h3 style={{ margin: 0, color: '#ecf0f1' }}>📋 出貨單據</h3>
               <button 
                 onClick={closeOrderModal}
                 style={{
-                  background: 'rgba(255,255,255,0.2)', // 半透明背景
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  color: 'white',
+                  background: 'rgba(236, 240, 241, 0.2)',
+                  border: '1px solid rgba(236, 240, 241, 0.3)',
+                  color: '#ecf0f1',
                   fontSize: 18,
                   cursor: 'pointer',
                   borderRadius: 4,
@@ -852,11 +852,11 @@ function Admin() {
             </div>
             
             {/* 單據內容 */}
-            <div style={{ padding: 20, maxHeight: 'calc(90vh - 80px)', overflowY: 'auto', background: '#fafafa' }}>
+            <div style={{ padding: 20, maxHeight: 'calc(90vh - 80px)', overflowY: 'auto', background: '#2c3e50' }}>
               {/* 公司資訊 */}
-              <div style={{ marginBottom: 20, padding: 16, background: '#ffffff', borderRadius: 8, border: '1px solid #e0e0e0' }}>
-                <h4 style={{ margin: '0 0 8px 0', color: '#2c3e50' }}>客戶資訊</h4>
-                <div style={{ color: '#5a6c7d' }}>
+              <div style={{ marginBottom: 20, padding: 16, background: '#34495e', borderRadius: 8, border: '1px solid #4a5f7a' }}>
+                <h4 style={{ margin: '0 0 8px 0', color: '#ecf0f1' }}>客戶資訊</h4>
+                <div style={{ color: '#bdc3c7' }}>
                   <strong>公司名稱：</strong>{selectedOrder.company}<br/>
                   <strong>出貨時間：</strong>{selectedOrder.time}
                 </div>
@@ -864,15 +864,15 @@ function Admin() {
               
               {/* 商品明細表格 */}
               <div style={{ marginBottom: 20 }}>
-                <h4 style={{ margin: '0 0 12px 0', color: '#2c3e50' }}>商品明細</h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e0e0e0', borderRadius: 8, overflow: 'hidden' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#ecf0f1' }}>商品明細</h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #4a5f7a', borderRadius: 8, overflow: 'hidden' }}>
                   <thead>
-                    <tr style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' }}>
-                      <th style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'left', color: '#2c3e50', fontWeight: '600' }}>商品名稱</th>
-                      <th style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'center', color: '#2c3e50', fontWeight: '600' }}>數量</th>
-                      <th style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'right', color: '#2c3e50', fontWeight: '600' }}>單價</th>
-                      <th style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'right', color: '#2c3e50', fontWeight: '600' }}>小計</th>
-                      <th style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'center', color: '#2c3e50', fontWeight: '600' }}>庫存</th>
+                    <tr style={{ background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)' }}>
+                      <th style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'left', color: '#ecf0f1', fontWeight: '600' }}>商品名稱</th>
+                      <th style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'center', color: '#ecf0f1', fontWeight: '600' }}>數量</th>
+                      <th style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1', fontWeight: '600' }}>單價</th>
+                      <th style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1', fontWeight: '600' }}>小計</th>
+                      <th style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'center', color: '#ecf0f1', fontWeight: '600' }}>庫存</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -886,16 +886,16 @@ function Admin() {
                         return getIdNumber(a.partName) - getIdNumber(b.partName);
                       })
                       .map((item, idx) => (
-                      <tr key={idx} style={{ background: idx % 2 === 0 ? '#ffffff' : '#f8f9fa' }}>
-                        <td style={{ padding: 12, border: '1px solid #e0e0e0', color: '#2c3e50' }}>{item.partName}</td>
-                        <td style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'center', color: '#2c3e50', fontWeight: '500' }}>{item.quantity}</td>
-                        <td style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'right', color: '#2c3e50' }}>
+                      <tr key={idx} style={{ background: idx % 2 === 0 ? '#34495e' : '#2c3e50' }}>
+                        <td style={{ padding: 12, border: '1px solid #4a5f7a', color: '#ecf0f1' }}>{item.partName}</td>
+                        <td style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'center', color: '#ecf0f1', fontWeight: '500' }}>{item.quantity}</td>
+                        <td style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>
                           {item.amount > 0 ? `NT$ ${(item.amount / item.quantity).toLocaleString()}` : '-'}
                         </td>
-                        <td style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'right', color: '#2c3e50', fontWeight: '500' }}>
+                        <td style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1', fontWeight: '500' }}>
                           {item.amount > 0 ? `NT$ ${item.amount.toLocaleString()}` : '-'}
                         </td>
-                        <td style={{ padding: 12, border: '1px solid #e0e0e0', textAlign: 'center', color: '#e67e22', fontWeight: '500' }}>
+                        <td style={{ padding: 12, border: '1px solid #4a5f7a', textAlign: 'center', color: '#f39c12', fontWeight: '500' }}>
                           {getStockByPartName(item.partName)}
                         </td>
                       </tr>
@@ -905,13 +905,13 @@ function Admin() {
               </div>
               
               {/* 總計資訊 */}
-              <div style={{ padding: 16, background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)', borderRadius: 8, border: '2px solid #667eea' }}>
-                <h4 style={{ margin: '0 0 12px 0', color: '#2c3e50' }}>總計資訊</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ padding: 16, background: 'linear-gradient(135deg, #34495e 0%, #2c3e50 100%)', borderRadius: 8, border: '2px solid #4a5f7a' }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#ecf0f1' }}>總計資訊</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, color: '#bdc3c7' }}>
                   <div><strong>總數量：</strong>{selectedOrder.totalQuantity}</div>
                   <div><strong>總金額：</strong>NT$ {selectedOrder.totalAmount.toLocaleString()}</div>
                   <div><strong>總成本：</strong>NT$ {selectedOrder.totalCost.toLocaleString()}</div>
-                  <div style={{ color: selectedOrder.totalProfit >= 0 ? '#27ae60' : '#e74c3c', fontWeight: '600' }}>
+                  <div style={{ color: selectedOrder.totalProfit >= 0 ? '#2ecc71' : '#e74c3c', fontWeight: '600' }}>
                     <strong>淨利潤：</strong>NT$ {selectedOrder.totalProfit.toLocaleString()}
                   </div>
                 </div>
@@ -941,14 +941,14 @@ function Admin() {
                   onClick={closeOrderModal}
                   style={{
                     padding: '12px 24px',
-                    background: 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)',
+                    background: 'linear-gradient(135deg, #7f8c8d 0%, #95a5a6 100%)',
                     color: 'white',
                     border: 'none',
                     borderRadius: 8,
                     cursor: 'pointer',
                     fontSize: 14,
                     fontWeight: '500',
-                    boxShadow: '0 2px 8px rgba(149, 165, 166, 0.3)',
+                    boxShadow: '0 2px 8px rgba(127, 140, 141, 0.3)',
                     transition: 'all 0.2s ease'
                   }}
                 >

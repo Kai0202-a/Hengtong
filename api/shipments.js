@@ -69,7 +69,8 @@ export default async function handler(req, res) {
         res.status(200).json({ success: true, message: '出貨資料儲存成功', id: result.insertedId, data: shipmentData });
       }
     } else if (req.method === 'GET') {
-      const { company, startDate, endDate, page = 1, limit = 50 } = req.query;
+      const { company, startDate, endDate, page = 1, limit } = req.query;
+      const actualLimit = limit ? parseInt(limit) : undefined; // 沒有指定時不限制
       let query = {};
       if (company) query.company = company;
       if (startDate || endDate) {
@@ -86,7 +87,7 @@ export default async function handler(req, res) {
       const shipments = await collection.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit))
+        .limit(actualLimit || 0) // 0 表示不限制
         .toArray();
         
       res.status(200).json({ 

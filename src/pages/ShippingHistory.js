@@ -95,6 +95,18 @@ function ShippingHistory() {
     return date.toLocaleString('zh-TW');
   };
 
+  // 添加響應式檢測
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div style={{ 
       backgroundColor: '#1a1a1a', 
@@ -104,7 +116,11 @@ function ShippingHistory() {
       color: '#ffffff'
     }}>
       <img src="/images/logo2.png" alt="Logo" style={{ height: 150 }} />
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+      <div style={{ 
+        maxWidth: isMobile ? '100%' : 1200, 
+        margin: '0 auto', 
+        padding: isMobile ? 8 : 16 
+      }}>
         
         {/* 返回按鈕 */}
         <div style={{ marginBottom: 20, textAlign: 'left' }}>
@@ -273,10 +289,11 @@ function ShippingHistory() {
         {/* 歷史記錄表格 */}
         <div style={{ 
           backgroundColor: '#1a202c', 
-          padding: 20, 
+          padding: isMobile ? 10 : 20, 
           borderRadius: 8,
           border: '1px solid #2d3748',
-          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)'
+          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',
+          overflowX: isMobile ? 'auto' : 'visible'
         }}>
           {loading ? (
             <div style={{ 
@@ -295,12 +312,14 @@ function ShippingHistory() {
                     maxHeight: 600, 
                     overflowY: 'auto', 
                     border: '1px solid #2d3748', 
-                    borderRadius: 4 
+                    borderRadius: 4,
+                    minWidth: isMobile ? '500px' : 'auto'
                   }}>
                     <table style={{ 
                       width: '100%', 
                       textAlign: 'center', 
-                      borderCollapse: 'collapse' 
+                      borderCollapse: 'collapse',
+                      fontSize: isMobile ? '12px' : '14px'
                     }}>
                       <thead style={{ 
                         backgroundColor: '#2d3748', 
@@ -309,38 +328,38 @@ function ShippingHistory() {
                       }}>
                         <tr>
                           <th style={{ 
-                            padding: 12, 
+                            padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: 150,
+                            minWidth: isMobile ? 100 : 150,
                             backgroundColor: '#2d3748'
                           }}>日期時間</th>
                           <th style={{ 
-                            padding: 12, 
+                            padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: 120,
+                            minWidth: isMobile ? 80 : 120,
                             backgroundColor: '#2d3748'
                           }}>品號</th>
                           <th style={{ 
-                            padding: 12, 
+                            padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: 80,
+                            minWidth: isMobile ? 50 : 80,
                             backgroundColor: '#2d3748'
                           }}>數量</th>
                           <th style={{ 
-                            padding: 12, 
+                            padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: 100,
+                            minWidth: isMobile ? 70 : 100,
                             backgroundColor: '#2d3748'
                           }}>單價</th>
                           <th style={{ 
-                            padding: 12, 
+                            padding: isMobile ? 8 : 12, 
                             border: '1px solid #4a5568', 
                             color: '#e2e8f0', 
-                            minWidth: 120,
+                            minWidth: isMobile ? 80 : 120,
                             backgroundColor: '#2d3748'
                           }}>總金額</th>
                         </tr>
@@ -355,23 +374,28 @@ function ShippingHistory() {
                           onMouseOut={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#2d3748' : '#1a202c'}
                           >
                             <td style={{ 
-                              padding: 10, 
+                              padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
-                              fontSize: 13, 
-                              color: '#cbd5e0' 
+                              fontSize: isMobile ? 11 : 13, 
+                              color: '#cbd5e0',
+                              wordBreak: 'break-word'
                             }}>
-                              {formatDate(record.time || record.createdAt)}
+                              {isMobile ? 
+                                formatDate(record.time || record.createdAt).split(' ')[0] + '\n' + formatDate(record.time || record.createdAt).split(' ')[1] :
+                                formatDate(record.time || record.createdAt)
+                              }
                             </td>
                             <td style={{ 
-                              padding: 10, 
+                              padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
                               color: '#e2e8f0', 
-                              fontWeight: 'bold' 
+                              fontWeight: 'bold',
+                              wordBreak: 'break-word'
                             }}>
                               {record.partName}
                             </td>
                             <td style={{ 
-                              padding: 10, 
+                              padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
                               color: '#63b3ed',
                               fontWeight: 'bold'
@@ -379,26 +403,28 @@ function ShippingHistory() {
                               {record.quantity}
                             </td>
                             <td style={{ 
-                              padding: 10, 
+                              padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
-                              color: '#cbd5e0' 
+                              color: '#cbd5e0',
+                              fontSize: isMobile ? '11px' : '14px'
                             }}>
-                              NT$ {record.price?.toLocaleString()}
+                              {isMobile ? `$${record.price?.toLocaleString()}` : `NT$ ${record.price?.toLocaleString()}`}
                             </td>
                             <td style={{ 
-                              padding: 10, 
+                              padding: isMobile ? 6 : 10, 
                               border: '1px solid #4a5568', 
                               color: '#68d391', 
-                              fontWeight: 'bold' 
+                              fontWeight: 'bold',
+                              fontSize: isMobile ? '11px' : '14px'
                             }}>
-                              NT$ {record.amount?.toLocaleString()}
+                              {isMobile ? `$${record.amount?.toLocaleString()}` : `NT$ ${record.amount?.toLocaleString()}`}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-
+                  
                   {/* 分頁控制 */}
                   {totalPages > 1 && (
                     <div style={{ 

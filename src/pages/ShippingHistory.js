@@ -232,7 +232,7 @@ function ShippingHistory() {
       <div style={{ 
         maxWidth: isMobile ? '100%' : 1200, 
         margin: '0 auto', 
-        padding: isMobile ? '0 16px' : 16
+        padding: isMobile ? '0 20px' : 16  // 手機端左右增加到20px padding
       }}>
         
         {/* 返回按鈕 */}
@@ -272,7 +272,7 @@ function ShippingHistory() {
         {/* 日期範圍查詢 */}
         <div style={{ 
           backgroundColor: '#2d3748', 
-          padding: isMobile ? '16px 12px' : 20,
+          padding: isMobile ? '16px 16px' : 20,  // 手機端調整為16px上下，16px左右
           borderRadius: 8, 
           marginBottom: 20,
           border: '1px solid #4a5568',
@@ -368,7 +368,7 @@ function ShippingHistory() {
         {!loading && historyData.length > 0 && (
           <div style={{ 
             backgroundColor: '#2d3748', 
-            padding: 15, 
+            padding: isMobile ? '15px 16px' : 15,  // 手機端增加左右padding
             borderRadius: 8, 
             marginBottom: 20,
             border: '1px solid #4a5568',
@@ -398,7 +398,7 @@ function ShippingHistory() {
         {/* 歷史記錄表格 */}
         <div style={{ 
           backgroundColor: '#1a202c', 
-          padding: isMobile ? 10 : 20, 
+          padding: isMobile ? '10px 16px' : 20,  // 手機端調整padding
           borderRadius: 8,
           border: '1px solid #2d3748',
           boxShadow: '0 8px 16px rgba(0, 0, 0, 0.4)',

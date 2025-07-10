@@ -127,16 +127,98 @@ function ShippingHistory() {
   const groupedData = groupRecordsByTime(historyData);
 
   // 添加響應式檢測
+  // 優化手機端顯示
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isSmallMobile, setIsSmallMobile] = useState(window.innerWidth <= 480);
   
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
+      setIsSmallMobile(window.innerWidth <= 480);
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // 手機端卡片式顯示組件
+  const MobileCard = ({ group, index }) => (
+    <div key={index} style={{
+      backgroundColor: '#2d3748',
+      margin: '10px 0',
+      borderRadius: '8px',
+      padding: '12px',
+      border: '1px solid #4a5568',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+    }}>
+      {/* 時間標題 */}
+      <div style={{
+        fontSize: '14px',
+        fontWeight: 'bold',
+        color: '#e2e8f0',
+        marginBottom: '8px',
+        textAlign: 'center',
+        borderBottom: '1px solid #4a5568',
+        paddingBottom: '6px'
+      }}>
+        {formatDate(group.time)}
+      </div>
+      
+      {/* 商品列表 */}
+      <div style={{ marginBottom: '8px' }}>
+        {group.items.map((item, itemIndex) => (
+          <div key={itemIndex} style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            padding: '6px 0',
+            borderBottom: itemIndex < group.items.length - 1 ? '1px solid #4a5568' : 'none'
+          }}>
+            {/* 商品名稱 */}
+            <div style={{
+              fontSize: '13px',
+              fontWeight: 'bold',
+              color: '#e2e8f0'
+            }}>
+              {item.partName}
+            </div>
+            
+            {/* 數量、單價、小計 */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '11px',
+              color: '#cbd5e0'
+            }}>
+              <span style={{ color: '#63b3ed', fontWeight: 'bold' }}>
+                數量: {item.quantity}
+              </span>
+              <span>
+                單價: ${item.price?.toLocaleString()}
+              </span>
+              <span style={{ color: '#68d391', fontWeight: 'bold' }}>
+                小計: ${item.amount?.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* 總金額 */}
+      <div style={{
+        textAlign: 'center',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        color: '#68d391',
+        backgroundColor: '#1a202c',
+        padding: '8px',
+        borderRadius: '4px',
+        border: '1px solid #4a5568'
+      }}>
+        總計: ${group.totalAmount?.toLocaleString()}
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ 

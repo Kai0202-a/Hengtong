@@ -128,14 +128,14 @@ const partsData = [
     stock: 50, 
     cost: 130, 
     price: 220, 
-    image: "images/PO-9025.jpg" 
+    image: "images/PO-9025.png" 
   },
   { id: 19, 
     name: "PO-9026", 
     stock: 50, 
     cost: 130, 
     price: 220, 
-    image: "images/PO-9026.png" 
+    image: "images/PO-9026.jpg" 
   },
   { id: 20, 
     name: "PO-9027", 
@@ -156,14 +156,14 @@ const partsData = [
     stock: 50, 
     cost: 130, 
     price: 220, 
-    image: "images/PO-9029.jpg" 
+    image: "images/PO-9029.png" 
   },
   { id: 23, 
     name: "PO-9030", 
     stock: 50, 
     cost: 130, 
     price: 220, 
-    image: "images/PO-9030.png" 
+    image: "images/PO-9030.jpg" 
   },
   { id: 24, 
     name: "PO-9031", 

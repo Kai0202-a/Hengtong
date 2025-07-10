@@ -232,7 +232,7 @@ function ShippingHistory() {
       <div style={{ 
         maxWidth: isMobile ? '100%' : 1200, 
         margin: '0 auto', 
-        padding: isMobile ? 8 : 16 
+        padding: isMobile ? '0 16px' : 16
       }}>
         
         {/* 返回按鈕 */}
@@ -272,102 +272,98 @@ function ShippingHistory() {
         {/* 日期範圍查詢 */}
         <div style={{ 
           backgroundColor: '#2d3748', 
-          padding: 20, 
+          padding: isMobile ? '16px 12px' : 20,
           borderRadius: 8, 
           marginBottom: 20,
           border: '1px solid #4a5568',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
         }}>
           <div style={{ 
-            marginBottom: 15, 
-            fontWeight: 'bold', 
-            fontSize: 18, 
-            color: '#e2e8f0'
-          }}>日期範圍查詢</div>
-          <div style={{ 
             display: 'flex', 
-            alignItems: 'center', 
             justifyContent: 'center', 
+            alignItems: 'center', 
             gap: 15, 
-            flexWrap: 'wrap' 
+            flexWrap: 'wrap',
+            marginBottom: 15
           }}>
-            <div>
-              <label style={{ 
-                marginRight: 8, 
-                fontWeight: 'bold', 
-                color: '#cbd5e0'
-              }}>開始日期：</label>
-              <input
-                type="datetime-local"
-                value={startDate}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ color: '#e2e8f0', fontWeight: 'bold' }}>開始日期：</label>
+              <input 
+                type="date" 
+                value={startDate} 
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{ 
-                  padding: '8px', 
-                  border: '1px solid #4a5568', 
+                  padding: '6px 10px',
                   borderRadius: '4px',
+                  border: '1px solid #4a5568',
                   backgroundColor: '#1a202c',
-                  color: '#e2e8f0'
+                  color: '#e2e8f0',
+                  fontSize: '14px'
                 }}
               />
             </div>
-            <div>
-              <label style={{ 
-                marginRight: 8, 
-                fontWeight: 'bold', 
-                color: '#cbd5e0'
-              }}>結束日期：</label>
-              <input
-                type="datetime-local"
-                value={endDate}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <label style={{ color: '#e2e8f0', fontWeight: 'bold' }}>結束日期：</label>
+              <input 
+                type="date" 
+                value={endDate} 
                 onChange={(e) => setEndDate(e.target.value)}
                 style={{ 
-                  padding: '8px', 
-                  border: '1px solid #4a5568', 
+                  padding: '6px 10px',
                   borderRadius: '4px',
+                  border: '1px solid #4a5568',
                   backgroundColor: '#1a202c',
-                  color: '#e2e8f0'
+                  color: '#e2e8f0',
+                  fontSize: '14px'
                 }}
               />
             </div>
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: 10, 
+            flexWrap: 'wrap'
+          }}>
             <button 
               onClick={handleSearch}
-              disabled={loading}
               style={{ 
                 padding: '8px 16px',
-                backgroundColor: loading ? '#4a5568' : '#3182ce',
+                backgroundColor: '#3182ce',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
                 transition: 'background-color 0.3s'
               }}
-              onMouseOver={(e) => !loading && (e.target.style.backgroundColor = '#2c5aa0')}
-              onMouseOut={(e) => !loading && (e.target.style.backgroundColor = '#3182ce')}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#2c5aa0'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#3182ce'}
             >
-              {loading ? '查詢中...' : '查詢'}
+              查詢
             </button>
             <button 
               onClick={clearDateFilter}
-              disabled={loading}
               style={{ 
                 padding: '8px 16px',
-                backgroundColor: loading ? '#4a5568' : '#718096',
+                backgroundColor: '#e53e3e',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
                 transition: 'background-color 0.3s'
               }}
-              onMouseOver={(e) => !loading && (e.target.style.backgroundColor = '#4a5568')}
-              onMouseOut={(e) => !loading && (e.target.style.backgroundColor = '#718096')}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#c53030'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#e53e3e'}
             >
               清除篩選
             </button>
           </div>
         </div>
-
+        
         {/* 統計信息 */}
         {!loading && historyData.length > 0 && (
           <div style={{ 

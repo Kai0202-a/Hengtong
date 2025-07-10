@@ -164,7 +164,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
         </div>
 
         <div style={{ textAlign: 'center', marginBottom: 16, fontWeight: 'bold', fontSize: 28 }}>
-          出貨日期：{today} <span style={{ fontSize: 14, color: '#4CAF50' }}>(雲端庫存)</span>
+          出貨日期：{today}
         </div>
         
         <form onSubmit={handleSubmit}>
@@ -173,7 +173,6 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
               <tr>
                 <th>圖片</th>
                 <th>品號</th>
-                <th>雲端庫存</th>
                 <th>售價</th>
                 <th>出貨數量</th>
               </tr>
@@ -185,15 +184,11 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                     {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
                   </td>
                   <td>{item.name}</td>
-                  <td style={{ fontWeight: 'bold', color: item.stock > 0 ? '#4CAF50' : '#f44336' }}>
-                    {item.stock}
-                  </td>
                   <td>NT$ {item.price}</td>
                   <td>
                     <input
                       type="number"
                       min="0"
-                      max={item.stock}
                       id={`quantity-${item.id}`}
                       name={`quantity-${item.id}`}
                       value={quantities[idx]}

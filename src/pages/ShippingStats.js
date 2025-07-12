@@ -13,6 +13,16 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
   
+  // 添加排序邏輯 - 按照商品編號排序
+  const sortedParts = [...parts].sort((a, b) => {
+    // 提取商品編號中的數字部分進行比較
+    const getNumber = (name) => {
+      const match = name.match(/\d+/);
+      return match ? parseInt(match[0]) : 0;
+    };
+    return getNumber(a.name) - getNumber(b.name);
+  });
+  
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
     if (!localUser || (localUser.role !== 'dealer' && localUser.role !== 'admin')) {
@@ -29,7 +39,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   }, [user, navigate]);
   
   const today = getToday();
-  const [quantities, setQuantities] = useState(Array(parts.length).fill(""));
+  const [quantities, setQuantities] = useState(Array(sortedParts.length).fill(""));
 
   const handleQuantityChange = (idx, value) => {
     const newQuantities = [...quantities];
@@ -50,8 +60,8 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       const updates = [];
       const shipments = [];
       
-      for (let idx = 0; idx < parts.length; idx++) {
-        const part = parts[idx];
+      for (let idx = 0; idx < sortedParts.length; idx++) {
+        const part = sortedParts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
           // 檢查庫存是否足夠
@@ -178,7 +188,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
               </tr>
             </thead>
             <tbody>
-              {parts.map((item, idx) => (
+              {sortedParts.map((item, idx) => (
                 <tr key={item.id}>
                   <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
                     {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}

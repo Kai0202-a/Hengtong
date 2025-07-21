@@ -183,6 +183,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
               <tr>
                 <th>圖片</th>
                 <th>品號</th>
+                <th>庫存</th>
                 <th>售價</th>
                 <th>出貨數量</th>
               </tr>
@@ -194,11 +195,19 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                     {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
                   </td>
                   <td>{item.name}</td>
+                  <td style={{ 
+                    fontWeight: 'bold', 
+                    color: item.stock > 0 ? '#28a745' : '#dc3545',
+                    fontSize: '16px'
+                  }}>
+                    {item.stock}
+                  </td>
                   <td>NT$ {item.price}</td>
                   <td>
                     <input
                       type="number"
                       min="0"
+                      max={item.stock}
                       id={`quantity-${item.id}`}
                       name={`quantity-${item.id}`}
                       value={quantities[idx]}

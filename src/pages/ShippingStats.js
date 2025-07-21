@@ -324,3 +324,9 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
 }
 
 export default ShippingStats;
+                    <td>
+                      <div>NT$ {item.price}</div>
+                      <div style={{ color: 'red', fontSize: '14px', fontWeight: 'bold' }}>
+                        末端價NT${item.endPrice}
+                      </div>
+                    </td>

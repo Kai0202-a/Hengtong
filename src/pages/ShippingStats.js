@@ -12,16 +12,43 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
+  const [dealerInventory, setDealerInventory] = useState({});
+  const [loading, setLoading] = useState(true);
+  
+  // API 基礎 URL
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
   
   // 添加排序邏輯 - 按照商品編號排序
   const sortedParts = [...parts].sort((a, b) => {
-    // 提取商品編號中的數字部分進行比較
     const getNumber = (name) => {
       const match = name.match(/\d+/);
       return match ? parseInt(match[0]) : 0;
     };
     return getNumber(a.name) - getNumber(b.name);
   });
+  
+  // 獲取店家專屬庫存
+  const fetchDealerInventory = async () => {
+    try {
+      const userObj = user || JSON.parse(localStorage.getItem('user'));
+      if (!userObj || userObj.role !== 'dealer') {
+        setLoading(false);
+        return;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/dealer-inventory?dealerUsername=${userObj.username}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setDealerInventory(result.data.inventory || {});
+        }
+      }
+    } catch (error) {
+      console.error('獲取店家庫存失敗:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -36,6 +63,9 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       navigate('/');
       return;
     }
+    
+    // 獲取店家庫存
+    fetchDealerInventory();
   }, [user, navigate]);
   
   const today = getToday();
@@ -59,21 +89,32 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       // 收集所有需要處理的項目
       const updates = [];
       const shipments = [];
+      const dealerInventoryUpdates = [];
       
       for (let idx = 0; idx < sortedParts.length; idx++) {
         const part = sortedParts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          // 檢查庫存是否足夠
-          if (part.stock < qty) {
-            alert(`${part.name} 庫存不足！當前庫存：${part.stock}，需要：${qty}`);
+          const dealerStock = dealerInventory[part.id] || 0;
+          
+          // 檢查店家庫存是否足夠
+          if (dealerStock < qty) {
+            alert(`${part.name} 店內庫存不足！當前店內庫存：${dealerStock}，需要：${qty}`);
             setSubmitting(false);
             return;
           }
           
+          // 更新總庫存
           updates.push({
             partId: part.id,
-            newStock: part.stock - qty // 基於當前雲端庫存計算
+            newStock: part.stock - qty
+          });
+          
+          // 更新店家庫存
+          dealerInventoryUpdates.push({
+            productId: part.id,
+            quantity: qty,
+            action: 'subtract'
           });
           
           shipments.push({
@@ -94,16 +135,32 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
         return;
       }
       
-      // 並行處理庫存更新和出貨記錄
+      // 並行處理所有更新
       const promises = [];
       
-      // 更新庫存
+      // 更新總庫存
       promises.push(updateInventory(updates, false));
+      
+      // 更新店家庫存
+      if (userObj.role === 'dealer' && dealerInventoryUpdates.length > 0) {
+        dealerInventoryUpdates.forEach(update => {
+          promises.push(
+            fetch(`${API_BASE_URL}/api/dealer-inventory`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                dealerUsername: userObj.username,
+                ...update
+              })
+            })
+          );
+        });
+      }
       
       // 新增出貨記錄
       if (shipments.length > 0) {
         promises.push(
-          fetch('/api/shipments', {
+          fetch(`${API_BASE_URL}/api/shipments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ batchShipments: shipments })
@@ -114,9 +171,10 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       const results = await Promise.all(promises);
       
       // 檢查結果
-      if (results[0] && (results[1]?.ok !== false)) {
-        // 刷新庫存數據
+      if (results[0]) {
+        // 刷新數據
         await refreshInventory();
+        await fetchDealerInventory();
         alert('發送完成！');
         setQuantities(Array(parts.length).fill(""));
       } else {
@@ -126,11 +184,19 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
     } catch (err) {
       console.error('發送失敗:', err);
       alert(`發送失敗：${err.message}`);
-      // 發生錯誤時刷新庫存以確保數據一致性
       await refreshInventory();
+      await fetchDealerInventory();
     } finally {
       setSubmitting(false);
     }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        載入店家庫存中...
+      </div>
+    );
   }
 
   return (
@@ -158,7 +224,10 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
           
           <button 
             type="button" 
-            onClick={refreshInventory}
+            onClick={() => {
+              refreshInventory();
+              fetchDealerInventory();
+            }}
             style={{ 
               fontSize: 18, 
               padding: '8px 16px',
@@ -183,42 +252,45 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
               <tr>
                 <th>圖片</th>
                 <th>品號</th>
-                <th>庫存</th>
+                <th>店內庫存</th>
                 <th>售價</th>
                 <th>出貨數量</th>
               </tr>
             </thead>
             <tbody>
-              {sortedParts.map((item, idx) => (
-                <tr key={item.id}>
-                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                    {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
-                  </td>
-                  <td>{item.name}</td>
-                  <td style={{ 
-                    fontWeight: 'bold', 
-                    color: item.stock > 0 ? '#28a745' : '#dc3545',
-                    fontSize: '16px'
-                  }}>
-                    {item.stock}
-                  </td>
-                  <td>NT$ {item.price}</td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      max={item.stock}
-                      id={`quantity-${item.id}`}
-                      name={`quantity-${item.id}`}
-                      value={quantities[idx]}
-                      onChange={e => handleQuantityChange(idx, e.target.value)}
-                      style={{ width: 60 }}
-                      disabled={submitting || item.stock === 0}
-                      placeholder={item.stock === 0 ? "缺貨" : "數量"}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {sortedParts.map((item, idx) => {
+                const dealerStock = dealerInventory[item.id] || 0;
+                return (
+                  <tr key={item.id}>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                      {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
+                    </td>
+                    <td>{item.name}</td>
+                    <td style={{ 
+                      fontWeight: 'bold', 
+                      color: dealerStock > 0 ? '#28a745' : '#dc3545',
+                      fontSize: '16px'
+                    }}>
+                      {dealerStock}
+                    </td>
+                    <td>NT$ {item.price}</td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        max={dealerStock}
+                        id={`quantity-${item.id}`}
+                        name={`quantity-${item.id}`}
+                        value={quantities[idx]}
+                        onChange={e => handleQuantityChange(idx, e.target.value)}
+                        style={{ width: 60 }}
+                        disabled={submitting || dealerStock === 0}
+                        placeholder={dealerStock === 0 ? "缺貨" : "數量"}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           

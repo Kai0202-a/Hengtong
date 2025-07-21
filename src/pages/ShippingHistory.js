@@ -134,6 +134,14 @@ function ShippingHistory() {
   // 處理分組後的數據
   const groupedData = groupRecordsByTime(historyData);
 
+  // 切換訂單明細展開/收起的函數
+  const toggleOrderDetails = (orderKey) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderKey]: !prev[orderKey]
+    }));
+  };
+
   // 添加響應式檢測
   // 優化手機端顯示
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -552,11 +560,3 @@ function ShippingHistory() {
 }
 
 export default ShippingHistory;
-
-  // 切換訂單明細展開/收起的函數
-  const toggleOrderDetails = (orderKey) => {
-    setExpandedOrders(prev => ({
-      ...prev,
-      [orderKey]: !prev[orderKey]
-    }));
-  };

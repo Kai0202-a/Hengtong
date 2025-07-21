@@ -95,12 +95,14 @@ function ShippingHistory() {
     return date.toLocaleString('zh-TW');
   };
 
-  // 新增：將同一時間的記錄分組合併
+  // 修正：將同一時間的記錄分組合併
   const groupRecordsByTime = (records) => {
     const grouped = {};
     
     records.forEach(record => {
-      const timeKey = formatDate(record.time || record.createdAt);
+      // 修正：參考 Admin.js 的成功做法，使用更精確的時間鍵值
+      const time = record.time || new Date(record.createdAt).toLocaleString('zh-TW');
+      const timeKey = time.substring(0, 16); // 截取前16個字符，確保同一時間的記錄被正確分組
       
       if (!grouped[timeKey]) {
         grouped[timeKey] = {

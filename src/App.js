@@ -139,20 +139,3 @@ function App() {
 }
 
 export default App;
-
-// 移除以下所有代碼（第182-189行）
-// 添加節流機制
-// const updateQueue = [];
-// let isProcessing = false;
-
-// const processUpdateQueue = async () => {
-//   if (isProcessing || updateQueue.length === 0) return;
-//   
-//   isProcessing = true;
-//   while (updateQueue.length > 0) {
-//     const { partId, newStock } = updateQueue.shift();
-//     await updateSinglePart(partId, newStock);
-//     await new Promise(resolve => setTimeout(resolve, 200)); // 200ms 間隔
-//   }
-//   isProcessing = false;
-// };

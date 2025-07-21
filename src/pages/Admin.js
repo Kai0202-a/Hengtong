@@ -214,7 +214,10 @@ function Admin() {
         };
       }
       
-      const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
+      // 修正：優先使用出貨記錄中的 cost，如果沒有則回退到查詢
+      const itemCost = shipment.cost ? 
+        (shipment.cost * (shipment.quantity || 0)) : 
+        (getCostByPartName(shipment.partName) * (shipment.quantity || 0));
       const itemProfit = (shipment.amount || 0) - itemCost;
       
       grouped[groupKey].items.push({

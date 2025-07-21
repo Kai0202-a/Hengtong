@@ -46,6 +46,7 @@ export default async function handler(req, res) {
           ...item,
           quantity: parseInt(item.quantity),
           price: parseFloat(item.price),
+          cost: parseFloat(item.cost || 0),  // 加入成本欄位處理
           amount: parseFloat(item.amount),
           createdAt: new Date()
         }));
@@ -57,11 +58,20 @@ export default async function handler(req, res) {
           count: result.insertedCount 
         });
       } else {
-        // 原有的單筆處理邏輯
+        // 在第65行附近，修改單筆處理邏輯
         const { company, partId, partName, quantity, price, amount, time } = req.body;
         if (!company || !partId || !partName || !quantity || !price || !amount || !time) {
           return res.status(400).json({ success: false, error: '缺少必要欄位', received: req.body });
         }
+        
+        // 加入金額驗證
+        const calculatedAmount = parseInt(quantity) * parseFloat(price);
+        if (Math.abs(parseFloat(amount) - calculatedAmount) > 0.01) {
+          console.warn(`金額計算不符：傳入 ${amount}，計算值 ${calculatedAmount}`);
+          // 可以選擇使用計算值覆蓋傳入值
+          // amount = calculatedAmount;
+        }
+        
         const shipmentData = {
           company,
           partId,

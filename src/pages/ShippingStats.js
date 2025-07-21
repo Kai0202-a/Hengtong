@@ -117,15 +117,20 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
             action: 'subtract'
           });
           
-          shipments.push({
+          // 在第120行附近加入除錯
+          const shipmentItem = {
             company: userObj?.company || userObj?.username || 'admin',
             partId: part.id,
             partName: part.name,
             quantity: qty,
             price: part.price,
+            cost: part.cost,  // 加入成本欄位
             amount: qty * part.price,
             time: today
-          });
+          };
+          
+          console.log(`出貨記錄：${part.name}, 數量：${qty}, 單價：${part.price}, 總額：${qty * part.price}`);
+          shipments.push(shipmentItem);
         }
       }
       

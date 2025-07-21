@@ -15,10 +15,18 @@ function Admin() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState({});
   const [showDealerManagement, setShowDealerManagement] = useState(false);
-    // 新增：訂單單據相關狀態
+  
+  // 新增：庫存管理相關狀態
+  const [showInventoryManagement, setShowInventoryManagement] = useState({});
+  const [dealerInventories, setDealerInventories] = useState({});
+  const [inventoryLoading, setInventoryLoading] = useState({});
+  const [products, setProducts] = useState([]);
+  
+  // 新增：訂單單據相關狀態
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
-    // 新增：開啟訂單單據的函數
+  
+  // 新增：開啟訂單單據的函數
   const openOrderModal = (order) => {
     setSelectedOrder(order);
     setShowOrderModal(true);
@@ -553,7 +561,6 @@ function Admin() {
                     const statusInfo = getStatusDisplay(dealer.status);
                     const userStatus = onlineStatus[dealer.username] || {};
                     const isOnline = userStatus.isOnline || false;
-                    // ... existing code ...
                     const lastSeen = formatLastSeen(userStatus.lastSeen);
                     
                     return (
@@ -682,6 +689,154 @@ function Admin() {
                             </button>
                           </div>
                         </div>
+                        
+                        {/* 新增：庫存管理按鈕 */}
+                        <div style={{ marginTop: 12, borderTop: '1px solid #444', paddingTop: 12 }}>
+                          <button
+                            onClick={() => toggleInventoryManagement(dealer.username)}
+                            style={{
+                              padding: '8px 16px',
+                              background: showInventoryManagement[dealer.username] ? '#ff9800' : '#2196F3',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 4,
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: 'bold',
+                              marginRight: 8
+                            }}
+                          >
+                            {showInventoryManagement[dealer.username] ? '隱藏庫存管理' : '📦 管理在店庫存'}
+                          </button>
+                        </div>
+
+                        {/* 新增：庫存管理介面 */}
+                        {showInventoryManagement[dealer.username] && (
+                          <div style={{
+                            marginTop: 16,
+                            padding: 16,
+                            background: '#1a1e26',
+                            borderRadius: 8,
+                            border: '1px solid #333'
+                          }}>
+                            <h4 style={{ margin: '0 0 12px 0', color: '#4CAF50' }}>📦 {dealer.name} - 在店庫存管理</h4>
+                            
+                            {inventoryLoading[dealer.username] ? (
+                              <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>載入庫存數據中...</div>
+                            ) : (
+                              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                                {products.map(product => {
+                                  const currentStock = dealerInventories[dealer.username]?.[product.id] || 0;
+                                  
+                                  return (
+                                    <div key={product.id} style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '8px 12px',
+                                      marginBottom: 8,
+                                      background: '#2a2e37',
+                                      borderRadius: 6,
+                                      border: '1px solid #444'
+                                    }}>
+                                      {/* 商品資訊 */}
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 'bold', color: '#e3f2fd', fontSize: 14 }}>
+                                          {product.name}
+                                        </div>
+                                        <div style={{ fontSize: 12, color: '#aaa' }}>
+                                          雲端總庫存: {product.stock}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* 當前在店庫存 */}
+                                      <div style={{
+                                        padding: '4px 8px',
+                                        background: currentStock > 0 ? '#1b5e20' : '#424242',
+                                        color: currentStock > 0 ? '#4CAF50' : '#aaa',
+                                        borderRadius: 4,
+                                        fontSize: 12,
+                                        fontWeight: 'bold',
+                                        minWidth: 60,
+                                        textAlign: 'center',
+                                        marginRight: 12
+                                      }}>
+                                        在店: {currentStock}
+                                      </div>
+                                      
+                                      {/* 操作按鈕 */}
+                                      <div style={{ display: 'flex', gap: 4 }}>
+                                        <button
+                                          onClick={() => {
+                                            const quantity = prompt('請輸入要增加的數量:');
+                                            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
+                                              updateDealerInventory(dealer.username, product.id, quantity, 'add');
+                                            }
+                                          }}
+                                          style={{
+                                            padding: '4px 8px',
+                                            background: '#4CAF50',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: 3,
+                                            cursor: 'pointer',
+                                            fontSize: 11
+                                          }}
+                                        >
+                                          +
+                                        </button>
+                                        
+                                        <button
+                                          onClick={() => {
+                                            const quantity = prompt('請輸入要減少的數量:');
+                                            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
+                                              if (parseInt(quantity) <= currentStock) {
+                                                updateDealerInventory(dealer.username, product.id, quantity, 'subtract');
+                                              } else {
+                                                alert('減少數量不能超過當前庫存！');
+                                              }
+                                            }
+                                          }}
+                                          style={{
+                                            padding: '4px 8px',
+                                            background: '#f44336',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: 3,
+                                            cursor: 'pointer',
+                                            fontSize: 11
+                                          }}
+                                        >
+                                          -
+                                        </button>
+                                        
+                                        <button
+                                          onClick={() => {
+                                            const quantity = prompt('請輸入要設定的庫存數量:', currentStock);
+                                            if (quantity !== null && !isNaN(quantity) && parseInt(quantity) >= 0) {
+                                              updateDealerInventory(dealer.username, product.id, quantity, 'set');
+                                            }
+                                          }}
+                                          style={{
+                                            padding: '4px 8px',
+                                            background: '#ff9800',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: 3,
+                                            cursor: 'pointer',
+                                            fontSize: 11
+                                          }}
+                                        >
+                                          設定
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })

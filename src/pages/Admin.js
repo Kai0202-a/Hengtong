@@ -283,6 +283,91 @@ function Admin() {
     }
   };
 
+  // 新增：切換庫存管理顯示的函數
+  const toggleInventoryManagement = async (dealerUsername) => {
+    setShowInventoryManagement(prev => ({
+      ...prev,
+      [dealerUsername]: !prev[dealerUsername]
+    }));
+    
+    // 如果是打開庫存管理，則載入相關數據
+    if (!showInventoryManagement[dealerUsername]) {
+      await fetchProducts();
+      await fetchDealerInventory(dealerUsername);
+    }
+  };
+
+  // 新增：獲取商品列表
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/products');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setProducts(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('獲取商品列表失敗:', error);
+    }
+  };
+
+  // 新增：獲取特定通路商的庫存
+  const fetchDealerInventory = async (dealerUsername) => {
+    try {
+      setInventoryLoading(prev => ({ ...prev, [dealerUsername]: true }));
+      
+      const response = await fetch(`https://hengtong.vercel.app/api/dealer-inventory?dealer=${dealerUsername}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setDealerInventories(prev => ({
+            ...prev,
+            [dealerUsername]: result.data || {}
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('獲取通路商庫存失敗:', error);
+    } finally {
+      setInventoryLoading(prev => ({ ...prev, [dealerUsername]: false }));
+    }
+  };
+
+  // 新增：更新通路商庫存
+  const updateDealerInventory = async (dealerUsername, productId, quantity, action) => {
+    try {
+      const response = await fetch('https://hengtong.vercel.app/api/dealer-inventory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dealer: dealerUsername,
+          productId: productId,
+          quantity: parseInt(quantity),
+          action: action // 'add', 'subtract', 'set'
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // 重新獲取該通路商的庫存數據
+          await fetchDealerInventory(dealerUsername);
+          alert(`庫存${action === 'add' ? '增加' : action === 'subtract' ? '減少' : '設定'}成功！`);
+        } else {
+          alert(result.message || '操作失敗');
+        }
+      } else {
+        throw new Error('API 請求失敗');
+      }
+    } catch (error) {
+      console.error('更新庫存失敗:', error);
+      alert('更新庫存失敗，請稍後再試');
+    }
+  };
+
   // 新增：切換訂單明細展開/收起的函數
   const toggleOrderDetails = (orderKey) => {
     setExpandedOrders(prev => ({

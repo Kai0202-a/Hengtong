@@ -212,7 +212,16 @@ function ShippingHistory() {
             </div>
             
             <div style={{ marginLeft: 12, marginBottom: 8 }}>  
-              {record.items.map((item, itemIdx) => (
+              {record.items
+                .sort((a, b) => {
+                  // 提取商品編號進行排序
+                  const getPartNumber = (partName) => {
+                    const match = partName.match(/PO-(\d+)/);
+                    return match ? parseInt(match[1]) : 9999;
+                  };
+                  return getPartNumber(a.partName) - getPartNumber(b.partName);
+                })
+                .map((item, itemIdx) => (
                 <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
                   • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
                   <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>

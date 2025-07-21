@@ -167,7 +167,7 @@ function ShippingHistory() {
         borderBottom: '1px solid #4a5568',
         paddingBottom: '6px'
       }}>
-        {formatDate(group.time)}
+        {group.time}
       </div>
       
       {/* 商品列表 */}
@@ -487,64 +487,17 @@ function ShippingHistory() {
                               wordBreak: 'break-word',
                               verticalAlign: 'top'
                             }}>
-                              {isMobile ? 
-                                formatDate(group.time).split(' ')[0] + '\n' + formatDate(group.time).split(' ')[1] :
-                                formatDate(group.time)
-                              }
+                              {group.time}
                             </td>
-                            <td style={{ 
-                              padding: isMobile ? 6 : 10, 
-                              border: '1px solid #4a5568', 
+                            <td style={{
+                              padding: '12px',
+                              border: '1px solid #4a5568',
+                              textAlign: 'center',
                               color: '#e2e8f0',
-                              wordBreak: 'break-word',
-                              verticalAlign: 'top'
+                              fontSize: isMobile ? '12px' : '14px',
+                              fontWeight: 'bold'
                             }}>
-                              <div style={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                gap: '4px' 
-                              }}>
-                                {group.items.map((item, itemIndex) => (
-                                  <div key={itemIndex} style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '2px 0',
-                                    borderBottom: itemIndex < group.items.length - 1 ? '1px solid #4a5568' : 'none',
-                                    fontSize: isMobile ? '10px' : '12px'
-                                  }}>
-                                    <span style={{ 
-                                      fontWeight: 'bold', 
-                                      color: '#e2e8f0',
-                                      flex: 1
-                                    }}>
-                                      {item.partName}
-                                    </span>
-                                    <span style={{ 
-                                      color: '#63b3ed', 
-                                      fontWeight: 'bold',
-                                      margin: '0 8px'
-                                    }}>
-                                      x{item.quantity}
-                                    </span>
-                                    <span style={{ 
-                                      color: '#cbd5e0',
-                                      fontSize: isMobile ? '9px' : '11px'
-                                    }}>
-                                      {isMobile ? `$${item.price?.toLocaleString()}` : `NT$ ${item.price?.toLocaleString()}`}
-                                    </span>
-                                    <span style={{ 
-                                      color: '#68d391', 
-                                      fontWeight: 'bold',
-                                      marginLeft: '8px',
-                                      minWidth: isMobile ? '50px' : '70px',
-                                      textAlign: 'right'
-                                    }}>
-                                      {isMobile ? `$${item.amount?.toLocaleString()}` : `NT$ ${item.amount?.toLocaleString()}`}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
+                              {group.time}
                             </td>
                             <td style={{ 
                               padding: isMobile ? 6 : 10, 

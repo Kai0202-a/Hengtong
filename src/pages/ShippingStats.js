@@ -12,16 +12,34 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
+  const [dealerInventory, setDealerInventory] = useState({}); // 新增：在店庫存狀態
   
   // 添加排序邏輯 - 按照商品編號排序
   const sortedParts = [...parts].sort((a, b) => {
-    // 提取商品編號中的數字部分進行比較
     const getNumber = (name) => {
       const match = name.match(/\d+/);
       return match ? parseInt(match[0]) : 0;
     };
     return getNumber(a.name) - getNumber(b.name);
   });
+  
+  // 新增：獲取在店庫存的函數
+  const fetchDealerInventory = async () => {
+    try {
+      const userObj = user || JSON.parse(localStorage.getItem('user'));
+      if (!userObj || userObj.role !== 'dealer') return;
+      
+      const response = await fetch(`/api/dealer-inventory?dealerUsername=${userObj.username}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setDealerInventory(result.data.inventory || {});
+        }
+      }
+    } catch (error) {
+      console.error('獲取在店庫存失敗:', error);
+    }
+  };
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -36,6 +54,9 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       navigate('/');
       return;
     }
+    
+    // 獲取在店庫存
+    fetchDealerInventory();
   }, [user, navigate]);
   
   const today = getToday();
@@ -136,7 +157,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   return (
     <div style={{ textAlign: 'center', marginBottom: 16 }}>
       <img src="images/logo2.png" alt="Logo" style={{ height: 150 }} />
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
         
         <div style={{ marginBottom: 20 }}>
           <button 
@@ -158,7 +179,10 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
           
           <button 
             type="button" 
-            onClick={refreshInventory}
+            onClick={() => {
+              refreshInventory();
+              fetchDealerInventory(); // 同時刷新在店庫存
+            }}
             style={{ 
               fontSize: 18, 
               padding: '8px 16px',
@@ -184,32 +208,47 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                 <th>圖片</th>
                 <th>品號</th>
                 <th>售價</th>
+                <th>總庫存</th>
+                <th style={{ backgroundColor: '#e8f5e8' }}>在店庫存</th>
                 <th>出貨數量</th>
               </tr>
             </thead>
             <tbody>
-              {sortedParts.map((item, idx) => (
-                <tr key={item.id}>
-                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                    {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
-                  </td>
-                  <td>{item.name}</td>
-                  <td>NT$ {item.price}</td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      id={`quantity-${item.id}`}
-                      name={`quantity-${item.id}`}
-                      value={quantities[idx]}
-                      onChange={e => handleQuantityChange(idx, e.target.value)}
-                      style={{ width: 60 }}
-                      disabled={submitting || item.stock === 0}
-                      placeholder={item.stock === 0 ? "缺貨" : "數量"}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {sortedParts.map((item, idx) => {
+                const storeStock = dealerInventory[item.id] || 0;
+                return (
+                  <tr key={item.id}>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                      {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
+                    </td>
+                    <td>{item.name}</td>
+                    <td>NT$ {item.price}</td>
+                    <td style={{ fontWeight: 'bold', color: item.stock > 0 ? '#28a745' : '#dc3545' }}>
+                      {item.stock}
+                    </td>
+                    <td style={{ 
+                      fontWeight: 'bold', 
+                      color: storeStock > 0 ? '#007bff' : '#6c757d',
+                      backgroundColor: '#f8f9fa'
+                    }}>
+                      {storeStock}
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        id={`quantity-${item.id}`}
+                        name={`quantity-${item.id}`}
+                        value={quantities[idx]}
+                        onChange={e => handleQuantityChange(idx, e.target.value)}
+                        style={{ width: 60 }}
+                        disabled={submitting || item.stock === 0}
+                        placeholder={item.stock === 0 ? "缺貨" : "數量"}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           

@@ -80,14 +80,17 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       // 收集所有需要處理的項目
       const updates = [];
       const shipments = [];
+      const dealerInventoryUpdates = []; // 新增：在店庫存更新
       
       for (let idx = 0; idx < sortedParts.length; idx++) {
         const part = sortedParts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          // 檢查庫存是否足夠
-          if (part.stock < qty) {
-            alert(`${part.name} 庫存不足！當前庫存：${part.stock}，需要：${qty}`);
+          const storeStock = dealerInventory[part.id] || 0;
+          
+          // 修正：檢查在店庫存是否足夠
+          if (storeStock < qty) {
+            alert(`${part.name} 在店庫存不足！當前在店庫存：${storeStock}，需要：${qty}`);
             setSubmitting(false);
             return;
           }
@@ -95,6 +98,13 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
           updates.push({
             partId: part.id,
             newStock: part.stock - qty // 基於當前雲端庫存計算
+          });
+          
+          // 新增：在店庫存減少
+          dealerInventoryUpdates.push({
+            productId: part.id,
+            quantity: qty,
+            action: 'subtract'
           });
           
           shipments.push({
@@ -118,8 +128,24 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       // 並行處理庫存更新和出貨記錄
       const promises = [];
       
-      // 更新庫存
+      // 更新雲端庫存
       promises.push(updateInventory(updates, false));
+      
+      // 新增：更新在店庫存
+      for (const update of dealerInventoryUpdates) {
+        promises.push(
+          fetch('/api/dealer-inventory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dealerUsername: userObj.username,
+              productId: update.productId,
+              quantity: update.quantity,
+              action: update.action
+            })
+          })
+        );
+      }
       
       // 新增出貨記錄
       if (shipments.length > 0) {
@@ -135,9 +161,12 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       const results = await Promise.all(promises);
       
       // 檢查結果
-      if (results[0] && (results[1]?.ok !== false)) {
+      const allSuccess = results.every(result => result === true || result?.ok !== false);
+      
+      if (allSuccess) {
         // 刷新庫存數據
         await refreshInventory();
+        await fetchDealerInventory(); // 新增：刷新在店庫存
         alert('發送完成！');
         setQuantities(Array(parts.length).fill(""));
       } else {
@@ -149,6 +178,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       alert(`發送失敗：${err.message}`);
       // 發生錯誤時刷新庫存以確保數據一致性
       await refreshInventory();
+      await fetchDealerInventory(); // 新增：同時刷新在店庫存
     } finally {
       setSubmitting(false);
     }

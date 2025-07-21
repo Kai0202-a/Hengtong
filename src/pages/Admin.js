@@ -312,18 +312,19 @@ function Admin() {
     }
   };
 
-  // 新增：獲取特定通路商的庫存
+  // 修正：獲取特定通路商的庫存
   const fetchDealerInventory = async (dealerUsername) => {
     try {
       setInventoryLoading(prev => ({ ...prev, [dealerUsername]: true }));
       
-      const response = await fetch(`https://hengtong.vercel.app/api/dealer-inventory?dealer=${dealerUsername}`);
+      // 修正參數名稱：dealer -> dealerUsername
+      const response = await fetch(`https://hengtong.vercel.app/api/dealer-inventory?dealerUsername=${dealerUsername}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
           setDealerInventories(prev => ({
             ...prev,
-            [dealerUsername]: result.data || {}
+            [dealerUsername]: result.data.inventory || {}
           }));
         }
       }
@@ -334,7 +335,7 @@ function Admin() {
     }
   };
 
-  // 新增：更新通路商庫存
+  // 修正：更新通路商庫存
   const updateDealerInventory = async (dealerUsername, productId, quantity, action) => {
     try {
       const response = await fetch('https://hengtong.vercel.app/api/dealer-inventory', {
@@ -343,17 +344,16 @@ function Admin() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          dealer: dealerUsername,
+          dealerUsername: dealerUsername, // 修正欄位名稱：dealer -> dealerUsername
           productId: productId,
           quantity: parseInt(quantity),
-          action: action // 'add', 'subtract', 'set'
+          action: action
         })
       });
       
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // 重新獲取該通路商的庫存數據
           await fetchDealerInventory(dealerUsername);
           alert(`庫存${action === 'add' ? '增加' : action === 'subtract' ? '減少' : '設定'}成功！`);
         } else {

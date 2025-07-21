@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../UserContext';
+import { partsData } from './partsdata'; // 添加這行
 
 function getToday() {
   const d = new Date();
@@ -19,7 +20,8 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
   
   // 添加排序邏輯 - 按照商品編號排序
-  const sortedParts = [...parts].sort((a, b) => {
+  // 修改這部分，使用 partsData 而不是 parts 參數
+  const sortedParts = [...partsData].sort((a, b) => {
     const getNumber = (name) => {
       const match = name.match(/\d+/);
       return match ? parseInt(match[0]) : 0;

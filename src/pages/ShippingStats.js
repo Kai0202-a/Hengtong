@@ -278,7 +278,12 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                     }}>
                       {dealerStock}
                     </td>
-                    <td>NT$ {item.price}</td>
+                    <td>
+                      <div>NT$ {item.price}</div>
+                      <div style={{ color: 'red', fontSize: '12px', marginTop: '2px' }}>
+                        末端價: {item.endPrice}
+                      </div>
+                    </td>
                     <td>
                       <input
                         type="number"
@@ -324,9 +329,3 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
 }
 
 export default ShippingStats;
-                    <td>
-                      <div>NT$ {item.price}</div>
-                      <div style={{ color: 'red', fontSize: '14px', fontWeight: 'bold' }}>
-                        末端價NT${item.endPrice}
-                      </div>
-                    </td>

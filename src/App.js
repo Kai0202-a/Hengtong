@@ -1,7 +1,7 @@
 import './App.css';
 import Home from "./pages/Home";
 import Inventory from "./pages/Inventory";
-import Admin from "./pages/admin";
+import Admin from "./pages/Admin";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import ShippingStats from './pages/shippingstats';
 import { useState, useEffect } from 'react';

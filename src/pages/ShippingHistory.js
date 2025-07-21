@@ -421,203 +421,125 @@ function ShippingHistory() {
             </div>
           ) : (
             <>
-              {historyData.length > 0 ? (
+              {/* 桌面端表格顯示 */}
+              {!isMobile ? (
                 <>
-                  <div style={{ 
-                    maxHeight: 600, 
-                    overflowY: 'auto', 
-                    border: '1px solid #2d3748', 
-                    borderRadius: 4,
-                    minWidth: isMobile ? '320px' : 'auto',  // 減少最小寬度
-                    width: '100%'
-                  }}>
-                    <table style={{ 
-                      width: '100%', 
-                      textAlign: 'center', 
-                      borderCollapse: 'collapse',
-                      fontSize: isMobile ? '11px' : '14px',  // 手機端字體更小
-                      tableLayout: isMobile ? 'fixed' : 'auto'  // 固定表格佈局
-                    }}>
-                      <thead style={{ 
-                        backgroundColor: '#2d3748', 
-                        position: 'sticky', 
-                        top: 0 
-                      }}>
-                        <tr>
-                          <th style={{ 
-                            padding: isMobile ? 6 : 12, 
-                            border: '1px solid #4a5568', 
-                            color: '#e2e8f0', 
-                            minWidth: isMobile ? 80 : 150,  // 減少最小寬度
-                            width: isMobile ? '25%' : 'auto',  // 設定百分比寬度
-                            backgroundColor: '#2d3748'
-                          }}>日期時間</th>
-                          <th style={{ 
-                            padding: isMobile ? 6 : 12, 
-                            border: '1px solid #4a5568', 
-                            color: '#e2e8f0', 
-                            minWidth: isMobile ? 150 : 300,
-                            width: isMobile ? '50%' : 'auto',
-                            backgroundColor: '#2d3748'
-                          }}>出貨明細</th>
-                          <th style={{ 
-                            padding: isMobile ? 6 : 12, 
-                            border: '1px solid #4a5568', 
-                            color: '#e2e8f0', 
-                            minWidth: isMobile ? 60 : 120,
-                            width: isMobile ? '25%' : 'auto',
-                            backgroundColor: '#2d3748'
-                          }}>總金額</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {groupedData.map((group, index) => (
-                          <tr key={index} style={{ 
-                            backgroundColor: index % 2 === 0 ? '#2d3748' : '#1a202c',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#4a5568'}
-                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#2d3748' : '#1a202c'}
-                          >
-                            <td style={{ 
-                              padding: isMobile ? 6 : 10, 
-                              border: '1px solid #4a5568', 
-                              fontSize: isMobile ? 11 : 13, 
-                              color: '#cbd5e0',
-                              wordBreak: 'break-word',
-                              verticalAlign: 'top'
-                            }}>
-                              {group.time}
-                            </td>
-                            <td style={{
-                              padding: '12px',
-                              border: '1px solid #4a5568',
-                              textAlign: 'center',
-                              color: '#e2e8f0',
-                              fontSize: isMobile ? '12px' : '14px',
-                              fontWeight: 'bold'
-                            }}>
-                              {group.time}
-                            </td>
-                            <td style={{ 
-                              padding: isMobile ? 6 : 10, 
-                              border: '1px solid #4a5568', 
-                              color: '#68d391', 
-                              fontWeight: 'bold',
-                              fontSize: isMobile ? '12px' : '16px',
-                              textAlign: 'center',
-                              verticalAlign: 'middle'
-                            }}>
-                              {isMobile ? `$${group.totalAmount?.toLocaleString()}` : `NT$ ${group.totalAmount?.toLocaleString()}`}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {/* 分頁控制 */}
-                  {totalPages > 1 && (
+                  {groupedData.length > 0 ? (
                     <div style={{ 
-                      marginTop: 20, 
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center', 
-                      gap: 10,
-                      flexWrap: 'wrap'
+                      overflowX: 'auto',
+                      backgroundColor: '#2d3748',
+                      borderRadius: '8px',
+                      border: '1px solid #4a5568'
                     }}>
-                      <button 
-                        onClick={() => handlePageChange(1)}
-                        disabled={currentPage === 1}
-                        style={{ 
-                          padding: '8px 12px',
-                          backgroundColor: currentPage === 1 ? '#4a5568' : '#3182ce',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                          transition: 'background-color 0.3s'
-                        }}
-                        onMouseOver={(e) => currentPage !== 1 && (e.target.style.backgroundColor = '#2c5aa0')}
-                        onMouseOut={(e) => currentPage !== 1 && (e.target.style.backgroundColor = '#3182ce')}
-                      >
-                        首頁
-                      </button>
-                      
-                      <button 
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        style={{ 
-                          padding: '8px 12px',
-                          backgroundColor: currentPage === 1 ? '#4a5568' : '#3182ce',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                          transition: 'background-color 0.3s'
-                        }}
-                        onMouseOver={(e) => currentPage !== 1 && (e.target.style.backgroundColor = '#2c5aa0')}
-                        onMouseOut={(e) => currentPage !== 1 && (e.target.style.backgroundColor = '#3182ce')}
-                      >
-                        上一頁
-                      </button>
-
-                      <span style={{ 
-                        color: '#e2e8f0', 
-                        fontSize: 16, 
-                        margin: '0 10px',
-                        fontWeight: 'bold'
-                      }}>
-                        第 {currentPage} 頁，共 {totalPages} 頁
-                      </span>
-
-                      <button 
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        style={{ 
-                          padding: '8px 12px',
-                          backgroundColor: currentPage === totalPages ? '#4a5568' : '#3182ce',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                          transition: 'background-color 0.3s'
-                        }}
-                        onMouseOver={(e) => currentPage !== totalPages && (e.target.style.backgroundColor = '#2c5aa0')}
-                        onMouseOut={(e) => currentPage !== totalPages && (e.target.style.backgroundColor = '#3182ce')}
-                      >
-                        下一頁
-                      </button>
-                      
-                      <button 
-                        onClick={() => handlePageChange(totalPages)}
-                        disabled={currentPage === totalPages}
-                        style={{ 
-                          padding: '8px 12px',
-                          backgroundColor: currentPage === totalPages ? '#4a5568' : '#3182ce',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                          transition: 'background-color 0.3s'
-                        }}
-                        onMouseOver={(e) => currentPage !== totalPages && (e.target.style.backgroundColor = '#2c5aa0')}
-                        onMouseOut={(e) => currentPage !== totalPages && (e.target.style.backgroundColor = '#3182ce')}
-                      >
-                        末頁
-                      </button>
+                      {/* 改為列表式顯示，參考 Admin.js 貨況提醒格式 */}
+                      <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none' }}>
+                        {groupedData.map((group, index) => {
+                          const orderKey = `${group.company}-${group.time}`;
+                          const isExpanded = expandedOrders[orderKey] || false;
+                          
+                          return (
+                            <li key={index} style={{
+                              background: '#2a2e37',
+                              margin: '8px',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              border: '1px solid #444'
+                            }}>
+                              {/* 標題區塊 - 可點擊展開/收起 */}
+                              <div 
+                                onClick={() => toggleOrderDetails(orderKey)}
+                                style={{ 
+                                  marginBottom: 8, 
+                                  fontSize: 16, 
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <div>
+                                  <span style={{ color: '#4CAF50' }}>{group.company || '未知公司'}</span> 於 
+                                  <span style={{ color: '#aaa', marginLeft: 4 }}>{group.time}</span>
+                                </div>
+                                <span style={{ color: '#ffa726', fontSize: 14 }}>
+                                  {isExpanded ? '▼' : '▶'} 點選查看明細
+                                </span>
+                              </div>
+                              
+                              {/* 簡要資訊 - 始終顯示 */}
+                              <div style={{ marginBottom: 8, fontSize: 13 }}>
+                                <span style={{ color: '#81c784', fontWeight: 'bold' }}>總數量: {group.items.reduce((sum, item) => sum + (item.quantity || 0), 0)}</span>
+                                {group.totalAmount > 0 && (
+                                  <span style={{ color: '#aaa', marginLeft: 16 }}>總金額: NT$ {group.totalAmount.toLocaleString()}</span>
+                                )}
+                              </div>
+                              
+                              {/* 詳細明細 - 可展開/收起 */}
+                              {isExpanded && (
+                                <>
+                                  <div style={{ marginBottom: 8 }}>
+                                    <span style={{ color: '#ffa726', fontWeight: 'bold' }}>出貨明細：</span>
+                                  </div>
+                                  
+                                  <div style={{ marginLeft: 12, marginBottom: 8 }}>  
+                                    {group.items.map((item, itemIdx) => (
+                                      <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
+                                        • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
+                                        <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
+                                        {item.amount > 0 && (
+                                          <span style={{ color: '#aaa', marginLeft: 8 }}>NT$ {item.amount.toLocaleString()}</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  
+                                  <div style={{ borderTop: '1px solid #444', paddingTop: 8, fontSize: 13 }}>
+                                    <span style={{ color: '#ffa726' }}>詳細總計：</span>
+                                    <span style={{ color: '#81c784', fontWeight: 'bold', marginLeft: 4 }}>數量 {group.items.reduce((sum, item) => sum + (item.quantity || 0), 0)}</span>
+                                    {group.totalAmount > 0 && (
+                                      <>
+                                        <br />
+                                        <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {group.totalAmount.toLocaleString()}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: 40, 
+                      color: '#a0aec0', 
+                      fontSize: 18 
+                    }}>
+                      {startDate || endDate ? '查詢範圍內暫無出貨記錄' : '暫無出貨記錄'}
                     </div>
                   )}
                 </>
               ) : (
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: 40, 
-                  color: '#a0aec0', 
-                  fontSize: 18 
-                }}>
-                  {startDate || endDate ? '查詢範圍內暫無出貨記錄' : '暫無出貨記錄'}
-                </div>
+                // 手機端顯示保持原有的 MobileCard 格式
+                <>
+                  {groupedData.length > 0 ? (
+                    groupedData.map((group, index) => (
+                      <MobileCard key={index} group={group} index={index} />
+                    ))
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: 40, 
+                      color: '#a0aec0', 
+                      fontSize: 18 
+                    }}>
+                      {startDate || endDate ? '查詢範圍內暫無出貨記錄' : '暫無出貨記錄'}
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -628,3 +550,14 @@ function ShippingHistory() {
 }
 
 export default ShippingHistory;
+
+  // 添加展開狀態管理
+  const [expandedOrders, setExpandedOrders] = useState({});
+  
+  // 切換訂單明細展開/收起的函數
+  const toggleOrderDetails = (orderKey) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderKey]: !prev[orderKey]
+    }));
+  };

@@ -12,18 +12,18 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
-  const [dealerInventory, setDealerInventory] = useState({}); // 新增：在店庫存狀態
+  const [dealerInventory, setDealerInventory] = useState({}); // 在店庫存狀態
   
   // 添加排序邏輯 - 按照商品編號排序
   const sortedParts = [...parts].sort((a, b) => {
     const getNumber = (name) => {
-      const match = name.match(/\d+/);
+      const match = name.match(/\\d+/);
       return match ? parseInt(match[0]) : 0;
     };
     return getNumber(a.name) - getNumber(b.name);
   });
   
-  // 新增：獲取在店庫存的函數
+  // 獲取在店庫存的函數
   const fetchDealerInventory = async () => {
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
@@ -157,7 +157,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   return (
     <div style={{ textAlign: 'center', marginBottom: 16 }}>
       <img src="images/logo2.png" alt="Logo" style={{ height: 150 }} />
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
         
         <div style={{ marginBottom: 20 }}>
           <button 
@@ -208,8 +208,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                 <th>圖片</th>
                 <th>品號</th>
                 <th>售價</th>
-                <th>總庫存</th>
-                <th style={{ backgroundColor: '#e8f5e8' }}>在店庫存</th>
+                <th>庫存</th>
                 <th>出貨數量</th>
               </tr>
             </thead>
@@ -223,13 +222,9 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                     </td>
                     <td>{item.name}</td>
                     <td>NT$ {item.price}</td>
-                    <td style={{ fontWeight: 'bold', color: item.stock > 0 ? '#28a745' : '#dc3545' }}>
-                      {item.stock}
-                    </td>
                     <td style={{ 
                       fontWeight: 'bold', 
-                      color: storeStock > 0 ? '#007bff' : '#6c757d',
-                      backgroundColor: '#f8f9fa'
+                      color: storeStock > 0 ? '#28a745' : '#dc3545'
                     }}>
                       {storeStock}
                     </td>
@@ -242,8 +237,8 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                         value={quantities[idx]}
                         onChange={e => handleQuantityChange(idx, e.target.value)}
                         style={{ width: 60 }}
-                        disabled={submitting || item.stock === 0}
-                        placeholder={item.stock === 0 ? "缺貨" : "數量"}
+                        disabled={submitting || storeStock === 0}
+                        placeholder={storeStock === 0 ? "缺貨" : "數量"}
                       />
                     </td>
                   </tr>

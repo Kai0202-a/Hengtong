@@ -7,7 +7,7 @@ import ShippingStats from './pages/ShippingStats';
 import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
-import ShippingHistory from './pages/shippinghistory';
+import ShippingHistory from './pages/ShippingHistory';
 
 function App() {
   // 移除本地庫存，只保留零件基本資訊

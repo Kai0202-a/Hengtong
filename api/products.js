@@ -277,7 +277,8 @@ export default async function handler(req, res) {
     client = new MongoClient(uri);
     await client.connect();
     const db = client.db(DB_NAME);
-    const collection = db.collection('products');
+    const productsCollection = db.collection('products');
+    const inventoryCollection = db.collection('inventory');
 
     if (req.method === 'GET') {
       // 優先從 MongoDB products 集合獲取數據

@@ -96,33 +96,37 @@ function ShippingHistory() {
   };
 
   // 修正：將同一時間的記錄分組合併
+  // 修正：完全參考 Admin.js 的成功邏輯
   const groupRecordsByTime = (records) => {
     const grouped = {};
     
     records.forEach(record => {
-      // 修正：參考 Admin.js 的成功做法，使用更精確的時間鍵值
+      const company = record.company || '未知公司';
       const time = record.time || new Date(record.createdAt).toLocaleString('zh-TW');
-      const timeKey = time.substring(0, 16); // 截取前16個字符，確保同一時間的記錄被正確分組
+      const timeKey = time.substring(0, 16);
+      const groupKey = `${company}-${timeKey}`; // 關鍵：加入公司分組
       
-      if (!grouped[timeKey]) {
-        grouped[timeKey] = {
-          time: record.time || record.createdAt,
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          company,
+          time: timeKey,
           items: [],
-          totalAmount: 0
+          totalAmount: 0,
+          createdAt: record.createdAt || record.time
         };
       }
       
-      grouped[timeKey].items.push({
-        partName: record.partName,
-        quantity: record.quantity,
-        price: record.price,
-        amount: record.amount
+      grouped[groupKey].items.push({
+        partName: record.partName || '未知商品',
+        quantity: record.quantity || 0,
+        price: record.price || 0,
+        amount: record.amount || 0
       });
       
-      grouped[timeKey].totalAmount += (record.amount || 0);
+      grouped[groupKey].totalAmount += (record.amount || 0);
     });
     
-    return Object.values(grouped);
+    return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   };
 
   // 處理分組後的數據

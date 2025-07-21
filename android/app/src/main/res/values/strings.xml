@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HengtongApp</string>
+    <string name="title_activity_main">HengtongApp</string>
+    <string name="package_name">com.hengtong.app</string>
+    <string name="custom_url_scheme">com.hengtong.app</string>
+</resources>

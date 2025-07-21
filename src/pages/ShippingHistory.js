@@ -515,22 +515,30 @@ function ShippingHistory() {
                           <div>小計</div>
                         </div>
                         
-                        {record.items.map((item, itemIndex) => (
-                          <div key={itemIndex} style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 100px 120px 120px',
-                            gap: 16,
-                            padding: '8px 0',
-                            borderBottom: itemIndex < record.items.length - 1 ? '1px solid #333' : 'none'
-                          }}>
-                            <div style={{ color: '#fff' }}>{item.partName}</div>
-                            <div style={{ color: '#2196F3' }}>{item.quantity}</div>
-                            <div style={{ color: '#aaa' }}>NT$ {item.price.toLocaleString()}</div>
-                            <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                              NT$ {item.amount.toLocaleString()}
+                        {record.items
+                          .sort((a, b) => {
+                            const getNumber = (name) => {
+                              const match = name.match(/\d+/);
+                              return match ? parseInt(match[0]) : 0;
+                            };
+                            return getNumber(a.partName) - getNumber(b.partName);
+                          })
+                          .map((item, itemIndex) => (
+                            <div key={itemIndex} style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 100px 120px 120px',
+                              gap: 16,
+                              padding: '8px 0',
+                              borderBottom: itemIndex < record.items.length - 1 ? '1px solid #333' : 'none'
+                            }}>
+                              <div style={{ color: '#fff' }}>{item.partName}</div>
+                              <div style={{ color: '#2196F3' }}>{item.quantity}</div>
+                              <div style={{ color: '#aaa' }}>NT$ {item.price.toLocaleString()}</div>
+                              <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                                NT$ {item.amount.toLocaleString()}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     )}
                   </div>

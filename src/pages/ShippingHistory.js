@@ -12,6 +12,8 @@ function ShippingHistory() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  // 添加展開狀態管理
+  const [expandedOrders, setExpandedOrders] = useState({});
   const recordsPerPage = 20;
 
   useEffect(() => {
@@ -551,9 +553,6 @@ function ShippingHistory() {
 
 export default ShippingHistory;
 
-  // 添加展開狀態管理
-  const [expandedOrders, setExpandedOrders] = useState({});
-  
   // 切換訂單明細展開/收起的函數
   const toggleOrderDetails = (orderKey) => {
     setExpandedOrders(prev => ({

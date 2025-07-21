@@ -1,7 +1,8 @@
 import { MongoClient } from 'mongodb';
 
-// MongoDB 連接字串
+// 使用環境變數替換硬編碼的連線字串
 const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = process.env.DB_NAME || 'hengtong';
 
 // 商品數據
 const partsData = [
@@ -247,22 +248,36 @@ const partsData = [
 ];
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // CORS 設置 - 使用環境變數
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').concat([
+        /^https:\/\/hengtong.*\.vercel\.app$/
+      ])
+    : [
+        'https://hengtong.vercel.app',
+        'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
+        /^https:\/\/hengtong.*\.vercel\.app$/
+      ];
   
+  const origin = req.headers.origin;
+  if (allowedOrigins.some(allowed => typeof allowed === 'string' ? allowed === origin : allowed.test(origin))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
-  
+
   let client;
   try {
     client = new MongoClient(uri);
     await client.connect();
-    const db = client.db('hengtong');
-    const productsCollection = db.collection('products');
-    const inventoryCollection = db.collection('inventory');
+    const db = client.db(DB_NAME);
+    const collection = db.collection('products');
 
     if (req.method === 'GET') {
       // 優先從 MongoDB products 集合獲取數據
@@ -373,7 +388,10 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('API 錯誤:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ 
+      success: false, 
+      error: process.env.NODE_ENV === 'production' ? '伺服器內部錯誤' : error.message 
+    });
   } finally {
     if (client) await client.close();
   }

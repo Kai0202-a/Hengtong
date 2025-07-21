@@ -1,7 +1,10 @@
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-const uri = 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+// 使用環境變數替換硬編碼的連線字串
+const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = process.env.DB_NAME || 'hengtong';
+const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
 // 連線池配置
 const clientOptions = {
@@ -24,12 +27,17 @@ async function connectToDatabase() {
 }
 
 export default async function handler(req, res) {
-  // CORS 設置
-  const allowedOrigins = [
-    'https://hengtong.vercel.app',
-    'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
-    /^https:\/\/hengtong.*\.vercel\.app$/
-  ];
+  // CORS 設置 - 使用環境變數
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').concat([
+        /^https:\/\/hengtong.*\.vercel\.app$/
+      ])
+    : [
+        'https://hengtong.vercel.app',
+        'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
+        /^https:\/\/hengtong.*\.vercel\.app$/
+      ];
+  
   const origin = req.headers.origin;
   if (allowedOrigins.some(allowed => typeof allowed === 'string' ? allowed === origin : allowed.test(origin))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -58,7 +66,7 @@ export default async function handler(req, res) {
     }
 
     client = await connectToDatabase();
-    const db = client.db('hengtong');
+    const db = client.db(DB_NAME);
     const collection = db.collection('dealers');
 
     // 查找用戶

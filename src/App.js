@@ -1,14 +1,13 @@
 import './App.css';
 import Home from "./pages/Home";
 import Inventory from "./pages/Inventory";
-import Admin from "./pages/Admin";
+import Admin from "./pages/admin";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import ShippingStats from './pages/ShippingStats';
-import { partsData } from './pages/partsData';
+import ShippingStats from './pages/shippingstats';
 import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
-import ShippingHistory from './pages/ShippingHistory';
+import ShippingHistory from './pages/shippinghistory';
 
 function App() {
   // 移除本地庫存，只保留零件基本資訊
@@ -18,21 +17,23 @@ function App() {
   // 完全從雲端獲取商品和庫存數據
   const fetchInventory = async () => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/products');
+      // 使用環境變數替換硬編碼的 URL
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      
+      const response = await fetch(`${API_BASE_URL}/api/products`);
+      
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && result.data.length > 0) {
           setParts(result.data);
         } else {
           console.warn('雲端數據為空，保持當前狀態');
-          // 移除重置邏輯，避免覆蓋現有庫存
         }
       } else {
         console.error('API 請求失敗:', response.status);
       }
     } catch (error) {
       console.error('獲取商品數據失敗:', error);
-      // 錯誤時不要重置數據
     } finally {
       setLoading(false);
     }
@@ -41,11 +42,14 @@ function App() {
   // 同步 partsData 到雲端的函數
   const syncPartsDataToCloud = async () => {
     try {
-      await fetch('https://hengtong.vercel.app/api/products', {
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      
+      await fetch(`${API_BASE_URL}/api/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'sync_partsdata' })
       });
+      
       console.log('partsData 已同步到雲端');
     } catch (error) {
       console.error('同步 partsData 失敗:', error);
@@ -55,7 +59,9 @@ function App() {
   // 統一的庫存更新函數 - 所有更新都同步到雲端
   const updateInventory = async (updates, shouldRefresh = true) => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/inventory', {
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      
+      const response = await fetch(`${API_BASE_URL}/api/inventory`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +71,6 @@ function App() {
       
       if (response.ok) {
         if (shouldRefresh) {
-          // 更新成功後重新獲取最新數據
           await fetchInventory();
         }
         return true;
@@ -81,7 +86,6 @@ function App() {
   useEffect(() => {
     fetchInventory();
     
-    // 定期同步雲端庫存（每30秒）
     const interval = setInterval(() => {
       fetchInventory();
     }, 30000);

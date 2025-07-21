@@ -16,11 +16,13 @@ function Register() {
     setIsSubmitting(true);
     setMsg("");
     
-    // 加入詳細 log
     console.log('準備送出資料:', form);
     
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/dealers', {
+      // 使用環境變數替換硬編碼的 URL
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      
+      const response = await fetch(`${API_BASE_URL}/api/dealers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

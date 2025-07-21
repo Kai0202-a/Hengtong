@@ -12,34 +12,16 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
-  const [dealerInventory, setDealerInventory] = useState({}); // 在店庫存狀態
   
   // 添加排序邏輯 - 按照商品編號排序
   const sortedParts = [...parts].sort((a, b) => {
+    // 提取商品編號中的數字部分進行比較
     const getNumber = (name) => {
-      const match = name.match(/\\d+/);
+      const match = name.match(/\d+/);
       return match ? parseInt(match[0]) : 0;
     };
     return getNumber(a.name) - getNumber(b.name);
   });
-  
-  // 獲取在店庫存的函數
-  const fetchDealerInventory = async () => {
-    try {
-      const userObj = user || JSON.parse(localStorage.getItem('user'));
-      if (!userObj || userObj.role !== 'dealer') return;
-      
-      const response = await fetch(`/api/dealer-inventory?dealerUsername=${userObj.username}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setDealerInventory(result.data.inventory || {});
-        }
-      }
-    } catch (error) {
-      console.error('獲取在店庫存失敗:', error);
-    }
-  };
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -54,9 +36,6 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       navigate('/');
       return;
     }
-    
-    // 獲取在店庫存
-    fetchDealerInventory();
   }, [user, navigate]);
   
   const today = getToday();
@@ -80,17 +59,14 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       // 收集所有需要處理的項目
       const updates = [];
       const shipments = [];
-      const dealerInventoryUpdates = []; // 新增：在店庫存更新
       
       for (let idx = 0; idx < sortedParts.length; idx++) {
         const part = sortedParts[idx];
         const qty = parseInt(quantities[idx], 10) || 0;
         if (qty > 0) {
-          const storeStock = dealerInventory[part.id] || 0;
-          
-          // 修正：檢查在店庫存是否足夠
-          if (storeStock < qty) {
-            alert(`${part.name} 在店庫存不足！當前在店庫存：${storeStock}，需要：${qty}`);
+          // 檢查庫存是否足夠
+          if (part.stock < qty) {
+            alert(`${part.name} 庫存不足！當前庫存：${part.stock}，需要：${qty}`);
             setSubmitting(false);
             return;
           }
@@ -98,13 +74,6 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
           updates.push({
             partId: part.id,
             newStock: part.stock - qty // 基於當前雲端庫存計算
-          });
-          
-          // 新增：在店庫存減少
-          dealerInventoryUpdates.push({
-            productId: part.id,
-            quantity: qty,
-            action: 'subtract'
           });
           
           shipments.push({
@@ -128,24 +97,8 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       // 並行處理庫存更新和出貨記錄
       const promises = [];
       
-      // 更新雲端庫存
+      // 更新庫存
       promises.push(updateInventory(updates, false));
-      
-      // 新增：更新在店庫存
-      for (const update of dealerInventoryUpdates) {
-        promises.push(
-          fetch('/api/dealer-inventory', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              dealerUsername: userObj.username,
-              productId: update.productId,
-              quantity: update.quantity,
-              action: update.action
-            })
-          })
-        );
-      }
       
       // 新增出貨記錄
       if (shipments.length > 0) {
@@ -161,12 +114,9 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       const results = await Promise.all(promises);
       
       // 檢查結果
-      const allSuccess = results.every(result => result === true || result?.ok !== false);
-      
-      if (allSuccess) {
+      if (results[0] && (results[1]?.ok !== false)) {
         // 刷新庫存數據
         await refreshInventory();
-        await fetchDealerInventory(); // 新增：刷新在店庫存
         alert('發送完成！');
         setQuantities(Array(parts.length).fill(""));
       } else {
@@ -178,7 +128,6 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
       alert(`發送失敗：${err.message}`);
       // 發生錯誤時刷新庫存以確保數據一致性
       await refreshInventory();
-      await fetchDealerInventory(); // 新增：同時刷新在店庫存
     } finally {
       setSubmitting(false);
     }
@@ -209,10 +158,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
           
           <button 
             type="button" 
-            onClick={() => {
-              refreshInventory();
-              fetchDealerInventory(); // 同時刷新在店庫存
-            }}
+            onClick={refreshInventory}
             style={{ 
               fontSize: 18, 
               padding: '8px 16px',
@@ -238,42 +184,32 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
                 <th>圖片</th>
                 <th>品號</th>
                 <th>售價</th>
-                <th>庫存</th>
                 <th>出貨數量</th>
               </tr>
             </thead>
             <tbody>
-              {sortedParts.map((item, idx) => {
-                const storeStock = dealerInventory[item.id] || 0;
-                return (
-                  <tr key={item.id}>
-                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-                      {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
-                    </td>
-                    <td>{item.name}</td>
-                    <td>NT$ {item.price}</td>
-                    <td style={{ 
-                      fontWeight: 'bold', 
-                      color: storeStock > 0 ? '#28a745' : '#dc3545'
-                    }}>
-                      {storeStock}
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min="0"
-                        id={`quantity-${item.id}`}
-                        name={`quantity-${item.id}`}
-                        value={quantities[idx]}
-                        onChange={e => handleQuantityChange(idx, e.target.value)}
-                        style={{ width: 60 }}
-                        disabled={submitting || storeStock === 0}
-                        placeholder={storeStock === 0 ? "缺貨" : "數量"}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+              {sortedParts.map((item, idx) => (
+                <tr key={item.id}>
+                  <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                    {item.image && <img src={item.image} alt={item.name} style={{ width: 60, height: 60, objectFit: 'cover' }} />}
+                  </td>
+                  <td>{item.name}</td>
+                  <td>NT$ {item.price}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      id={`quantity-${item.id}`}
+                      name={`quantity-${item.id}`}
+                      value={quantities[idx]}
+                      onChange={e => handleQuantityChange(idx, e.target.value)}
+                      style={{ width: 60 }}
+                      disabled={submitting || item.stock === 0}
+                      placeholder={item.stock === 0 ? "缺貨" : "數量"}
+                    />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           

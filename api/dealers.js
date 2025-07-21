@@ -1,7 +1,10 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-const uri = 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+// 使用環境變數替換硬編碼的連線字串
+const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = process.env.DB_NAME || 'hengtong';
+const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
 
 // 連線池配置
 const clientOptions = {
@@ -57,12 +60,17 @@ function validateDealerData(data) {
 }
 
 export default async function handler(req, res) {
-  // CORS 设置
-  const allowedOrigins = [
-    'https://hengtong.vercel.app',
-    'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
-    /^https:\/\/hengtong.*\.vercel\.app$/
-  ];
+  // CORS 設置 - 使用環境變數
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').concat([
+        /^https:\/\/hengtong.*\.vercel\.app$/
+      ])
+    : [
+        'https://hengtong.vercel.app',
+        'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
+        /^https:\/\/hengtong.*\.vercel\.app$/
+      ];
+  
   const origin = req.headers.origin;
   if (allowedOrigins.some(allowed => typeof allowed === 'string' ? allowed === origin : allowed.test(origin))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -79,16 +87,14 @@ export default async function handler(req, res) {
   let client;
   try {
     client = await connectToDatabase();
-    const db = client.db('hengtong');
+    const db = client.db(DB_NAME);
     const collection = db.collection('dealers');
 
     if (req.method === 'GET') {
-      // 获取所有通路商数据
       const dealers = await collection.find({}).toArray();
       res.status(200).json({ success: true, data: dealers });
     }
     else if (req.method === 'POST') {
-      // 新增通路商申请
       const { username, password, name, company, taxId, address, email, phone } = req.body;
       
       // 輸入驗證
@@ -112,9 +118,8 @@ export default async function handler(req, res) {
         return;
       }
       
-      // 密碼加密
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      // 密碼加密 - 使用環境變數的加密強度
+      const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
       
       const newDealer = {
         username: username.trim().toLowerCase(),
@@ -190,5 +195,4 @@ export default async function handler(req, res) {
       error: process.env.NODE_ENV === 'production' ? '伺服器內部錯誤' : error.message 
     });
   }
-  // 注意：不要在這裡關閉連線，讓連線池管理
 }

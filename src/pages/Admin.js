@@ -1,10 +1,9 @@
 import React, { useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../UserContext";
-import { partsData } from './partsData';
 
-
-
+// 在檔案開頭添加 API_BASE_URL 常數
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
 
 function Admin() {
   const navigate = useNavigate();
@@ -45,7 +44,7 @@ function Admin() {
     // 新增：獲取用戶上線狀態
   const fetchOnlineStatus = useCallback(async (dealersList) => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/user-status');
+      const response = await fetch(`${API_BASE_URL}/api/user-status`);
       if (response.ok) {
         const result = await response.json();
         setOnlineStatus(result.data || {});
@@ -60,7 +59,7 @@ function Admin() {
     try {
       setDealersLoading(true);
       setDealersError(null);
-      const response = await fetch('https://hengtong.vercel.app/api/dealers');
+      const response = await fetch(`${API_BASE_URL}/api/dealers`);
       if (response.ok) {
         const result = await response.json();
         setDealers(result.data || []);
@@ -134,7 +133,7 @@ function Admin() {
   const fetchCloudInventory = useCallback(async () => {
     try {
     // 改用 products API 獲取完整商品和庫存數據
-    const response = await fetch('https://hengtong.vercel.app/api/products');
+    const response = await fetch(`${API_BASE_URL}/api/products`);
     if (response.ok) {
       const result = await response.json();
       if (result.success && result.data) {
@@ -152,10 +151,10 @@ function Admin() {
     return cloudPart ? cloudPart.stock : 0;
   };
 
-  // 根據零件名稱獲取成本
+  // 根據零件名稱獲取成本 - 改為使用雲端數據
   const getCostByPartName = (partName) => {
-    const part = partsData.find(p => p.name === partName);
-    return part ? part.cost : 0;
+    const cloudPart = cloudInventory.find(p => p.name === partName || p.id === partName);
+    return cloudPart ? cloudPart.cost : 0;
   };
 
   // 獲取出貨數據
@@ -168,7 +167,7 @@ function Admin() {
       }
       setError(null);
       
-      const response = await fetch('https://hengtong.vercel.app/api/shipments');
+      const response = await fetch(`${API_BASE_URL}/api/shipments`);
       if (response.ok) {
         const result = await response.json();
         const shipments = result.data || [];
@@ -240,7 +239,7 @@ function Admin() {
   // 更新通路商狀態
   const updateDealerStatus = async (dealerId, newStatus) => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/dealers', {
+      const response = await fetch(`${API_BASE_URL}/api/dealers`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -300,7 +299,7 @@ function Admin() {
   // 新增：獲取商品列表
   const fetchProducts = async () => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/products');
+      const response = await fetch(`${API_BASE_URL}/api/products`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
@@ -318,7 +317,7 @@ function Admin() {
       setInventoryLoading(prev => ({ ...prev, [dealerUsername]: true }));
       
       // 修正參數名稱：dealer -> dealerUsername
-      const response = await fetch(`https://hengtong.vercel.app/api/dealer-inventory?dealerUsername=${dealerUsername}`);
+      const response = await fetch(`${API_BASE_URL}/api/dealer-inventory?dealerUsername=${dealerUsername}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -338,7 +337,7 @@ function Admin() {
   // 修正：更新通路商庫存
   const updateDealerInventory = async (dealerUsername, productId, quantity, action) => {
     try {
-      const response = await fetch('https://hengtong.vercel.app/api/dealer-inventory', {
+      const response = await fetch(`${API_BASE_URL}/api/dealer-inventory`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

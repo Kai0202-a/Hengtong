@@ -1,18 +1,24 @@
 import { MongoClient } from 'mongodb';
 
-const uri = 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+// 使用環境變數替換硬編碼的連線字串
+const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = process.env.DB_NAME || 'hengtong';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 設置 SSE 標頭
+  // 設置 SSE 標頭 - 使用環境變數設定 CORS
+  const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').join(', ')
+    : '*';
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigins,
     'Access-Control-Allow-Headers': 'Cache-Control',
     'Access-Control-Allow-Methods': 'GET'
   });
@@ -54,7 +60,7 @@ export default async function handler(req, res) {
     await client.connect();
     console.log('MongoDB 連接成功');
     
-    const db = client.db('hengtong');
+    const db = client.db(DB_NAME);
     const collection = db.collection('shipments');
     
     // 建立變更流

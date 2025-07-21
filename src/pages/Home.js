@@ -34,8 +34,10 @@ function Home() {
     setLoginMsg("");
 
     try {
-      // 使用新的登入 API
-      const response = await fetch('https://hengtong.vercel.app/api/login', {
+      // 使用環境變數替換硬編碼的 URL
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +48,6 @@ function Home() {
       const result = await response.json();
       
       if (result.success) {
-        // 登入成功
         const userObj = {
           username: result.data.username,
           role: "dealer",
@@ -56,9 +57,9 @@ function Home() {
         localStorage.setItem("user", JSON.stringify(userObj));
         setUser(userObj);
         
-        // 新增：更新用戶上線狀態
+        // 更新用戶上線狀態
         try {
-          await fetch('https://hengtong.vercel.app/api/user-status', {
+          await fetch(`${API_BASE_URL}/api/user-status`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -71,13 +72,11 @@ function Home() {
           console.log('上線狀態更新成功');
         } catch (statusError) {
           console.error('上線狀態更新失敗:', statusError);
-          // 不影響登入流程，只記錄錯誤
         }
         
         setLoginMsg("登入成功！");
         setTimeout(() => navigate("/shipping"), 800);
       } else {
-        // 根據不同狀態顯示不同訊息
         if (result.status === 'pending') {
           setLoginMsg(result.message || "您的帳號正在審核中，請等待管理員審核通過後再登入。");
         } else if (result.status === 'suspended') {

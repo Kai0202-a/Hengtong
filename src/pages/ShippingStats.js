@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../UserContext';
-import { partsData } from './partsdata'; // 添加這行
+import { partsData } from './partsData'; // Fix: change 'partsdata' to 'partsData'
 
 function getToday() {
   const d = new Date();
@@ -9,7 +9,7 @@ function getToday() {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-function ShippingStats({ parts, updateInventory, refreshInventory }) {
+function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts 參數
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
   const [submitting, setSubmitting] = useState(false);
@@ -183,7 +183,7 @@ function ShippingStats({ parts, updateInventory, refreshInventory }) {
         await refreshInventory();
         await fetchDealerInventory();
         alert('發送完成！');
-        setQuantities(Array(parts.length).fill(""));
+        setQuantities(Array(partsData.length).fill(""));  // 改為 partsData.length
       } else {
         throw new Error('部分操作失敗');
       }

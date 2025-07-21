@@ -894,26 +894,6 @@ function Admin() {
                                         >
                                           -
                                         </button>
-                                        
-                                        <button
-                                          onClick={() => {
-                                            const quantity = prompt('請輸入要設定的庫存數量:', currentStock);
-                                            if (quantity !== null && !isNaN(quantity) && parseInt(quantity) >= 0) {
-                                              updateDealerInventory(dealer.username, product.id, quantity, 'set');
-                                            }
-                                          }}
-                                          style={{
-                                            padding: '4px 8px',
-                                            background: '#ff9800',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: 3,
-                                            cursor: 'pointer',
-                                            fontSize: 11
-                                          }}
-                                        >
-                                          設定
-                                        </button>
                                       </div>
                                     </div>
                                   );

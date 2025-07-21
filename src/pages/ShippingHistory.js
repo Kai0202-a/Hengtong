@@ -81,28 +81,19 @@ function ShippingHistory() {
           items: [],
           totalQuantity: 0,
           totalAmount: 0,
-          totalCost: 0,
-          totalProfit: 0,
           createdAt: shipment.createdAt || shipment.time
         };
       }
-      
-      const itemCost = getCostByPartName(shipment.partName) * (shipment.quantity || 0);
-      const itemProfit = (shipment.amount || 0) - itemCost;
       
       grouped[groupKey].items.push({
         partName: shipment.partName || '未知商品',
         quantity: shipment.quantity || 0,
         price: shipment.price || 0,
-        amount: shipment.amount || 0,
-        cost: itemCost,
-        profit: itemProfit
+        amount: shipment.amount || 0
       });
       
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;
-      grouped[groupKey].totalCost += itemCost;
-      grouped[groupKey].totalProfit += itemProfit;
     });
     
     return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -239,12 +230,6 @@ function ShippingHistory() {
                 <>
                   <br />
                   <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {record.totalAmount.toLocaleString()}</span>
-                  <br />
-                  <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {record.totalCost.toLocaleString()}</span>
-                  <br />
-                  <span style={{ color: record.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
-                    淨利金額 NT$ {record.totalProfit.toLocaleString()}
-                  </span>
                 </>
               )}
             </div>
@@ -450,7 +435,16 @@ function ShippingHistory() {
                           </div>
                           
                           <div style={{ marginLeft: 12, marginBottom: 8 }}>  
-                            {record.items.map((item, itemIdx) => (
+                            {record.items
+                              .sort((a, b) => {
+                                // 提取商品編號進行排序
+                                const getPartNumber = (partName) => {
+                                  const match = partName.match(/PO-(\d+)/);
+                                  return match ? parseInt(match[1]) : 9999;
+                                };
+                                return getPartNumber(a.partName) - getPartNumber(b.partName);
+                              })
+                              .map((item, itemIdx) => (
                               <div key={itemIdx} style={{ marginBottom: 4, fontSize: 13 }}>
                                 • <span style={{ color: '#e3f2fd' }}>{item.partName}</span> × 
                                 <span style={{ color: '#81c784', fontWeight: 'bold' }}>{item.quantity}</span>
@@ -468,12 +462,6 @@ function ShippingHistory() {
                               <>
                                 <br />
                                 <span style={{ color: '#aaa', marginTop: 4, display: 'inline-block' }}>銷售金額 NT$ {record.totalAmount.toLocaleString()}</span>
-                                <br />
-                                <span style={{ color: '#ff9800', marginTop: 2, display: 'inline-block' }}>成本金額 NT$ {record.totalCost.toLocaleString()}</span>
-                                <br />
-                                <span style={{ color: record.totalProfit >= 0 ? '#4CAF50' : '#f44336', marginTop: 2, display: 'inline-block', fontWeight: 'bold' }}>
-                                  淨利金額 NT$ {record.totalProfit.toLocaleString()}
-                                </span>
                               </>
                             )}
                           </div>

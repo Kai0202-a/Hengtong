@@ -3,7 +3,7 @@ import Home from "./pages/Home";
 import Inventory from "./pages/Inventory";
 import Admin from "./pages`/Admin";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import ShippingStats from './pages/shippingstats';
+import ShippingStats from './pages/ShippingStats';
 import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';

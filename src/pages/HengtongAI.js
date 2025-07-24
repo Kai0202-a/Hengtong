@@ -32,11 +32,6 @@ const HengtongAI = () => {
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
-    if (!apiKey) {
-      alert('請先設定 OpenAI API Key');
-      setShowApiKeyInput(true);
-      return;
-    }
 
     const userMessage = { role: 'user', content: inputMessage };
     setMessages(prev => [...prev, userMessage]);
@@ -44,24 +39,14 @@ const HengtongAI = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // 修改：使用後端 API 而不是直接調用 OpenAI
+      const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: '你是恆通公司的AI助手，專門協助處理庫存管理、訂單處理、數據分析等業務。請用繁體中文回答，並保持專業且友善的語調。'
-            },
-            ...messages,
-            userMessage
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
+          message: inputMessage
         })
       });
 
@@ -72,7 +57,7 @@ const HengtongAI = () => {
       const data = await response.json();
       const assistantMessage = {
         role: 'assistant',
-        content: data.choices[0].message.content
+        content: data.message
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -80,7 +65,7 @@ const HengtongAI = () => {
       console.error('發送訊息失敗:', error);
       const errorMessage = {
         role: 'assistant',
-        content: '抱歉，發生錯誤。請檢查您的 API Key 是否正確，或稍後再試。'
+        content: '抱歉，發生錯誤。請稍後再試。'
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {

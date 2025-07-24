@@ -12,7 +12,6 @@ const MonthlyBilling = () => {
   const [billingData, setBillingData] = useState({});
   const [companies, setCompanies] = useState([]);
   const [availableMonths, setAvailableMonths] = useState([]);
-  const [sortBy, setSortBy] = useState('date'); // 新增排序選項
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
 
@@ -118,7 +117,7 @@ const MonthlyBilling = () => {
     return new Date(dateString).toLocaleDateString('zh-TW');
   };
 
-  // 獲取選定的帳單資料並排序
+  // 獲取選定的帳單資料（固定按日期排序）
   const getSelectedBillingData = () => {
     if (!selectedCompany || !selectedMonth || !billingData[selectedCompany]) {
       return null;
@@ -126,20 +125,9 @@ const MonthlyBilling = () => {
     
     const data = { ...billingData[selectedCompany][selectedMonth] };
     
-    // 根據選擇的排序方式排序品項
+    // 固定按日期排序（最新日期在前）
     data.items = [...data.items].sort((a, b) => {
-      switch (sortBy) {
-        case 'date':
-          return new Date(b.time) - new Date(a.time); // 最新日期在前
-        case 'name':
-          return a.partName.localeCompare(b.partName, 'zh-TW'); // 商品名稱 A-Z
-        case 'quantity':
-          return b.quantity - a.quantity; // 數量大到小
-        case 'amount':
-          return b.amount - a.amount; // 金額大到小
-        default:
-          return 0;
-      }
+      return new Date(b.time) - new Date(a.time);
     });
     
     return data;
@@ -159,8 +147,8 @@ const MonthlyBilling = () => {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
+        background: '#23272f',
+        color: '#f5f6fa',
         fontSize: 18
       }}>
         <div style={{ textAlign: 'center' }}>
@@ -176,35 +164,32 @@ const MonthlyBilling = () => {
       padding: 20, 
       maxWidth: 1200, 
       margin: '0 auto', 
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', 
+      background: '#23272f', 
       minHeight: '100vh' 
     }}>
       {/* 控制面板 */}
       <div style={{ 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+        background: '#2c3e50', 
         padding: 24, 
-        borderRadius: 16, 
+        borderRadius: 12, 
         marginBottom: 24, 
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        color: 'white'
+        boxShadow: '0 2px 12px #0002',
+        color: '#f5f6fa'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <h2 style={{ margin: 0, color: 'white', fontSize: 28, fontWeight: '600' }}>💰 月度帳單統計</h2>
+          <h2 style={{ margin: 0, color: '#f5f6fa', fontSize: 28, fontWeight: '600' }}>💰 月度帳單統計</h2>
           <button 
             onClick={() => navigate('/admin')}
             style={{
               padding: '12px 24px',
-              background: 'rgba(255,255,255,0.2)',
+              background: '#ff9800',
               color: 'white',
-              border: '1px solid rgba(255,255,255,0.3)',
+              border: 'none',
               borderRadius: 8,
               cursor: 'pointer',
               fontWeight: '500',
-              transition: 'all 0.3s ease',
-              backdropFilter: 'blur(10px)'
+              fontSize: 14
             }}
-            onMouseOver={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-            onMouseOut={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
           >
             ← 返回管理頁面
           </button>
@@ -212,7 +197,7 @@ const MonthlyBilling = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 24 }}>
           <div>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: '500', color: 'rgba(255,255,255,0.9)' }}>選擇商家：</label>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: '500', color: '#f5f6fa' }}>選擇商家：</label>
             <select 
               value={selectedCompany} 
               onChange={(e) => setSelectedCompany(e.target.value)}
@@ -222,8 +207,8 @@ const MonthlyBilling = () => {
                 border: 'none',
                 borderRadius: 8,
                 fontSize: 14,
-                background: 'rgba(255,255,255,0.9)',
-                color: '#333',
+                background: '#34495e',
+                color: '#f5f6fa',
                 outline: 'none'
               }}
             >
@@ -235,7 +220,7 @@ const MonthlyBilling = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: '500', color: 'rgba(255,255,255,0.9)' }}>選擇月份：</label>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: '500', color: '#f5f6fa' }}>選擇月份：</label>
             <select 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -245,8 +230,8 @@ const MonthlyBilling = () => {
                 border: 'none',
                 borderRadius: 8,
                 fontSize: 14,
-                background: 'rgba(255,255,255,0.9)',
-                color: '#333',
+                background: '#34495e',
+                color: '#f5f6fa',
                 outline: 'none'
               }}
             >
@@ -256,29 +241,6 @@ const MonthlyBilling = () => {
               ))}
             </select>
           </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: '500', color: 'rgba(255,255,255,0.9)' }}>排序方式：</label>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: 'none',
-                borderRadius: 8,
-                fontSize: 14,
-                background: 'rgba(255,255,255,0.9)',
-                color: '#333',
-                outline: 'none'
-              }}
-            >
-              <option value="date">依日期排序</option>
-              <option value="name">依商品名稱</option>
-              <option value="quantity">依數量排序</option>
-              <option value="amount">依金額排序</option>
-            </select>
-          </div>
         </div>
 
         {selectedData && (
@@ -286,38 +248,30 @@ const MonthlyBilling = () => {
             <button 
               onClick={handlePrint}
               style={{
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                padding: '16px',
+                background: '#4CAF50',
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: 14,
-                boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)',
-                transition: 'all 0.3s ease'
+                fontWeight: 'bold',
+                fontSize: 16
               }}
-              onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
             >
               🖨️ 列印帳單
             </button>
             <button 
               onClick={generateImage}
               style={{
-                padding: '12px 24px',
-                background: 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)',
+                padding: '16px',
+                background: '#2196F3',
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
                 cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: 14,
-                boxShadow: '0 4px 15px rgba(33, 150, 243, 0.3)',
-                transition: 'all 0.3s ease'
+                fontWeight: 'bold',
+                fontSize: 16
               }}
-              onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
             >
               📷 生成圖片
             </button>
@@ -329,51 +283,47 @@ const MonthlyBilling = () => {
       {selectedData ? (
         <div 
           ref={printRef}
+          className="print-content"
           style={{
             background: '#fff',
             padding: 40,
-            borderRadius: 16,
-            boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-            border: '1px solid rgba(0,0,0,0.05)'
+            borderRadius: 12,
+            boxShadow: '0 2px 12px #0002'
           }}
         >
           {/* 帳單標題 */}
           <div style={{ 
             textAlign: 'center', 
             marginBottom: 40, 
-            borderBottom: '3px solid #667eea', 
-            paddingBottom: 24,
-            background: 'linear-gradient(135deg, #f8f9ff 0%, #e8eaff 100%)',
-            margin: '-40px -40px 40px -40px',
-            padding: '40px 40px 24px 40px',
-            borderRadius: '16px 16px 0 0'
+            borderBottom: '3px solid #2c3e50', 
+            paddingBottom: 24
           }}>
-            <h1 style={{ margin: 0, fontSize: 32, color: '#667eea', fontWeight: '700' }}>月度出貨帳單</h1>
-            <p style={{ margin: '12px 0 0 0', fontSize: 16, color: '#8892b0', fontWeight: '500' }}>Monthly Shipping Invoice</p>
+            <h1 style={{ margin: 0, fontSize: 32, color: '#2c3e50', fontWeight: '700' }}>月度出貨帳單</h1>
+            <p style={{ margin: '12px 0 0 0', fontSize: 16, color: '#666', fontWeight: '500' }}>Monthly Shipping Invoice</p>
           </div>
 
           {/* 帳單資訊 */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 40 }}>
             <div style={{ 
               padding: 24, 
-              background: 'linear-gradient(135deg, #f8f9ff 0%, #e8eaff 100%)', 
+              background: '#f8f9fa', 
               borderRadius: 12,
-              border: '1px solid #e1e5f2'
+              border: '1px solid #dee2e6'
             }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#667eea', borderBottom: '2px solid #667eea', paddingBottom: 8, fontWeight: '600' }}>客戶資訊</h3>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#2d3748' }}><strong style={{ color: '#667eea' }}>公司名稱：</strong>{selectedCompany}</p>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#2d3748' }}><strong style={{ color: '#667eea' }}>帳單月份：</strong>{selectedMonth}</p>
+              <h3 style={{ margin: '0 0 20px 0', color: '#2c3e50', borderBottom: '2px solid #2c3e50', paddingBottom: 8, fontWeight: '600' }}>客戶資訊</h3>
+              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>公司名稱：</strong>{selectedCompany}</p>
+              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>帳單月份：</strong>{selectedMonth}</p>
             </div>
             <div style={{ 
               padding: 24, 
-              background: 'linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%)', 
+              background: '#f8f9fa', 
               borderRadius: 12,
-              border: '1px solid #feb2b2'
+              border: '1px solid #dee2e6'
             }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#e53e3e', borderBottom: '2px solid #e53e3e', paddingBottom: 8, fontWeight: '600' }}>帳單摘要</h3>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#2d3748' }}><strong style={{ color: '#e53e3e' }}>總數量：</strong>{selectedData.totalQuantity.toLocaleString()} 件</p>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#2d3748' }}><strong style={{ color: '#e53e3e' }}>總金額：</strong>{formatCurrency(selectedData.totalAmount)}</p>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#2d3748' }}><strong style={{ color: '#e53e3e' }}>開立日期：</strong>{formatDate(new Date())}</p>
+              <h3 style={{ margin: '0 0 20px 0', color: '#2c3e50', borderBottom: '2px solid #2c3e50', paddingBottom: 8, fontWeight: '600' }}>帳單摘要</h3>
+              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>總數量：</strong>{selectedData.totalQuantity.toLocaleString()} 件</p>
+              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>總金額：</strong>{formatCurrency(selectedData.totalAmount)}</p>
+              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>開立日期：</strong>{formatDate(new Date())}</p>
             </div>
           </div>
 
@@ -381,16 +331,16 @@ const MonthlyBilling = () => {
           <div style={{ marginBottom: 40 }}>
             <h3 style={{ 
               margin: '0 0 20px 0', 
-              color: '#2d3748', 
-              borderBottom: '2px solid #667eea', 
+              color: '#2c3e50', 
+              borderBottom: '2px solid #2c3e50', 
               paddingBottom: 12, 
               fontWeight: '600',
               fontSize: 20
-            }}>商品明細</h3>
-            <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+            }}>商品明細（按日期排序）</h3>
+            <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #dee2e6' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                  <tr style={{ background: '#2c3e50' }}>
                     <th style={{ padding: 16, border: 'none', textAlign: 'left', color: 'white', fontWeight: '600' }}>出貨日期</th>
                     <th style={{ padding: 16, border: 'none', textAlign: 'left', color: 'white', fontWeight: '600' }}>商品名稱</th>
                     <th style={{ padding: 16, border: 'none', textAlign: 'center', color: 'white', fontWeight: '600' }}>數量</th>
@@ -401,23 +351,22 @@ const MonthlyBilling = () => {
                 <tbody>
                   {selectedData.items.map((item, index) => (
                     <tr key={index} style={{ 
-                      background: index % 2 === 0 ? '#f8f9ff' : 'white',
-                      transition: 'background-color 0.2s ease'
+                      background: index % 2 === 0 ? '#f8f9fa' : 'white'
                     }}>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #e2e8f0', color: '#4a5568' }}>{formatDate(item.time)}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #e2e8f0', color: '#2d3748', fontWeight: '500' }}>{item.partName}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #e2e8f0', textAlign: 'center', color: '#667eea', fontWeight: '600' }}>{item.quantity}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #e2e8f0', textAlign: 'right', color: '#4a5568' }}>{formatCurrency(item.price)}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #e2e8f0', textAlign: 'right', color: '#e53e3e', fontWeight: '600' }}>{formatCurrency(item.amount)}</td>
+                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', color: '#666' }}>{formatDate(item.time)}</td>
+                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', color: '#333', fontWeight: '500' }}>{item.partName}</td>
+                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', textAlign: 'center', color: '#2c3e50', fontWeight: '600' }}>{item.quantity}</td>
+                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', textAlign: 'right', color: '#666' }}>{formatCurrency(item.price)}</td>
+                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', textAlign: 'right', color: '#e74c3c', fontWeight: '600' }}>{formatCurrency(item.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ background: 'linear-gradient(135deg, #2d3748 0%, #4a5568 100%)' }}>
+                  <tr style={{ background: '#34495e' }}>
                     <td colSpan="2" style={{ padding: 16, border: 'none', textAlign: 'right', color: 'white', fontWeight: '700', fontSize: 16 }}>總計：</td>
-                    <td style={{ padding: 16, border: 'none', textAlign: 'center', color: '#ffd700', fontWeight: '700', fontSize: 16 }}>{selectedData.totalQuantity}</td>
+                    <td style={{ padding: 16, border: 'none', textAlign: 'center', color: '#f39c12', fontWeight: '700', fontSize: 16 }}>{selectedData.totalQuantity}</td>
                     <td style={{ padding: 16, border: 'none' }}></td>
-                    <td style={{ padding: 16, border: 'none', textAlign: 'right', color: '#ffd700', fontWeight: '700', fontSize: 16 }}>{formatCurrency(selectedData.totalAmount)}</td>
+                    <td style={{ padding: 16, border: 'none', textAlign: 'right', color: '#f39c12', fontWeight: '700', fontSize: 16 }}>{formatCurrency(selectedData.totalAmount)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -428,12 +377,12 @@ const MonthlyBilling = () => {
           <div style={{ 
             marginTop: 40, 
             padding: 24, 
-            background: 'linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%)', 
+            background: '#f8f9fa', 
             borderRadius: 12,
-            border: '1px solid #9ae6b4'
+            border: '1px solid #dee2e6'
           }}>
-            <h4 style={{ margin: '0 0 16px 0', color: '#22543d', fontWeight: '600' }}>📋 備註事項：</h4>
-            <p style={{ margin: 0, fontSize: 14, color: '#2f855a', lineHeight: 1.8 }}>
+            <h4 style={{ margin: '0 0 16px 0', color: '#2c3e50', fontWeight: '600' }}>📋 備註事項：</h4>
+            <p style={{ margin: 0, fontSize: 14, color: '#666', lineHeight: 1.8 }}>
               1. 本帳單為系統自動生成，如有疑問請聯繫相關人員。<br/>
               2. 請於收到帳單後 30 天內完成付款。<br/>
               3. 如有任何問題，請及時與我們聯繫。
@@ -442,28 +391,28 @@ const MonthlyBilling = () => {
         </div>
       ) : (
         <div style={{
-          background: 'linear-gradient(135deg, #fff 0%, #f8f9ff 100%)',
+          background: '#2c3e50',
           padding: 60,
-          borderRadius: 16,
+          borderRadius: 12,
           textAlign: 'center',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
-          border: '1px solid rgba(0,0,0,0.05)'
+          boxShadow: '0 2px 12px #0002',
+          color: '#f5f6fa'
         }}>
           <div style={{ fontSize: 48, marginBottom: 20 }}>📊</div>
-          <p style={{ fontSize: 20, color: '#667eea', fontWeight: '500', margin: 0 }}>請選擇商家和月份以查看帳單</p>
+          <p style={{ fontSize: 20, color: '#f5f6fa', fontWeight: '500', margin: 0 }}>請選擇商家和月份以查看帳單</p>
         </div>
       )}
 
       {/* 列印樣式 */}
-      <style jsx>{`
+      <style>{`
         @media print {
           body * {
             visibility: hidden;
           }
-          .print-area, .print-area * {
+          .print-content, .print-content * {
             visibility: visible;
           }
-          .print-area {
+          .print-content {
             position: absolute;
             left: 0;
             top: 0;

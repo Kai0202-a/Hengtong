@@ -23,10 +23,17 @@ export default async function handler(req, res) {
     // 從環境變數獲取 API Key
     const apiKey = process.env.OPENAI_API_KEY;
     
+    // 添加調試信息
+    console.log('API Key exists:', !!apiKey);
+    console.log('API Key length:', apiKey ? apiKey.length : 0);
+    console.log('Environment:', process.env.NODE_ENV);
+    
     if (!apiKey) {
+      console.error('OPENAI_API_KEY not found in environment variables');
       return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
+    console.log('Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -50,16 +57,21 @@ export default async function handler(req, res) {
       }),
     });
 
+    console.log('OpenAI response status:', response.status);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
     const aiMessage = data.choices[0]?.message?.content || '抱歉，我無法處理您的請求。';
 
+    console.log('AI response received successfully');
     res.status(200).json({ message: aiMessage });
   } catch (error) {
     console.error('AI Chat Error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 }

@@ -12,8 +12,6 @@ const HengtongAI = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
-  const [apiKey, setApiKey] = useState(localStorage.getItem('openai_api_key') || '');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(!apiKey);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -22,13 +20,6 @@ const HengtongAI = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const saveApiKey = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem('openai_api_key', apiKey.trim());
-      setShowApiKeyInput(false);
-    }
-  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -39,7 +30,6 @@ const HengtongAI = () => {
     setIsLoading(true);
 
     try {
-      // 修改：使用後端 API 而不是直接調用 OpenAI
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
@@ -108,20 +98,6 @@ const HengtongAI = () => {
           <h2 style={{ margin: 0, color: '#f5f6fa', fontSize: 28, fontWeight: '600' }}>🤖 恆通AI助手</h2>
           <div style={{ display: 'flex', gap: 12 }}>
             <button
-              onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-              style={{
-                padding: '8px 16px',
-                background: '#34495e',
-                color: '#f5f6fa',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                fontSize: 14
-              }}
-            >
-              🔑 API設定
-            </button>
-            <button
               onClick={clearChat}
               style={{
                 padding: '8px 16px',
@@ -151,54 +127,6 @@ const HengtongAI = () => {
             </button>
           </div>
         </div>
-
-        {/* API Key 設定區域 */}
-        {showApiKeyInput && (
-          <div style={{
-            marginTop: 20,
-            padding: 16,
-            background: '#34495e',
-            borderRadius: 8,
-            border: '1px solid #4a5f7a'
-          }}>
-            <label style={{ display: 'block', marginBottom: 8, color: '#f5f6fa', fontSize: 14 }}>
-              OpenAI API Key：
-            </label>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="請輸入您的 OpenAI API Key"
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  border: 'none',
-                  borderRadius: 6,
-                  background: '#23272f',
-                  color: '#f5f6fa',
-                  outline: 'none'
-                }}
-              />
-              <button
-                onClick={saveApiKey}
-                style={{
-                  padding: '8px 16px',
-                  background: '#27ae60',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer'
-                }}
-              >
-                保存
-              </button>
-            </div>
-            <p style={{ margin: '8px 0 0 0', fontSize: 12, color: '#bdc3c7' }}>
-              API Key 將安全地儲存在您的瀏覽器本地，不會上傳到伺服器。
-            </p>
-          </div>
-        )}
       </div>
 
       {/* 聊天區域 */}

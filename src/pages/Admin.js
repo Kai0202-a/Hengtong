@@ -967,6 +967,22 @@ function Admin() {
           </button>
           
           <button 
+            onClick={() => navigate('/monthly-billing')}
+            style={{ 
+              padding: '16px', 
+              background: '#E91E63', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}
+          >
+            💰 月度帳單統計
+          </button>
+          
+          <button 
             onClick={() => {
               const confirmed = window.confirm('確定要備份數據嗎？');
               if (confirmed) {

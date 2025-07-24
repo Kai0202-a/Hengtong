@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
 import ShippingHistory from './pages/ShippingHistory';
+import MonthlyBilling from './pages/MonthlyBilling';
 
 function App() {
   // 移除本地庫存，只保留零件基本資訊
@@ -131,6 +132,7 @@ function App() {
             <Route path="/shipping" element={<ShippingStats parts={parts} updateInventory={updateInventory} refreshInventory={fetchInventory} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/shipping-history" element={<ShippingHistory />} />
+            <Route path="/monthly-billing" element={<MonthlyBilling />} />
           </Routes>
         </div>
       </Router>

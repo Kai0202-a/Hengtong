@@ -14,23 +14,39 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('=== AI Chat API Called ===');
+    console.log('Request method:', req.method);
+    console.log('Request body:', req.body);
+    
     const { message } = req.body;
     
     if (!message) {
+      console.log('ERROR: No message provided');
       return res.status(400).json({ error: 'Message is required' });
     }
 
     // 從環境變數獲取 API Key
     const apiKey = process.env.OPENAI_API_KEY;
     
-    // 添加調試信息
-    console.log('API Key exists:', !!apiKey);
-    console.log('API Key length:', apiKey ? apiKey.length : 0);
-    console.log('Environment:', process.env.NODE_ENV);
+    // 詳細的調試信息
+    console.log('Environment variables check:');
+    console.log('- NODE_ENV:', process.env.NODE_ENV);
+    console.log('- VERCEL_ENV:', process.env.VERCEL_ENV);
+    console.log('- API Key exists:', !!apiKey);
+    console.log('- API Key length:', apiKey ? apiKey.length : 0);
+    console.log('- API Key starts with sk-:', apiKey ? apiKey.startsWith('sk-') : false);
     
     if (!apiKey) {
-      console.error('OPENAI_API_KEY not found in environment variables');
-      return res.status(500).json({ error: 'OpenAI API key not configured' });
+      console.error('CRITICAL ERROR: OPENAI_API_KEY not found in environment variables');
+      console.log('Available env vars:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
+      return res.status(500).json({ 
+        error: 'OpenAI API key not configured',
+        debug: {
+          env: process.env.NODE_ENV,
+          vercelEnv: process.env.VERCEL_ENV,
+          hasApiKey: !!apiKey
+        }
+      });
     }
 
     console.log('Calling OpenAI API...');
@@ -58,20 +74,34 @@ export default async function handler(req, res) {
     });
 
     console.log('OpenAI response status:', response.status);
+    console.log('OpenAI response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('OpenAI API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response data:', data);
+    
     const aiMessage = data.choices[0]?.message?.content || '抱歉，我無法處理您的請求。';
 
-    console.log('AI response received successfully');
+    console.log('AI response sent successfully');
     res.status(200).json({ message: aiMessage });
   } catch (error) {
-    console.error('AI Chat Error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    console.error('=== AI Chat Error ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error.message,
+      type: error.constructor.name
+    });
   }
 }

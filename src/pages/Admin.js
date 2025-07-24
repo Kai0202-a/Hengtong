@@ -983,6 +983,23 @@ function Admin() {
           </button>
           
           <button 
+            onClick={() => navigate('/hengtong-ai')}
+            style={{ 
+              padding: '16px', 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold',
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            🤖 恆通AI
+          </button>
+          
+          <button 
             onClick={() => {
               const confirmed = window.confirm('確定要備份數據嗎？');
               if (confirmed) {

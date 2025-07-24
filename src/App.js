@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
 import ShippingHistory from './pages/ShippingHistory';
 import MonthlyBilling from './pages/MonthlyBilling';
+import HengtongAI from './pages/HengtongAI'; // 新增導入
 
 function App() {
   // 移除本地庫存，只保留零件基本資訊
@@ -133,6 +134,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/shipping-history" element={<ShippingHistory />} />
             <Route path="/monthly-billing" element={<MonthlyBilling />} />
+            <Route path="/hengtong-ai" element={<HengtongAI />} /> {/* 新增路由 */}
           </Routes>
         </div>
       </Router>

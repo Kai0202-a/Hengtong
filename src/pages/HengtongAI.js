@@ -22,9 +22,13 @@ const HengtongAI = () => {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+    if (!inputMessage.trim()) return;
 
-    const userMessage = { role: 'user', content: inputMessage };
+    const userMessage = {
+      role: 'user',
+      content: inputMessage
+    };
+
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
@@ -41,7 +45,15 @@ const HengtongAI = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`API 請求失敗: ${response.status}`);
+        // 嘗試獲取詳細錯誤信息
+        let errorDetails = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorDetails = errorData.details || errorData.error || errorDetails;
+        } catch (e) {
+          // 如果無法解析 JSON，使用狀態碼
+        }
+        throw new Error(`API 請求失敗: ${errorDetails}`);
       }
 
       const data = await response.json();
@@ -53,11 +65,20 @@ const HengtongAI = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('發送訊息失敗:', error);
-      const errorMessage = {
+      
+      // 顯示詳細錯誤信息
+      let errorMessage = '抱歉，發生錯誤。請稍後再試。';
+      
+      if (error.message.includes('API 請求失敗')) {
+        errorMessage = `錯誤詳情: ${error.message}\n\n可能的解決方案：\n1. 檢查 Vercel 環境變數 OPENAI_API_KEY 設定\n2. 確認 OpenAI API Key 是否有效\n3. 檢查網路連接狀況\n4. 查看瀏覽器開發者工具的 Network 標籤獲取更多信息`;
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = '網路連接失敗，請檢查您的網路連接。';
+      }
+      
+      setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '抱歉，發生錯誤。請稍後再試。'
-      };
-      setMessages(prev => [...prev, errorMessage]);
+        content: errorMessage
+      }]);
     } finally {
       setIsLoading(false);
     }

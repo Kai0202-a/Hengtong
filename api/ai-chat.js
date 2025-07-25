@@ -61,6 +61,12 @@ async function getDealerInventoryData(client, dealerName) {
   const productsWithStock = Object.keys(inventory).filter(id => inventory[id] > 0).length;
   const productsWithoutStock = totalProducts - productsWithStock;
   
+  // 新增：庫存異常檢測
+  const stockValues = Object.values(inventory).filter(stock => stock > 0);
+  const uniqueStockValues = [...new Set(stockValues)];
+  const isUniformStock = uniqueStockValues.length === 1;
+  const averageStock = stockValues.length > 0 ? stockValues.reduce((a, b) => a + b, 0) / stockValues.length : 0;
+  
   return {
     dealer,
     inventory,
@@ -68,7 +74,11 @@ async function getDealerInventoryData(client, dealerName) {
     stats: {
       totalProducts,
       productsWithStock,
-      productsWithoutStock
+      productsWithoutStock,
+      isUniformStock, // 是否所有商品庫存數量相同
+      averageStock,   // 平均庫存數量
+      uniqueStockValues, // 不重複的庫存數值
+      missingProductIds: products.filter(p => !inventory[p.id]).map(p => p.id) // 缺少庫存的商品ID
     }
   };
 }

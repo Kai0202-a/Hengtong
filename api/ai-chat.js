@@ -1,3 +1,47 @@
+import { MongoClient } from 'mongodb';
+
+// MongoDB 連接配置
+const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = process.env.DB_NAME || 'hengtong';
+
+// 數據庫連接函數
+async function connectToDatabase() {
+  const client = new MongoClient(uri);
+  await client.connect();
+  return client;
+}
+
+// 獲取庫存數據
+async function getInventoryData(client) {
+  const db = client.db(DB_NAME);
+  const inventory = await db.collection('inventory').find({}).toArray();
+  const products = await db.collection('products').find({}).toArray();
+  return { inventory, products };
+}
+
+// 獲取通路商數據
+async function getDealersData(client) {
+  const db = client.db(DB_NAME);
+  const dealers = await db.collection('dealers').find({}).toArray();
+  return dealers;
+}
+
+// 分析用戶問題並決定需要什麼數據
+function analyzeUserQuery(message) {
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('庫存') || lowerMessage.includes('商品') || lowerMessage.includes('產品')) {
+    return 'inventory';
+  }
+  if (lowerMessage.includes('通路商') || lowerMessage.includes('經銷商') || lowerMessage.includes('代理商')) {
+    return 'dealers';
+  }
+  if (lowerMessage.includes('訂單') || lowerMessage.includes('出貨')) {
+    return 'orders';
+  }
+  return 'general';
+}
+
 export default async function handler(req, res) {
   // 設定 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,6 +93,24 @@ export default async function handler(req, res) {
       });
     }
 
+    let client;
+    let contextData = '';
+    
+    // 根據用戶問題獲取相關數據
+    const queryType = analyzeUserQuery(message);
+    
+    if (queryType !== 'general') {
+      client = await connectToDatabase();
+      
+      if (queryType === 'inventory') {
+        const { inventory, products } = await getInventoryData(client);
+        contextData = `\n\n當前庫存數據：\n${JSON.stringify(inventory.slice(0, 10), null, 2)}\n\n商品資料：\n${JSON.stringify(products.slice(0, 10), null, 2)}`;
+      } else if (queryType === 'dealers') {
+        const dealers = await getDealersData(client);
+        contextData = `\n\n通路商數據：\n${JSON.stringify(dealers.map(d => ({name: d.name, company: d.company, status: d.status})), null, 2)}`;
+      }
+    }
+
     console.log('Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -61,7 +123,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: '你是恆通公司的AI助手，專門協助處理公司相關業務問題。請用繁體中文回答。'
+            content: `你是恆通公司的AI助手，專門協助處理公司相關業務問題。請用繁體中文回答。\n\n你可以協助：\n1. 庫存查詢和管理\n2. 商品信息查詢\n3. 通路商管理\n4. 數據分析\n\n${contextData ? '以下是相關的實時數據，請根據這些數據回答用戶問題：' + contextData : ''}`
           },
           {
             role: 'user',
@@ -93,6 +155,12 @@ export default async function handler(req, res) {
 
     console.log('AI response sent successfully');
     res.status(200).json({ message: aiMessage });
+    
+    // 記得關閉數據庫連接
+    if (client) {
+      await client.close();
+    }
+    
   } catch (error) {
     console.error('=== AI Chat Error ===');
     console.error('Error type:', error.constructor.name);

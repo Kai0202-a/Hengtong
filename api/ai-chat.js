@@ -30,6 +30,7 @@ async function getDealersData(client) {
 }
 
 // 獲取特定通路商的庫存數據
+// 在 getDealerInventoryData 函數中增強邏輯
 async function getDealerInventoryData(client, dealerName) {
   const db = client.db(DB_NAME);
   
@@ -51,13 +52,24 @@ async function getDealerInventoryData(client, dealerName) {
     dealerUsername: dealer.username
   });
   
-  // 獲取商品資料以便顯示商品名稱
+  // 獲取所有商品資料
   const products = await db.collection('products').find({}).toArray();
+  
+  // 統計庫存信息
+  const inventory = dealerInventory?.inventory || {};
+  const totalProducts = products.length;
+  const productsWithStock = Object.keys(inventory).filter(id => inventory[id] > 0).length;
+  const productsWithoutStock = totalProducts - productsWithStock;
   
   return {
     dealer,
-    inventory: dealerInventory?.inventory || {},
-    products
+    inventory,
+    products,
+    stats: {
+      totalProducts,
+      productsWithStock,
+      productsWithoutStock
+    }
   };
 }
 
@@ -349,5 +361,139 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('AI 聊天處理失敗:', error);
     res.status(500).json({ error: '處理請求時發生錯誤' });
+  }
+}
+
+// 新增：獲取數據庫概覽的函數
+async function getDatabaseOverview(client) {
+  const db = client.db(DB_NAME);
+  
+  try {
+    // 獲取所有集合的統計信息
+    const collections = await db.listCollections().toArray();
+    const overview = {};
+    
+    for (const collection of collections) {
+      const collectionName = collection.name;
+      const coll = db.collection(collectionName);
+      
+      // 獲取文檔數量
+      const count = await coll.countDocuments();
+      
+      // 獲取樣本數據（前3筆）
+      const samples = await coll.find({}).limit(3).toArray();
+      
+      // 獲取集合統計
+      const stats = await coll.stats().catch(() => null);
+      
+      overview[collectionName] = {
+        documentCount: count,
+        sampleData: samples,
+        storageSize: stats?.storageSize || 0,
+        avgDocumentSize: stats?.avgObjSize || 0
+      };
+    }
+    
+    return overview;
+  } catch (error) {
+    console.error('獲取數據庫概覽失敗:', error);
+    return {};
+  }
+}
+
+// 新增：分析數據庫查詢類型
+function analyzeDatabaseQuery(message) {
+  const lowerMessage = message.toLowerCase();
+  
+  // 檢查是否為數據庫概覽查詢
+  const overviewKeywords = ['數據庫', '資料庫', '集合', '概覽', '結構', '所有數據'];
+  const hasOverviewKeyword = overviewKeywords.some(keyword => 
+    lowerMessage.includes(keyword)
+  );
+  
+  if (hasOverviewKeyword) {
+    return { type: 'database_overview' };
+  }
+  
+  // 檢查特定集合查詢
+  const collectionKeywords = {
+    'dealers': ['通路商', '經銷商', '代理商'],
+    'dealer_inventory': ['店家庫存', '通路商庫存'],
+    'inventory': ['總庫存', '雲端庫存'],
+    'products': ['商品', '產品', '零件'],
+    'shipments': ['出貨', '訂單', '交易'],
+    'user_sessions': ['用戶', '會話', '登入']
+  };
+  
+  for (const [collection, keywords] of Object.entries(collectionKeywords)) {
+    if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+      return { type: 'collection_query', collection };
+    }
+  }
+  
+  return { type: 'general' };
+}
+
+// 修改主處理函數，添加數據庫查詢支援
+export default async function handler(req, res) {
+  // ... 現有的 CORS 和驗證邏輯 ...
+  
+  try {
+    const { message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ error: '訊息不能為空' });
+    }
+    
+    const client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db(DB_NAME);
+    
+    // 分析查詢類型
+    const queryAnalysis = analyzeUserQuery(message);
+    const dbAnalysis = analyzeDatabaseQuery(message);
+    const billingAnalysis = analyzeBillingQuery(message);
+    
+    let contextData = '';
+    
+    // 根據查詢類型獲取相關數據
+    if (dbAnalysis.type === 'database_overview') {
+      const overview = await getDatabaseOverview(client);
+      contextData = `\n\n完整數據庫概覽：\n${JSON.stringify(overview, null, 2)}`;
+    } else if (dbAnalysis.type === 'collection_query') {
+      const collection = db.collection(dbAnalysis.collection);
+      const data = await collection.find({}).limit(20).toArray();
+      const count = await collection.countDocuments();
+      contextData = `\n\n${dbAnalysis.collection} 集合數據（共 ${count} 筆，顯示前 20 筆）：\n${JSON.stringify(data, null, 2)}`;
+    }
+    // ... 其他現有的查詢邏輯 ...
+    
+    // 調用 OpenAI API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: `你是恆通公司的AI助手，專門協助處理公司相關業務問題。請用繁體中文回答。\n\n你可以協助：\n1. 庫存查詢和管理（包括總庫存和各店家庫存）\n2. 商品信息查詢\n3. 通路商管理\n4. 出貨記錄和帳單查詢\n5. 數據庫結構和數據分析\n\n數據庫集合說明：\n- dealers: 通路商基本資料\n- dealer_inventory: 各通路商庫存數據\n- inventory: 公司總庫存\n- products: 商品基本資料\n- shipments: 出貨交易記錄\n- user_sessions: 用戶會話管理\n\n請根據提供的數據給出準確、有用的回答。${contextData}`
+          },
+          {
+            role: 'user',
+            content: message
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      })
+    });
+    
+    // ... 處理回應邏輯 ...
+  } catch (error) {
+    // ... 錯誤處理 ...
   }
 }

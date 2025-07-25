@@ -30,7 +30,6 @@ async function getDealersData(client) {
 }
 
 // 獲取特定通路商的庫存數據
-// 在 getDealerInventoryData 函數中增強邏輯
 async function getDealerInventoryData(client, dealerName) {
   const db = client.db(DB_NAME);
   
@@ -64,8 +63,41 @@ async function getDealerInventoryData(client, dealerName) {
   // 新增：庫存異常檢測
   const stockValues = Object.values(inventory).filter(stock => stock > 0);
   const uniqueStockValues = [...new Set(stockValues)];
-  const isUniformStock = uniqueStockValues.length === 1;
+  const isUniformStock = uniqueStockValues.length === 1 && stockValues.length > 0;
   const averageStock = stockValues.length > 0 ? stockValues.reduce((a, b) => a + b, 0) / stockValues.length : 0;
+  
+  // 檢查商品ID連續性
+  const productIds = products.map(p => parseInt(p.id)).sort((a, b) => a - b);
+  const inventoryIds = Object.keys(inventory).map(id => parseInt(id)).sort((a, b) => a - b);
+  const missingIds = productIds.filter(id => !inventoryIds.includes(id));
+  
+  // 庫存分析報告
+  const analysis = {
+    isUniformStock,
+    uniformValue: isUniformStock ? uniqueStockValues[0] : null,
+    averageStock: Math.round(averageStock * 100) / 100,
+    stockDistribution: uniqueStockValues,
+    missingProductCount: missingIds.length,
+    missingProductIds: missingIds,
+    suspiciousPatterns: [],
+    recommendations: []
+  };
+  
+  // 異常模式檢測
+  if (isUniformStock) {
+    analysis.suspiciousPatterns.push('所有商品庫存數量完全相同');
+    analysis.recommendations.push('檢查是否為批次設定或系統預設值');
+  }
+  
+  if (missingIds.length > totalProducts * 0.3) {
+    analysis.suspiciousPatterns.push('超過30%的商品沒有庫存記錄');
+    analysis.recommendations.push('檢查商品同步機制和進貨記錄');
+  }
+  
+  if (stockValues.length > 0 && Math.max(...stockValues) === Math.min(...stockValues)) {
+    analysis.suspiciousPatterns.push('庫存數量缺乏變化，可能非實際銷售結果');
+    analysis.recommendations.push('確認庫存更新機制是否正常運作');
+  }
   
   return {
     dealer,
@@ -74,12 +106,9 @@ async function getDealerInventoryData(client, dealerName) {
     stats: {
       totalProducts,
       productsWithStock,
-      productsWithoutStock,
-      isUniformStock, // 是否所有商品庫存數量相同
-      averageStock,   // 平均庫存數量
-      uniqueStockValues, // 不重複的庫存數值
-      missingProductIds: products.filter(p => !inventory[p.id]).map(p => p.id) // 缺少庫存的商品ID
-    }
+      productsWithoutStock
+    },
+    analysis
   };
 }
 
@@ -346,7 +375,19 @@ export default async function handler(req, res) {
     } else if (queryAnalysis.type === 'dealer_inventory') {
       const dealerData = await getDealerInventoryData(client, queryAnalysis.dealerName);
       if (dealerData) {
-        contextData = `\n\n${dealerData.dealer.name} 的店家庫存數據：\n${JSON.stringify(dealerData.inventory, null, 2)}\n\n商品資料：\n${JSON.stringify(dealerData.products.slice(0, 10), null, 2)}`;
+        contextData = `\n\n=== ${dealerData.dealer.name} 庫存分析報告 ===\n\n` +
+          `基本統計：\n` +
+          `- 總商品數：${dealerData.stats.totalProducts}\n` +
+          `- 有庫存商品：${dealerData.stats.productsWithStock}\n` +
+          `- 無庫存商品：${dealerData.stats.productsWithoutStock}\n\n` +
+          `異常檢測結果：\n` +
+          `- 庫存統一性：${dealerData.analysis.isUniformStock ? '是（異常）' : '否（正常）'}\n` +
+          `- 平均庫存：${dealerData.analysis.averageStock}\n` +
+          `- 庫存分布：${JSON.stringify(dealerData.analysis.stockDistribution)}\n` +
+          `- 缺失商品數：${dealerData.analysis.missingProductCount}\n\n` +
+          `發現的異常模式：\n${dealerData.analysis.suspiciousPatterns.map(p => '- ' + p).join('\n')}\n\n` +
+          `建議措施：\n${dealerData.analysis.recommendations.map(r => '- ' + r).join('\n')}\n\n` +
+          `詳細庫存數據：\n${JSON.stringify(dealerData.inventory, null, 2)}`;
       } else {
         contextData = `\n\n未找到 "${queryAnalysis.dealerName}" 的店家資料。`;
       }
@@ -370,7 +411,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: `你是恆通公司的AI助手，專門協助處理公司相關業務問題。請用繁體中文回答。\n\n你可以協助：\n1. 庫存查詢和管理（包括總庫存和各店家庫存）\n2. 商品信息查詢\n3. 通路商管理\n4. 出貨記錄和帳單查詢\n5. 數據庫結構和數據分析\n\n數據庫集合說明：\n- dealers: 通路商基本資料\n- dealer_inventory: 各通路商庫存數據\n- inventory: 公司總庫存\n- products: 商品基本資料\n- shipments: 出貨交易記錄\n- user_sessions: 用戶會話管理\n- hengtong: 系統設定\n- parts: 零件資料\n\n重要提醒：\n- 當用戶詢問特定通路商（如諾林國際）的庫存時，請回答該店家的實際在店庫存\n- 當用戶詢問總庫存時，請回答雲端總庫存\n- 當用戶詢問數據庫概覽時，提供完整的集合統計信息\n- 請明確區分這些不同類型的查詢\n\n${contextData ? '以下是相關的實時數據，請根據這些數據回答用戶問題：' + contextData : ''}`
+            content: `你是恆通公司的專業AI助手，具備深度數據分析能力。請用繁體中文回答。\n\n你的核心能力：\n1. 庫存異常檢測和分析\n2. 商品數據深度洞察\n3. 業務問題診斷和建議\n4. 數據趨勢分析\n\n分析規則：\n- 當發現庫存數據異常時，必須主動指出問題\n- 如果所有商品庫存數量相同，這通常表示系統設定問題\n- 如果商品ID不連續，需要分析缺失原因\n- 提供具體的改善建議和後續行動方案\n\n數據庫集合說明：\n- dealers: 通路商基本資料\n- dealer_inventory: 各通路商庫存數據\n- inventory: 公司總庫存\n- products: 商品基本資料\n- shipments: 出貨交易記錄\n\n重要：當分析庫存數據時，請執行以下檢查：\n1. 檢查庫存數量是否過於統一\n2. 分析商品ID的連續性\n3. 計算庫存分布和異常值\n4. 提供業務層面的解釋和建議\n\n${contextData ? '以下是相關的實時數據，請進行深度分析並提供專業見解：' + contextData : ''}`
           },
           {
             role: 'user',

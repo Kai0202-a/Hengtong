@@ -74,9 +74,35 @@ async function getDealerInventoryData(client, dealerName) {
 }
 
 // 分析用戶問題並決定需要什麼數據
-// 修改 analyzeUserQuery 函數以支援帳單查詢
+// 修改 analyzeUserQuery 函數以支援帳單查詢和數據庫概覽
 function analyzeUserQuery(message) {
   const lowerMessage = message.toLowerCase();
+  
+  // 檢查是否為數據庫概覽查詢
+  const dbOverviewKeywords = ['數據庫', '資料庫', '集合', '概覽', '結構', '所有數據', '完整數據'];
+  const hasDbOverviewKeyword = dbOverviewKeywords.some(keyword => 
+    lowerMessage.includes(keyword)
+  );
+  
+  if (hasDbOverviewKeyword) {
+    return { type: 'database_overview' };
+  }
+  
+  // 檢查特定集合查詢
+  const collectionKeywords = {
+    'dealers': ['通路商資料', '經銷商資料'],
+    'dealer_inventory': ['店家庫存資料', '通路商庫存資料'],
+    'inventory': ['總庫存資料', '雲端庫存資料'],
+    'products': ['商品資料', '產品資料', '零件資料'],
+    'shipments': ['出貨資料', '訂單資料', '交易資料'],
+    'user_sessions': ['用戶資料', '會話資料', '登入資料']
+  };
+  
+  for (const [collection, keywords] of Object.entries(collectionKeywords)) {
+    if (keywords.some(keyword => lowerMessage.includes(keyword))) {
+      return { type: 'collection_query', collection };
+    }
+  }
   
   // 檢查是否為帳單查詢
   const billingKeywords = ['帳單', '出貨', '月份', '營收', '銷售'];
@@ -284,7 +310,17 @@ export default async function handler(req, res) {
     let contextData = '';
     
     // 根據查詢類型獲取相關數據
-    if (billingAnalysis.isBillingQuery || queryAnalysis.type === 'billing') {
+    if (queryAnalysis.type === 'database_overview') {
+      const overview = await getDatabaseOverview(client);
+      contextData = `\n\n完整數據庫概覽：\n${JSON.stringify(overview, null, 2)}`;
+    } else if (queryAnalysis.type === 'collection_query') {
+      const collectionData = await getCollectionData(client, queryAnalysis.collection);
+      if (collectionData) {
+        contextData = `\n\n${queryAnalysis.collection} 集合數據（共 ${collectionData.documentCount} 筆，顯示前 20 筆）：\n${JSON.stringify(collectionData, null, 2)}`;
+      } else {
+        contextData = `\n\n無法獲取 ${queryAnalysis.collection} 集合數據。`;
+      }
+    } else if (billingAnalysis.isBillingQuery || queryAnalysis.type === 'billing') {
       const { shipments, billingData } = await getBillingData(
         db, 
         billingAnalysis.company, 
@@ -324,7 +360,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: `你是恆通公司的AI助手，專門協助處理公司相關業務問題。請用繁體中文回答。\n\n你可以協助：\n1. 庫存查詢和管理（包括總庫存和各店家庫存）\n2. 商品信息查詢\n3. 通路商管理\n4. 數據分析\n\n重要提醒：\n- 當用戶詢問特定通路商（如諾林國際）的庫存時，請回答該店家的實際在店庫存\n- 當用戶詢問總庫存時，請回答雲端總庫存\n- 請明確區分這兩種庫存類型\n\n${contextData ? '以下是相關的實時數據，請根據這些數據回答用戶問題：' + contextData : ''}`
+            content: `你是恆通公司的AI助手，專門協助處理公司相關業務問題。請用繁體中文回答。\n\n你可以協助：\n1. 庫存查詢和管理（包括總庫存和各店家庫存）\n2. 商品信息查詢\n3. 通路商管理\n4. 出貨記錄和帳單查詢\n5. 數據庫結構和數據分析\n\n數據庫集合說明：\n- dealers: 通路商基本資料\n- dealer_inventory: 各通路商庫存數據\n- inventory: 公司總庫存\n- products: 商品基本資料\n- shipments: 出貨交易記錄\n- user_sessions: 用戶會話管理\n- hengtong: 系統設定\n- parts: 零件資料\n\n重要提醒：\n- 當用戶詢問特定通路商（如諾林國際）的庫存時，請回答該店家的實際在店庫存\n- 當用戶詢問總庫存時，請回答雲端總庫存\n- 當用戶詢問數據庫概覽時，提供完整的集合統計信息\n- 請明確區分這些不同類型的查詢\n\n${contextData ? '以下是相關的實時數據，請根據這些數據回答用戶問題：' + contextData : ''}`
           },
           {
             role: 'user',
@@ -361,5 +397,83 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('AI 聊天處理失敗:', error);
     res.status(500).json({ error: '處理請求時發生錯誤' });
+  }
+}
+
+// 新增：獲取數據庫概覽的函數
+async function getDatabaseOverview(client) {
+  const db = client.db(DB_NAME);
+  
+  try {
+    // 獲取所有集合的統計信息
+    const collections = await db.listCollections().toArray();
+    const overview = {};
+    
+    for (const collection of collections) {
+      const collectionName = collection.name;
+      const coll = db.collection(collectionName);
+      
+      // 獲取文檔數量
+      const count = await coll.countDocuments();
+      
+      // 獲取樣本數據（前3筆）
+      const samples = await coll.find({}).limit(3).toArray();
+      
+      // 獲取集合統計
+      const stats = await coll.stats().catch(() => null);
+      
+      overview[collectionName] = {
+        documentCount: count,
+        sampleData: samples,
+        storageSize: stats?.storageSize || 0,
+        avgDocumentSize: stats?.avgObjSize || 0,
+        description: getCollectionDescription(collectionName)
+      };
+    }
+    
+    return overview;
+  } catch (error) {
+    console.error('獲取數據庫概覽失敗:', error);
+    return {};
+  }
+}
+
+// 新增：獲取集合描述的函數
+function getCollectionDescription(collectionName) {
+  const descriptions = {
+    'dealers': '通路商基本資料，包含公司名稱、聯絡資訊等',
+    'dealer_inventory': '各通路商的庫存數據，記錄每個商品的庫存數量',
+    'inventory': '公司總庫存數據，中央倉庫的商品庫存',
+    'products': '商品基本資料，包含商品名稱、規格、價格等',
+    'shipments': '出貨交易記錄，包含訂單、出貨時間、數量等',
+    'user_sessions': '用戶會話管理，記錄登入狀態和會話資訊',
+    'hengtong': '系統設定和其他相關數據',
+    'parts': '零件資料，商品的詳細零件信息'
+  };
+  
+  return descriptions[collectionName] || '未知集合類型';
+}
+
+// 新增：獲取特定集合數據的函數
+async function getCollectionData(client, collectionName) {
+  const db = client.db(DB_NAME);
+  
+  try {
+    const collection = db.collection(collectionName);
+    const data = await collection.find({}).limit(20).toArray();
+    const count = await collection.countDocuments();
+    const stats = await collection.stats().catch(() => null);
+    
+    return {
+      collectionName,
+      documentCount: count,
+      data,
+      storageSize: stats?.storageSize || 0,
+      avgDocumentSize: stats?.avgObjSize || 0,
+      description: getCollectionDescription(collectionName)
+    };
+  } catch (error) {
+    console.error(`獲取集合 ${collectionName} 數據失敗:`, error);
+    return null;
   }
 }

@@ -1,0 +1,9 @@
+@echo off
+echo 正在添加所有變更...
+git add .
+echo 正在提交變更...
+git commit -m "Update message"
+echo 正在推送到遠端倉庫...
+git push
+echo 推送完成！
+pause

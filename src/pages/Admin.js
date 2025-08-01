@@ -812,7 +812,16 @@ function Admin() {
                               <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>載入庫存數據中...</div>
                             ) : (
                               <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-                                {products.map(product => {
+                                {products
+                                  .sort((a, b) => {
+                                    // 提取商品 ID 中的數字部分進行比較
+                                    const getIdNumber = (productName) => {
+                                      const match = productName.match(/PO-(\d+)/);
+                                      return match ? parseInt(match[1]) : 0;
+                                    };
+                                    return getIdNumber(a.name) - getIdNumber(b.name);
+                                  })
+                                  .map(product => {
                                   const currentStock = dealerInventories[dealer.username]?.[product.id] || 0;
                                   
                                   return (

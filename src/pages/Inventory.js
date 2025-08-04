@@ -77,7 +77,14 @@ function Inventory({ parts, updateInventory, refreshInventory }) {
     (part) =>
       part.name.toLowerCase().includes(search.toLowerCase()) ||
       (part.type && part.type.toLowerCase().includes(search.toLowerCase()))
-  );
+  ).sort((a, b) => {
+    // 提取商品 ID 中的數字部分進行比較
+    const getIdNumber = (partName) => {
+      const match = partName.match(/PO-(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    };
+    return getIdNumber(a.name) - getIdNumber(b.name);
+  });
 
   return (
     <div>

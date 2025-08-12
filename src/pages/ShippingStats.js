@@ -175,6 +175,18 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
         );
       }
       
+      // 新增：更新用戶活動狀態
+      promises.push(
+        fetch(`${API_BASE_URL}/api/user-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: userObj.username,
+            action: 'activity'
+          })
+        })
+      );
+      
       const results = await Promise.all(promises);
       
       // 檢查結果

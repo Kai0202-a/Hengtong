@@ -75,6 +75,24 @@ const MonthlyBilling = () => {
 
   // 已移除未使用的輔助函式以修正 ESLint no-unused-vars
 
+  // 列印功能（供按鈕使用）
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // 用於顯示金額與日期（渲染中會使用）
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('zh-TW', {
+      style: 'currency',
+      currency: 'TWD',
+      minimumFractionDigits: 0
+    }).format(amount || 0);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('zh-TW');
+  };
+
   // 獲取選定的帳單資料（固定按日期排序）
   const getSelectedBillingData = () => {
     if (!selectedCompany || !selectedMonth || !billingData[selectedCompany]) {
@@ -122,10 +140,6 @@ const MonthlyBilling = () => {
   }, [selectedMonth]);
   const selectedData = getSelectedBillingData();
 
-  // 列印按鈕用的函式（組件作用域）
-  const handlePrint = () => {
-    window.print();
-  };
 
   if (loading) {
     return (
@@ -251,7 +265,50 @@ const MonthlyBilling = () => {
         {/* 帳單內容 */}
         {selectedData ? (
           <div ref={printRef} className="print-content">
-            {/* 帳單內容區（此處保留你原本的渲染） */}
+            <div style={{ background: '#ffffff', color: '#333', padding: 24, borderRadius: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+                <h3 style={{ margin: 0 }}>{selectedCompany || '未選擇商家'}</h3>
+                <div style={{ color: '#666' }}>{selectedMonth || '未選擇月份'}</div>
+              </div>
+
+              {selectedData.items && selectedData.items.length > 0 ? (
+                <div>
+                  <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16 }}>
+                    <div>總出貨數量：{selectedData.totalQuantity || 0}</div>
+                    <div>總金額：{formatCurrency(selectedData.totalAmount || 0)}</div>
+                    <div>總成本：{formatCurrency(selectedData.totalCost || 0)}</div>
+                    <div>總利潤：{formatCurrency((selectedData.totalAmount || 0) - (selectedData.totalCost || 0))}</div>
+                  </div>
+
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: '#f5f5f5' }}>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedData.items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.cost || 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ color: '#666' }}>本月無出貨資料</div>
+              )}
+            </div>
           </div>
         ) : (
           <div style={{

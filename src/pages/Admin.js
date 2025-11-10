@@ -12,7 +12,22 @@ function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [expandedOrders] = useState({});
+  const [expandedOrders, setExpandedOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('adminExpandedOrders');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleOrderDetails = useCallback((orderKey) => {
+    setExpandedOrders(prev => {
+      const next = { ...prev, [orderKey]: !prev[orderKey] };
+      localStorage.setItem('adminExpandedOrders', JSON.stringify(next));
+      return next;
+    });
+  }, []);
   const [showDealerManagement, setShowDealerManagement] = useState(false);
   
   // 新增：庫存管理相關狀態
@@ -515,7 +530,7 @@ function Admin() {
               
               // 在 return 語句中的 filteredOrders.map() 部分需要修正
               return filteredOrders.map((order, idx) => {
-                const orderKey = `${order.createdAt}-${idx}`;
+                const orderKey = `${order.company}-${order.time}`;
                 const isExpanded = expandedOrders[orderKey];
                 
                 return (
@@ -531,7 +546,7 @@ function Admin() {
                   }}>
                     {/* 訂單標題 - 可點選展開/收起 */}
                     <div 
-                        onClick={() => openOrderModal(order)} // 傳入 order 物件而不是 orderKey
+                        onClick={() => toggleOrderDetails(orderKey)}
                         style={{ 
                           marginBottom: 8, 
                           fontSize: 16, 

@@ -40,11 +40,6 @@ function Admin() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   
-  // 新增：開啟訂單單據的函數
-  const openOrderModal = (order) => {
-    setSelectedOrder(order);
-    setShowOrderModal(true);
-  };
 
   // 新增：關閉訂單單據的函數
   const closeOrderModal = () => {

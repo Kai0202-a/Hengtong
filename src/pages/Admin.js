@@ -12,7 +12,7 @@ function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [expandedOrders, setExpandedOrders] = useState({});
+  const [expandedOrders] = useState({});
   const [showDealerManagement, setShowDealerManagement] = useState(false);
   
   // 新增：庫存管理相關狀態

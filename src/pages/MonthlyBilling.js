@@ -14,26 +14,24 @@ const MonthlyBilling = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
 
-  // 處理出貨資料，按公司和月份分組
-  function MonthlyBilling() {
+  // 處理出貨資料，按公司和月份分組（修正：明確接收 data 參數並在作用域內）
+  const processShipmentData = useCallback((data) => {
     const grouped = {};
     const companiesSet = new Set();
     const monthsSet = new Set();
   
-    data.forEach(shipment => {
+    data.forEach((shipment) => {
       const rawTime = shipment.time || shipment.createdAt;
       const date = new Date(rawTime);
-      if (isNaN(date.getTime())) return; // 跳過無效時間
+      if (isNaN(date.getTime())) return;
   
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const company = shipment.company || '未知公司';
-      
+  
       companiesSet.add(company);
       monthsSet.add(monthKey);
   
-      if (!grouped[company]) {
-        grouped[company] = {};
-      }
+      if (!grouped[company]) grouped[company] = {};
       if (!grouped[company][monthKey]) {
         grouped[company][monthKey] = {
           items: [],
@@ -43,10 +41,7 @@ const MonthlyBilling = () => {
         };
       }
   
-      grouped[company][monthKey].items.push({
-        ...shipment,
-        time: rawTime // 確保後續顯示有值
-      });
+      grouped[company][monthKey].items.push({ ...shipment, time: rawTime });
       grouped[company][monthKey].totalQuantity += shipment.quantity || 0;
       grouped[company][monthKey].totalAmount += shipment.amount || 0;
       grouped[company][monthKey].totalCost += shipment.cost || 0;
@@ -55,17 +50,21 @@ const MonthlyBilling = () => {
     setBillingData(grouped);
     setCompanies(Array.from(companiesSet).sort());
     setAvailableMonths(Array.from(monthsSet).sort().reverse());
-  };
+  }, []);
 
-  // 獲取所有出貨資料
+  // 獲取所有出貨資料（修正：依賴 processShipmentData，並對 result.data 做防呆）
   const fetchShipmentData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/shipments`);
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
+        if (result.success && Array.isArray(result.data)) {
           processShipmentData(result.data);
+        } else {
+          setBillingData({});
+          setCompanies([]);
+          setAvailableMonths([]);
         }
       }
     } catch (error) {
@@ -73,7 +72,7 @@ const MonthlyBilling = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, processShipmentData]);
 
   // 獲取當前月份
   const getCurrentMonth = () => {

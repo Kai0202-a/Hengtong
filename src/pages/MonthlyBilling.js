@@ -80,11 +80,6 @@ const MonthlyBilling = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   };
 
-  // 列印功能
-  const handlePrint = () => {
-    window.print();
-  };
-
   // 生成圖片功能
   const generateImage = async () => {
     if (printRef.current) {

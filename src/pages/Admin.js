@@ -9,7 +9,6 @@ function Admin() {
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState(() => {
@@ -219,9 +218,7 @@ function Admin() {
   // 獲取出貨數據
   const fetchShipments = useCallback(async (isInitialLoad = false) => {
     try {
-      if (isInitialLoad) {
-        setLoading(true);
-      } else {
+      if (!isInitialLoad) {
         setIsRefreshing(true);
       }
       setError(null);
@@ -242,11 +239,7 @@ function Admin() {
         setOrders([]);
       }
     } finally {
-      if (isInitialLoad) {
-        setLoading(false);
-      } else {
-        setIsRefreshing(false);
-      }
+      setIsRefreshing(false);
     }
   }, [groupShipmentsByCompanyAndTime]);
   

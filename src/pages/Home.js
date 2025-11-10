@@ -21,7 +21,10 @@ function Home() {
   }, [navigate]);
 
   const handleLogin = async () => {
-    if (username === "admin" && password === "admin123") {
+    const adminUsername = process.env.REACT_APP_ADMIN_USERNAME || "admin";
+    const adminPassword = process.env.REACT_APP_ADMIN_PASSWORD || "admin123";
+
+    if (username === adminUsername && password === adminPassword) {
       const userObj = { username: "admin", role: "admin" };
       localStorage.setItem("user", JSON.stringify(userObj));
       setUser(userObj);

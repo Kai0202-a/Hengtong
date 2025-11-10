@@ -267,7 +267,6 @@ const MonthlyBilling = () => {
 
         {selectedData && (
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {/* 移除這裡的 const handlePrint 宣告 */}
             <button 
               onClick={handlePrint}
               style={{ 
@@ -436,3 +435,7 @@ const MonthlyBilling = () => {
 };
 
 export default MonthlyBilling;
+
+const handlePrint = useCallback(() => {
+  window.print();
+}, []);

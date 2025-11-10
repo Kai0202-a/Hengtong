@@ -173,8 +173,14 @@ function Admin() {
     
     shipments.forEach(shipment => {
       const company = shipment.company || '未知公司';
-      const time = shipment.time || new Date(shipment.createdAt).toLocaleString('zh-TW');
-      const timeKey = time.substring(0, 16);
+      const rawTime = shipment.time || shipment.createdAt;
+      const date = new Date(rawTime);
+
+      // 使用穩定鍵：YYYY-MM-DD HH:mm（避免 substring 截斷造成不一致）
+      const timeKey = isNaN(date.getTime())
+        ? String(rawTime).slice(0, 16)
+        : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
       const groupKey = `${company}-${timeKey}`;
       
       if (!grouped[groupKey]) {
@@ -186,14 +192,11 @@ function Admin() {
           totalAmount: 0,
           totalCost: 0,
           totalProfit: 0,
-          createdAt: shipment.createdAt || shipment.time
+          createdAt: rawTime
         };
       }
       
-      // 修正：優先使用出貨記錄中的 cost，如果沒有則回退到查詢
-      const itemCost = shipment.cost ? 
-        (shipment.cost * (shipment.quantity || 0)) : 
-        (getCostByPartName(shipment.partName) * (shipment.quantity || 0));
+      const itemCost = shipment.cost ? (shipment.cost * (shipment.quantity || 0)) : (getCostByPartName(shipment.partName) * (shipment.quantity || 0));
       const itemProfit = (shipment.amount || 0) - itemCost;
       
       grouped[groupKey].items.push({
@@ -204,7 +207,6 @@ function Admin() {
         cost: itemCost,
         profit: itemProfit
       });
-      
       grouped[groupKey].totalQuantity += shipment.quantity || 0;
       grouped[groupKey].totalAmount += shipment.amount || 0;
       grouped[groupKey].totalCost += itemCost;

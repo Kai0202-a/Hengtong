@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../UserContext';
 import { partsData } from './partsData'; // Fix: change 'partsdata' to 'partsData'
@@ -30,7 +30,7 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
   });
   
   // 獲取店家專屬庫存
-  const fetchDealerInventory = async () => {
+  const fetchDealerInventory = useCallback(async () => {
     try {
       const userObj = user || JSON.parse(localStorage.getItem('user'));
       if (!userObj || userObj.role !== 'dealer') {
@@ -50,7 +50,7 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, API_BASE_URL]);
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -68,7 +68,7 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
     
     // 獲取店家庫存
     fetchDealerInventory();
-  }, [user, navigate]);
+  }, [user, navigate, fetchDealerInventory]);
   
   const today = getToday();
   const [quantities, setQuantities] = useState(Array(sortedParts.length).fill(""));

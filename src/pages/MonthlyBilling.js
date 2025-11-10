@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 
 const MonthlyBilling = () => {
   const navigate = useNavigate();
   const printRef = useRef();
-  const [shipmentData, setShipmentData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedCompany, setSelectedCompany] = useState('');
@@ -14,25 +13,6 @@ const MonthlyBilling = () => {
   const [availableMonths, setAvailableMonths] = useState([]);
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
-
-  // 獲取所有出貨資料
-  const fetchShipmentData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/shipments`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setShipmentData(result.data);
-          processShipmentData(result.data);
-        }
-      }
-    } catch (error) {
-      console.error('獲取出貨資料失敗:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 處理出貨資料，按公司和月份分組
   const processShipmentData = (data) => {
@@ -70,6 +50,24 @@ const MonthlyBilling = () => {
     setCompanies(Array.from(companiesSet).sort());
     setAvailableMonths(Array.from(monthsSet).sort().reverse());
   };
+
+  // 獲取所有出貨資料
+  const fetchShipmentData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/shipments`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          processShipmentData(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('獲取出貨資料失敗:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE_URL]);
 
   // 獲取當前月份
   const getCurrentMonth = () => {
@@ -136,6 +134,7 @@ const MonthlyBilling = () => {
   useEffect(() => {
     fetchShipmentData();
     setSelectedMonth(getCurrentMonth());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const selectedData = getSelectedBillingData();

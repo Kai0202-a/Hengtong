@@ -27,12 +27,6 @@ function ShippingHistory() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 獲取成本價格 - 如果需要從雲端獲取
-  const getCostByPartName = (partName) => {
-    // 如果移除了 partsData，這個函數需要重新實作
-    // 或者從 API 獲取商品資訊
-    return 0; // 暫時返回 0
-  };
 
   // 獲取出貨歷史數據
   const fetchShippingHistory = useCallback(async () => {

@@ -485,11 +485,7 @@ function Admin() {
           </div>
         )}
         
-        {loading && (
-          <div style={{ color: '#aaa', padding: 20 }}>
-            正在加載貨況數據...
-          </div>
-        )}
+        {/* 移除 loading 提示區塊 */}
         
         {error && (
           <div style={{ color: '#ff6b6b', padding: 20, background: '#2d1b1b', borderRadius: 8, margin: '10px 0' }}>
@@ -504,7 +500,8 @@ function Admin() {
           </div>
         )}
         
-        {!loading && !error && (
+        {/* 調整條件：不再依賴 loading，永遠顯示列表（若有錯誤則顯示錯誤） */}
+        {!error && (
           <ul style={{ paddingLeft: 0, maxHeight: 500, overflowY: 'auto', margin: 0, listStyle: 'none' }}>            
             {(() => {
               const filteredOrders = getFilteredOrders();

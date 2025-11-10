@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import html2canvas from 'html2canvas';
 
 const MonthlyBilling = () => {
   const navigate = useNavigate();
@@ -162,6 +161,11 @@ const MonthlyBilling = () => {
   }, [selectedMonth]);
   const selectedData = getSelectedBillingData();
 
+  // 補上：供列印按鈕使用的組件內函式
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -283,153 +287,47 @@ const MonthlyBilling = () => {
             {/* 其餘按鈕/內容保持 */}
           </div>
         )}
+        {/* 帳單內容 */}
+        {selectedData ? (
+          <div ref={printRef} className="print-content">
+            // ... existing code ...
+          </div>
+        ) : (
+          <div style={{
+            background: '#2c3e50',
+            padding: 60,
+            borderRadius: 12,
+            textAlign: 'center',
+            boxShadow: '0 2px 12px #0002',
+            color: '#f5f6fa'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 20 }}>📊</div>
+            <p style={{ fontSize: 20, color: '#f5f6fa', fontWeight: '500', margin: 0 }}>請選擇商家和月份以查看帳單</p>
+          </div>
+        )}
+        {/* 列印樣式 */}
+        <style>{`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            .print-content, .print-content * {
+              visibility: visible;
+            }
+            .print-content {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+            }
+            @page {
+              margin: 1cm;
+              size: A4;
+            }
+          }
+        `}</style>
       </div>
-
-      {/* 帳單內容 */}
-      {selectedData ? (
-        <div 
-          ref={printRef}
-          className="print-content"
-          style={{
-            background: '#fff',
-            padding: 40,
-            borderRadius: 12,
-            boxShadow: '0 2px 12px #0002'
-          }}
-        >
-          {/* 帳單標題 */}
-          <div style={{ 
-            textAlign: 'center', 
-            marginBottom: 40, 
-            borderBottom: '3px solid #2c3e50', 
-            paddingBottom: 24
-          }}>
-            <h1 style={{ margin: 0, fontSize: 32, color: '#2c3e50', fontWeight: '700' }}>月度出貨帳單</h1>
-            <p style={{ margin: '12px 0 0 0', fontSize: 16, color: '#666', fontWeight: '500' }}>Monthly Shipping Invoice</p>
-          </div>
-
-          {/* 帳單資訊 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 40 }}>
-            <div style={{ 
-              padding: 24, 
-              background: '#f8f9fa', 
-              borderRadius: 12,
-              border: '1px solid #dee2e6'
-            }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#2c3e50', borderBottom: '2px solid #2c3e50', paddingBottom: 8, fontWeight: '600' }}>客戶資訊</h3>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>公司名稱：</strong>{selectedCompany}</p>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>帳單月份：</strong>{selectedMonth}</p>
-            </div>
-            <div style={{ 
-              padding: 24, 
-              background: '#f8f9fa', 
-              borderRadius: 12,
-              border: '1px solid #dee2e6'
-            }}>
-              <h3 style={{ margin: '0 0 20px 0', color: '#2c3e50', borderBottom: '2px solid #2c3e50', paddingBottom: 8, fontWeight: '600' }}>帳單摘要</h3>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>總數量：</strong>{selectedData.totalQuantity.toLocaleString()} 件</p>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>總金額：</strong>{formatCurrency(selectedData.totalAmount)}</p>
-              <p style={{ margin: '12px 0', fontSize: 16, color: '#333' }}><strong style={{ color: '#2c3e50' }}>開立日期：</strong>{formatDate(new Date())}</p>
-            </div>
-          </div>
-
-          {/* 商品明細表格 */}
-          <div style={{ marginBottom: 40 }}>
-            <h3 style={{ 
-              margin: '0 0 20px 0', 
-              color: '#2c3e50', 
-              borderBottom: '2px solid #2c3e50', 
-              paddingBottom: 12, 
-              fontWeight: '600',
-              fontSize: 20
-            }}>商品明細（按日期排序）</h3>
-            <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #dee2e6' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#2c3e50' }}>
-                    <th style={{ padding: 16, border: 'none', textAlign: 'left', color: 'white', fontWeight: '600' }}>出貨日期</th>
-                    <th style={{ padding: 16, border: 'none', textAlign: 'left', color: 'white', fontWeight: '600' }}>商品名稱</th>
-                    <th style={{ padding: 16, border: 'none', textAlign: 'center', color: 'white', fontWeight: '600' }}>數量</th>
-                    <th style={{ padding: 16, border: 'none', textAlign: 'right', color: 'white', fontWeight: '600' }}>單價</th>
-                    <th style={{ padding: 16, border: 'none', textAlign: 'right', color: 'white', fontWeight: '600' }}>小計</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedData.items.map((item, index) => (
-                    <tr key={index} style={{ 
-                      background: index % 2 === 0 ? '#f8f9fa' : 'white'
-                    }}>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', color: '#666' }}>{formatDate(item.time)}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', color: '#333', fontWeight: '500' }}>{item.partName}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', textAlign: 'center', color: '#2c3e50', fontWeight: '600' }}>{item.quantity}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', textAlign: 'right', color: '#666' }}>{formatCurrency(item.price)}</td>
-                      <td style={{ padding: 16, border: 'none', borderBottom: '1px solid #dee2e6', textAlign: 'right', color: '#e74c3c', fontWeight: '600' }}>{formatCurrency(item.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr style={{ background: '#34495e' }}>
-                    <td colSpan="2" style={{ padding: 16, border: 'none', textAlign: 'right', color: 'white', fontWeight: '700', fontSize: 16 }}>總計：</td>
-                    <td style={{ padding: 16, border: 'none', textAlign: 'center', color: '#f39c12', fontWeight: '700', fontSize: 16 }}>{selectedData.totalQuantity}</td>
-                    <td style={{ padding: 16, border: 'none' }}></td>
-                    <td style={{ padding: 16, border: 'none', textAlign: 'right', color: '#f39c12', fontWeight: '700', fontSize: 16 }}>{formatCurrency(selectedData.totalAmount)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* 帳單備註 */}
-          <div style={{ 
-            marginTop: 40, 
-            padding: 24, 
-            background: '#f8f9fa', 
-            borderRadius: 12,
-            border: '1px solid #dee2e6'
-          }}>
-            <h4 style={{ margin: '0 0 16px 0', color: '#2c3e50', fontWeight: '600' }}>📋 備註事項：</h4>
-            <p style={{ margin: 0, fontSize: 14, color: '#666', lineHeight: 1.8 }}>
-              1. 本帳單為系統自動生成，如有疑問請聯繫相關人員。<br/>
-              2. 請於收到帳單後 30 天內完成付款。<br/>
-              3. 如有任何問題，請及時與我們聯繫。
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div style={{
-          background: '#2c3e50',
-          padding: 60,
-          borderRadius: 12,
-          textAlign: 'center',
-          boxShadow: '0 2px 12px #0002',
-          color: '#f5f6fa'
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>📊</div>
-          <p style={{ fontSize: 20, color: '#f5f6fa', fontWeight: '500', margin: 0 }}>請選擇商家和月份以查看帳單</p>
-        </div>
-      )}
-
-      {/* 列印樣式 */}
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-content, .print-content * {
-            visibility: visible;
-          }
-          .print-content {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          @page {
-            margin: 1cm;
-            size: A4;
-          }
-        }
-      `}</style>
+      {/* 補上：外層容器結尾 */}
     </div>
   );
 };

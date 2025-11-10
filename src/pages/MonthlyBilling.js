@@ -15,19 +15,22 @@ const MonthlyBilling = () => {
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
 
   // 處理出貨資料，按公司和月份分組
-  const processShipmentData = (data) => {
+  function MonthlyBilling() {
     const grouped = {};
     const companiesSet = new Set();
     const monthsSet = new Set();
-
+  
     data.forEach(shipment => {
-      const date = new Date(shipment.time);
+      const rawTime = shipment.time || shipment.createdAt;
+      const date = new Date(rawTime);
+      if (isNaN(date.getTime())) return; // 跳過無效時間
+  
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const company = shipment.company;
+      const company = shipment.company || '未知公司';
       
       companiesSet.add(company);
       monthsSet.add(monthKey);
-
+  
       if (!grouped[company]) {
         grouped[company] = {};
       }
@@ -39,13 +42,16 @@ const MonthlyBilling = () => {
           totalCost: 0
         };
       }
-
-      grouped[company][monthKey].items.push(shipment);
-      grouped[company][monthKey].totalQuantity += shipment.quantity;
-      grouped[company][monthKey].totalAmount += shipment.amount;
+  
+      grouped[company][monthKey].items.push({
+        ...shipment,
+        time: rawTime // 確保後續顯示有值
+      });
+      grouped[company][monthKey].totalQuantity += shipment.quantity || 0;
+      grouped[company][monthKey].totalAmount += shipment.amount || 0;
       grouped[company][monthKey].totalCost += shipment.cost || 0;
     });
-
+  
     setBillingData(grouped);
     setCompanies(Array.from(companiesSet).sort());
     setAvailableMonths(Array.from(monthsSet).sort().reverse());
@@ -84,12 +90,12 @@ const MonthlyBilling = () => {
   const generateImage = async () => {
     if (printRef.current) {
       try {
+        const { default: html2canvas } = await import('html2canvas');
         const canvas = await html2canvas(printRef.current, {
           scale: 2,
           useCORS: true,
           backgroundColor: '#ffffff'
         });
-        
         const link = document.createElement('a');
         link.download = `月度帳單_${selectedCompany}_${selectedMonth}.png`;
         link.href = canvas.toDataURL();
@@ -133,10 +139,33 @@ const MonthlyBilling = () => {
 
   useEffect(() => {
     fetchShipmentData();
-    setSelectedMonth(getCurrentMonth());
+    // 嘗試恢復上次選擇的月份
+    const savedMonth = localStorage.getItem('mb_selectedMonth');
+    if (savedMonth) setSelectedMonth(savedMonth);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 資料載入完成後，預設選第一個公司與最新月份（若尚未選）
+  useEffect(() => {
+    if (!selectedCompany && companies.length > 0) {
+      const savedCompany = localStorage.getItem('mb_selectedCompany');
+      const nextCompany = savedCompany && companies.includes(savedCompany) ? savedCompany : companies[0];
+      setSelectedCompany(nextCompany);
+    }
+    if (!selectedMonth && availableMonths.length > 0) {
+      const savedMonth = localStorage.getItem('mb_selectedMonth');
+      const nextMonth = savedMonth && availableMonths.includes(savedMonth) ? savedMonth : availableMonths[0];
+      setSelectedMonth(nextMonth);
+    }
+  }, [companies, availableMonths, selectedCompany, selectedMonth]);
+
+  // 變更選項時保存
+  useEffect(() => {
+    if (selectedCompany) localStorage.setItem('mb_selectedCompany', selectedCompany);
+  }, [selectedCompany]);
+  useEffect(() => {
+    if (selectedMonth) localStorage.setItem('mb_selectedMonth', selectedMonth);
+  }, [selectedMonth]);
   const selectedData = getSelectedBillingData();
 
   if (loading) {

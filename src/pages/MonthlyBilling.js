@@ -73,46 +73,7 @@ const MonthlyBilling = () => {
     }
   }, [API_BASE_URL, processShipmentData]);
 
-  // 獲取當前月份
-  const getCurrentMonth = () => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  };
-
-  // 生成圖片功能
-  const generateImage = async () => {
-    if (printRef.current) {
-      try {
-        const { default: html2canvas } = await import('html2canvas');
-        const canvas = await html2canvas(printRef.current, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-        const link = document.createElement('a');
-        link.download = `月度帳單_${selectedCompany}_${selectedMonth}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
-      } catch (error) {
-        console.error('生成圖片失敗:', error);
-        alert('生成圖片失敗，請稍後再試');
-      }
-    }
-  };
-
-  // 格式化金額
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('zh-TW', {
-      style: 'currency',
-      currency: 'TWD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  // 格式化日期
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('zh-TW');
-  };
+  // 已移除未使用的輔助函式以修正 ESLint no-unused-vars
 
   // 獲取選定的帳單資料（固定按日期排序）
   const getSelectedBillingData = () => {

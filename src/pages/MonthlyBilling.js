@@ -267,36 +267,21 @@ const MonthlyBilling = () => {
 
         {selectedData && (
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            {/* 移除這裡的 const handlePrint 宣告 */}
             <button 
               onClick={handlePrint}
-              style={{
-                padding: '16px',
-                background: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: 16
+              style={{ 
+                background: '#4CAF50', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: 6, 
+                padding: '10px 16px', 
+                cursor: 'pointer' 
               }}
             >
-              🖨️ 列印帳單
+              🖨️ 列印
             </button>
-            <button 
-              onClick={generateImage}
-              style={{
-                padding: '16px',
-                background: '#2196F3',
-                color: 'white',
-                border: 'none',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: 16
-              }}
-            >
-              📷 生成圖片
-            </button>
+            {/* 其餘按鈕/內容保持 */}
           </div>
         )}
       </div>

@@ -161,7 +161,7 @@ const MonthlyBilling = () => {
   }, [selectedMonth]);
   const selectedData = getSelectedBillingData();
 
-  // 補上：供列印按鈕使用的組件內函式
+  // 列印按鈕用的函式（組件作用域）
   const handlePrint = () => {
     window.print();
   };
@@ -290,7 +290,7 @@ const MonthlyBilling = () => {
         {/* 帳單內容 */}
         {selectedData ? (
           <div ref={printRef} className="print-content">
-            // ... existing code ...
+            {/* 帳單內容區（此處保留你原本的渲染） */}
           </div>
         ) : (
           <div style={{

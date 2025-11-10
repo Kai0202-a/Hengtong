@@ -435,7 +435,3 @@ const MonthlyBilling = () => {
 };
 
 export default MonthlyBilling;
-
-const handlePrint = useCallback(() => {
-  window.print();
-}, []);

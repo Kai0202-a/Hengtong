@@ -152,47 +152,13 @@ function Admin() {
   };
 
   // 根據零件名稱獲取成本 - 改為使用雲端數據
-  const getCostByPartName = (partName) => {
+  const getCostByPartName = useCallback((partName) => {
     const cloudPart = cloudInventory.find(p => p.name === partName || p.id === partName);
     return cloudPart ? cloudPart.cost : 0;
-  };
-
-  // 獲取出貨數據
-  const fetchShipments = useCallback(async (isInitialLoad = false) => {
-    try {
-      if (isInitialLoad) {
-        setLoading(true);
-      } else {
-        setIsRefreshing(true);
-      }
-      setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/api/shipments`);
-      if (response.ok) {
-        const result = await response.json();
-        const shipments = result.data || [];
-        const groupedOrders = groupShipmentsByCompanyAndTime(shipments);
-        setOrders(groupedOrders);
-      } else {
-        throw new Error(`API 請求失敗: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('獲取出貨數據失敗:', error);
-      setError(error.message);
-      if (isInitialLoad) {
-        setOrders([]);
-      }
-    } finally {
-      if (isInitialLoad) {
-        setLoading(false);
-      } else {
-        setIsRefreshing(false);
-      }
-    }
-  }, []);
+  }, [cloudInventory]);
 
   // 整合同銷商同一時間的出貨記錄
-  const groupShipmentsByCompanyAndTime = (shipments) => {
+  const groupShipmentsByCompanyAndTime = useCallback((shipments) => {
     const grouped = {};
     
     shipments.forEach(shipment => {
@@ -236,7 +202,41 @@ function Admin() {
     });
     
     return Object.values(grouped).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  };
+  }, [getCostByPartName]);
+
+  // 獲取出貨數據
+  const fetchShipments = useCallback(async (isInitialLoad = false) => {
+    try {
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/api/shipments`);
+      if (response.ok) {
+        const result = await response.json();
+        const shipments = result.data || [];
+        const groupedOrders = groupShipmentsByCompanyAndTime(shipments);
+        setOrders(groupedOrders);
+      } else {
+        throw new Error(`API 請求失敗: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('獲取出貨數據失敗:', error);
+      setError(error.message);
+      if (isInitialLoad) {
+        setOrders([]);
+      }
+    } finally {
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
+    }
+  }, [groupShipmentsByCompanyAndTime]);
   
   
   // 更新通路商狀態
@@ -406,7 +406,7 @@ function Admin() {
       clearInterval(pollInterval);
       window.removeEventListener('focus', handleFocus);
     };
-  }, []);
+  }, [fetchShipments, fetchCloudInventory]);
 
   // 修改清空提醒欄功能
   const clearAlerts = () => {

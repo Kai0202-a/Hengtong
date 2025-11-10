@@ -4,7 +4,7 @@ import Inventory from "./pages/Inventory";
 import Admin from "./pages/Admin";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import ShippingStats from './pages/ShippingStats';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Register from './pages/Register';
 import { UserProvider, UserContext } from './UserContext';
 import ShippingHistory from './pages/ShippingHistory';
@@ -17,7 +17,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   // 完全從雲端獲取商品和庫存數據
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     try {
       // 使用環境變數替換硬編碼的 URL
       const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
@@ -39,27 +39,10 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // 同步 partsData 到雲端的函數
-  const syncPartsDataToCloud = async () => {
-    try {
-      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
-      
-      await fetch(`${API_BASE_URL}/api/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_partsdata' })
-      });
-      
-      console.log('partsData 已同步到雲端');
-    } catch (error) {
-      console.error('同步 partsData 失敗:', error);
-    }
-  };
+  }, []);
 
   // 統一的庫存更新函數 - 所有更新都同步到雲端
-  const updateInventory = async (updates, shouldRefresh = true) => {
+  const updateInventory = useCallback(async (updates, shouldRefresh = true) => {
     try {
       const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
       
@@ -83,7 +66,7 @@ function App() {
       console.error('更新庫存失敗:', error);
       return false;
     }
-  };
+  }, [fetchInventory]);
 
   useEffect(() => {
     fetchInventory();
@@ -93,7 +76,7 @@ function App() {
     }, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchInventory]);
 
   useEffect(() => {
     const handleContextMenu = e => e.preventDefault();

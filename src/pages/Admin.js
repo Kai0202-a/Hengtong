@@ -969,113 +969,6 @@ function Admin() {
         )}
       </div>
 
-      <div style={{ width: '95vw', maxWidth: 800, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, color: '#f5f6fa' }}>收入總表</h3>
-          <button
-            onClick={() => setShowIncomeMatrix(prev => !prev)}
-            style={{ padding: '8px 16px', background: showIncomeMatrix ? '#f44336' : '#4CAF50', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
-          >
-            {showIncomeMatrix ? '隱藏' : '顯示'}
-          </button>
-        </div>
-        {showIncomeMatrix && (
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: 6 }}>群組方式</label>
-                <select value={matrixGroupBy} onChange={(e) => setMatrixGroupBy(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
-                  <option value="company">依商家</option>
-                  <option value="month">依月份</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: 6 }}>起始月份</label>
-                <select value={matrixStartMonth} onChange={(e) => setMatrixStartMonth(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
-                  {incomeMonths.slice().reverse().map(m => (<option key={m} value={m}>{m}</option>))}
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: 6 }}>結束月份</label>
-                <select value={matrixEndMonth} onChange={(e) => setMatrixEndMonth(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
-                  {incomeMonths.map(m => (<option key={m} value={m}>{m}</option>))}
-                </select>
-              </div>
-              {matrixGroupBy === 'month' && (
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6 }}>商家</label>
-                  <select value={selectedIncomeCompany} onChange={(e) => setSelectedIncomeCompany(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
-                    <option value="">全部</option>
-                    {incomeCompanies.map(c => (<option key={c} value={c}>{c}</option>))}
-                  </select>
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <button onClick={fetchIncomeMatrix} style={{ padding: '8px 16px', background: '#2196F3', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>查詢</button>
-              <button onClick={() => window.print()} style={{ padding: '8px 16px', background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>🖨️ 列印</button>
-              <button onClick={exportIncomeMatrixCSV} style={{ padding: '8px 16px', background: '#9C27B0', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>匯出CSV</button>
-            </div>
-            {incomeMatrixLoading && (
-              <div style={{ background: '#2a2e37', padding: 16, borderRadius: 8, color: '#aaa', textAlign: 'center' }}>載入中...</div>
-            )}
-            {incomeMatrixData && (
-              <div className="income-print-content" style={{ background: '#ffffff', color: '#333', padding: 16, borderRadius: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-                  <h3 style={{ margin: 0 }}>收入總表</h3>
-                  <div style={{ color: '#666' }}>{matrixStartMonth} ~ {matrixEndMonth}</div>
-                </div>
-                <div style={{ display: 'flex', gap: 16, marginBottom: 12, color: '#555' }}>
-                  <div>群組：{matrixGroupBy === 'company' ? '依商家' : '依月份'}</div>
-                  <div>總數量：{incomeMatrixData.totalQuantity || 0}</div>
-                  <div style={{ fontWeight: 600 }}>總金額：NT$ {(incomeMatrixData.totalAmount || 0).toLocaleString()}</div>
-                  <div>總利潤：NT$ {((incomeMatrixData.totalAmount || 0) - (incomeMatrixData.totalCost || 0)).toLocaleString()}</div>
-                </div>
-                <div className="print-table-wrapper" style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: '#f5f5f5' }}>
-                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>{matrixGroupBy === 'company' ? '商家' : '月份'}</th>
-                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
-                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
-                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
-                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>利潤</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(incomeMatrixData.groups || []).map((g, idx) => (
-                        <tr key={idx}>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{g._id}</td>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{(g.totalQuantity || 0).toLocaleString()}</td>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {(g.totalAmount || 0).toLocaleString()}</td>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {(g.totalCost || 0).toLocaleString()}</td>
-                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {(((g.totalAmount || 0) - (g.totalCost || 0)) || 0).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-            <style>{`
-              @media print {
-                body * { visibility: hidden; }
-                .income-print-content, .income-print-content * { visibility: visible; }
-                .income-print-content {
-                  position: absolute; left: 0; top: 0; width: 100%;
-                  background: #ffffff !important; color: #333 !important;
-                }
-                .income-print-content .print-table-wrapper { max-height: none !important; overflow: visible !important; }
-                .income-print-content th { position: static !important; }
-                .income-print-content thead tr { background: #f5f5f5 !important; }
-                .income-print-content th, .income-print-content td { border-color: #e0e0e0 !important; }
-                @page { margin: 1cm; size: A4; }
-              }
-            `}</style>
-          </div>
-        )}
-      </div>
-
       {/* 通路商管理區塊 */}
       <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -1267,7 +1160,31 @@ function Admin() {
                             borderRadius: 8,
                             border: '1px solid #333'
                           }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h4 style={{ margin: '0 0 12px 0', color: '#4CAF50' }}>📦 {dealer.name} - 在店庫存管理</h4>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const map = dealerAdjustQty[dealer.username] || {};
+                                  const entries = Object.entries(map).filter(([pid, val]) => val !== '' && !isNaN(parseInt(val)));
+                                  for (const [pid, val] of entries) {
+                                    await fetch(`${API_BASE_URL}/api/dealer-inventory`, {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ dealerUsername: dealer.username, productId: parseInt(pid), quantity: parseInt(val), action: 'set' })
+                                    });
+                                  }
+                                  await fetchDealerInventory(dealer.username);
+                                  alert('批次設定完成');
+                                } catch (e) {
+                                  alert('批次設定失敗，請稍後再試');
+                                }
+                              }}
+                              style={{ padding: '6px 10px', background: '#9C27B0', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
+                            >
+                              批次設定
+                            </button>
+                          </div>
                             
                             {inventoryLoading[dealer.username] ? (
                               <div style={{ color: '#aaa', textAlign: 'center', padding: 20 }}>載入庫存數據中...</div>
@@ -1325,10 +1242,12 @@ function Admin() {
                                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                         <input
                                           type="number"
-                                          min="1"
-                                          value={(dealerAdjustQty[dealer.username]?.[product.id]) ?? 1}
+                                          value={(dealerAdjustQty[dealer.username]?.[product.id]) ?? ''}
+                                          placeholder="輸入數量"
                                           onChange={(e) => {
-                                            const val = Math.max(1, parseInt(e.target.value) || 1);
+                                            const raw = e.target.value;
+                                            const parsed = parseInt(raw);
+                                            const val = raw === '' ? '' : (isNaN(parsed) ? '' : parsed);
                                             setDealerAdjustQty(prev => ({
                                               ...prev,
                                               [dealer.username]: {
@@ -1337,14 +1256,14 @@ function Admin() {
                                               }
                                             }));
                                           }}
-                                          style={{ width: 70, padding: '4px 6px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
+                                          style={{ width: 90, padding: '4px 6px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
                                         />
                                         <button
                                           onClick={() => {
-                                            const q = dealerAdjustQty[dealer.username]?.[product.id] ?? 1;
-                                            if (q > 0) {
+                                            const q = dealerAdjustQty[dealer.username]?.[product.id];
+                                            if (q && !isNaN(parseInt(q)) && parseInt(q) >= 1) {
                                               updateDealerInventory(dealer.username, product.id, q, 'add');
-                                            }
+                                            } else { alert('請先輸入有效數量 (≥1)'); }
                                           }}
                                           style={{
                                             padding: '4px 8px',
@@ -1360,8 +1279,9 @@ function Admin() {
                                         </button>
                                         <button
                                           onClick={() => {
-                                            const q = dealerAdjustQty[dealer.username]?.[product.id] ?? 1;
-                                            if (q > currentStock) {
+                                            const q = dealerAdjustQty[dealer.username]?.[product.id];
+                                            if (!(q && !isNaN(parseInt(q)) && parseInt(q) >= 1)) { alert('請先輸入有效數量 (≥1)'); return; }
+                                            if (parseInt(q) > currentStock) {
                                               alert('減少數量不能超過當前庫存！');
                                               return;
                                             }

@@ -11,7 +11,8 @@ function Home() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
-  const LOGO_URL = process.env.REACT_APP_LOGO_URL || '/images/logo%20ht.png';
+  const LOGO_VERSION = '20251121';
+  const LOGO_URL = process.env.REACT_APP_LOGO_URL || `/images/logo%20ht.png?v=${LOGO_VERSION}`;
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -99,7 +100,7 @@ function Home() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 0 }}>
-      <img src={LOGO_URL} alt="logo" style={{ width: 200, height: 200, marginBottom: 16 }} onError={(e) => { e.currentTarget.src = '/images/logo2.png'; }} />
+      <img src={LOGO_URL} alt="logo" style={{ width: 200, height: 200, marginBottom: 16 }} onError={(e) => { e.currentTarget.src = `/images/logo2.png?v=${LOGO_VERSION}`; }} />
       <div>
         <div style={{ background: "#222", color: "#fff", padding: 24, borderRadius: 8, width: 320 }}>
           <h3>登入</h3>

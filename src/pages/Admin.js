@@ -716,13 +716,16 @@ function Admin() {
                     company: o.company,
                     name: it.partName,
                     qty: it.quantity || 0,
-                    price: it.amount && it.quantity ? (it.amount / it.quantity) : 0,
-                    amount: it.amount || 0
+                    amount: it.amount || 0,
+                    unitCost: it.cost && it.quantity ? (it.cost / it.quantity) : (it.quantity ? ( (it.amount && it.quantity) ? (it.amount / it.quantity) : 0 ) : 0),
+                    totalCost: it.cost || 0
                   });
                 });
               });
               const totalQty = rows.reduce((s, r) => s + (r.qty || 0), 0);
               const totalAmt = rows.reduce((s, r) => s + (r.amount || 0), 0);
+              const totalCost = rows.reduce((s, r) => s + (r.totalCost || 0), 0);
+              const totalProfit = totalAmt - totalCost;
               return (
                 <div className="income-print-content" style={{ background: '#ffffff', color: '#333', padding: 16, borderRadius: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
@@ -733,6 +736,7 @@ function Admin() {
                     <div>商家：{selectedIncomeCompany || '全部'}</div>
                     <div>總出貨數量：{totalQty}</div>
                     <div style={{ fontWeight: 600 }}>總金額：NT$ {Math.round(totalAmt).toLocaleString()}</div>
+                    <div>總利潤：NT$ {Math.round(totalProfit).toLocaleString()}</div>
                   </div>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -742,7 +746,7 @@ function Admin() {
                           <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>商家</th>
                           <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>單價</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
                         </tr>
                       </thead>
@@ -753,7 +757,7 @@ function Admin() {
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.company}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.name}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{r.qty}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.price).toLocaleString()}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.unitCost).toLocaleString()}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.amount).toLocaleString()}</td>
                           </tr>
                         ))}

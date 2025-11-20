@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../UserContext';
 
 const MonthlyBilling = () => {
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
   const printRef = useRef();
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -15,6 +17,13 @@ const MonthlyBilling = () => {
   const [isPrinting, setIsPrinting] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+
+  useEffect(() => {
+    const localUser = user || JSON.parse(localStorage.getItem('user'));
+    if (!localUser || localUser.role !== 'admin') {
+      navigate('/shipping');
+    }
+  }, [user, navigate]);
 
   // 處理出貨資料，按公司和月份分組（修正：明確接收 data 參數並在作用域內）
   const processShipmentData = useCallback((data) => {

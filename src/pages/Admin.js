@@ -258,10 +258,10 @@ function Admin() {
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || user.role !== "admin") {
-      navigate("/");
+      navigate("/shipping");
+      return;
     }
     
-    // 檢查自動清空狀態
     checkAutoClearing();
   }, [navigate]);
   

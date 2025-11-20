@@ -15,8 +15,8 @@ function Inventory({ parts, updateInventory, refreshInventory }) {
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem("user"));
     if (!localUser || localUser.role !== "admin") {
-      navigate("/");
-    }
+      navigate("/shipping");
+      }
   }, [user, navigate]);
 
   const handleSearch = (e) => {

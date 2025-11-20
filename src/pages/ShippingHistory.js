@@ -39,6 +39,11 @@ function ShippingHistory() {
         navigate('/login');
         return;
       }
+      // 僅允許管理者訪問此頁；其他角色導向 shipping
+      if (userObj.role !== 'admin') {
+        navigate('/shipping');
+        return;
+      }
 
       // 使用環境變數替換硬編碼的 URL
       const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';

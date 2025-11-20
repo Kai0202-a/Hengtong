@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../UserContext';
 
 const HengtongAI = () => {
   const navigate = useNavigate();
+  const { user } = useContext(UserContext);
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -20,6 +22,13 @@ const HengtongAI = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const localUser = user || JSON.parse(localStorage.getItem('user'));
+    if (!localUser || localUser.role !== 'admin') {
+      navigate('/shipping');
+    }
+  }, [user, navigate]);
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;

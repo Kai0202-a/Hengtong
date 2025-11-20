@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const MonthlyBilling = () => {
@@ -17,19 +17,17 @@ const MonthlyBilling = () => {
   const processShipmentData = useCallback((data) => {
     const grouped = {};
     const companiesSet = new Set();
-    const monthsSet = new Set();
-  
+
     data.forEach((shipment) => {
       const rawTime = shipment.time || shipment.createdAt;
       const date = new Date(rawTime);
       if (isNaN(date.getTime())) return;
-  
+
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const company = shipment.company || '未知公司';
-  
+
       companiesSet.add(company);
-      monthsSet.add(monthKey);
-  
+
       if (!grouped[company]) grouped[company] = {};
       if (!grouped[company][monthKey]) {
         grouped[company][monthKey] = {
@@ -39,27 +37,29 @@ const MonthlyBilling = () => {
           totalCost: 0
         };
       }
-  
+
       grouped[company][monthKey].items.push({ ...shipment, time: rawTime });
       grouped[company][monthKey].totalQuantity += shipment.quantity || 0;
       grouped[company][monthKey].totalAmount += shipment.amount || 0;
       grouped[company][monthKey].totalCost += shipment.cost || 0;
     });
-  
+
     setBillingData(grouped);
     setCompanies(Array.from(companiesSet).sort());
-    setAvailableMonths(Array.from(monthsSet).sort().reverse());
   }, []);
 
   // 獲取所有出貨資料（修正：依賴 processShipmentData，並對 result.data 做防呆）
-  const fetchShipmentData = useCallback(async () => {
+  const fetchShipmentData = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/shipments`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && Array.isArray(result.data)) {
           processShipmentData(result.data);
+          try {
+            localStorage.setItem('mb_cache_shipments', JSON.stringify({ data: result.data, ts: Date.now() }));
+          } catch {}
         } else {
           setBillingData({});
           setCompanies([]);
@@ -69,7 +69,7 @@ const MonthlyBilling = () => {
     } catch (error) {
       console.error('獲取出貨資料失敗:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [API_BASE_URL, processShipmentData]);
 
@@ -94,26 +94,27 @@ const MonthlyBilling = () => {
   };
 
   // 獲取選定的帳單資料（固定按日期排序）
-  const getSelectedBillingData = () => {
-    if (!selectedCompany || !selectedMonth || !billingData[selectedCompany]) {
-      return null;
-    }
-    
+  const selectedData = useMemo(() => {
+    if (!selectedCompany || !selectedMonth || !billingData[selectedCompany]) return null;
     const data = { ...billingData[selectedCompany][selectedMonth] };
-    
-    // 固定按日期排序（最新日期在前）
-    data.items = [...data.items].sort((a, b) => {
-      return new Date(b.time) - new Date(a.time);
-    });
-    
+    data.items = [...data.items].sort((a, b) => new Date(b.time) - new Date(a.time));
     return data;
-  };
+  }, [selectedCompany, selectedMonth, billingData]);
 
   useEffect(() => {
-    fetchShipmentData();
-    // 嘗試恢復上次選擇的月份
+    try {
+      const cacheRaw = localStorage.getItem('mb_cache_shipments');
+      if (cacheRaw) {
+        const cache = JSON.parse(cacheRaw);
+        if (cache && Array.isArray(cache.data)) {
+          processShipmentData(cache.data);
+          setLoading(false);
+        }
+      }
+    } catch {}
     const savedMonth = localStorage.getItem('mb_selectedMonth');
     if (savedMonth) setSelectedMonth(savedMonth);
+    fetchShipmentData(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -131,6 +132,22 @@ const MonthlyBilling = () => {
     }
   }, [companies, availableMonths, selectedCompany, selectedMonth]);
 
+  useEffect(() => {
+    const monthsSet = new Set();
+    if (selectedCompany && billingData[selectedCompany]) {
+      Object.keys(billingData[selectedCompany]).forEach((m) => monthsSet.add(m));
+    } else {
+      Object.values(billingData).forEach((companyObj) => {
+        Object.keys(companyObj).forEach((m) => monthsSet.add(m));
+      });
+    }
+    const newMonths = Array.from(monthsSet).sort().reverse();
+    setAvailableMonths(newMonths);
+    if (selectedMonth && newMonths.length > 0 && !newMonths.includes(selectedMonth)) {
+      setSelectedMonth(newMonths[0]);
+    }
+  }, [selectedCompany, billingData]);
+
   // 變更選項時保存
   useEffect(() => {
     if (selectedCompany) localStorage.setItem('mb_selectedCompany', selectedCompany);
@@ -138,7 +155,7 @@ const MonthlyBilling = () => {
   useEffect(() => {
     if (selectedMonth) localStorage.setItem('mb_selectedMonth', selectedMonth);
   }, [selectedMonth]);
-  const selectedData = getSelectedBillingData();
+  
 
 
   if (loading) {

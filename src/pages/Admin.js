@@ -34,6 +34,7 @@ function Admin() {
   const [dealerInventories, setDealerInventories] = useState({});
   const [inventoryLoading, setInventoryLoading] = useState({});
   const [products, setProducts] = useState([]);
+  const [dealerAdjustQty, setDealerAdjustQty] = useState({});
   
   // 新增：訂單單據相關狀態
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -908,12 +909,12 @@ function Admin() {
               const totalCost = incomeSummaryData ? (incomeSummaryData.totalCost || 0) : rows.reduce((s, r) => s + (r.totalCost || 0), 0);
               const totalProfit = totalAmt - totalCost;
               return (
-                <div className="income-print-content" style={{ background: '#ffffff', color: '#333', padding: 16, borderRadius: 8 }}>
+                <div className="income-print-content" style={{ background: '#2c3e50', color: '#f5f6fa', padding: 16, borderRadius: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-                    <h3 style={{ margin: 0 }}>收入統計報表</h3>
-                    <div style={{ color: '#666' }}>{selectedIncomeMonth || '未選擇月份'}</div>
+                    <h3 style={{ margin: 0, color: '#f5f6fa' }}>收入統計報表</h3>
+                    <div style={{ color: '#f5f6fa' }}>{selectedIncomeMonth || '未選擇月份'}</div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: '#555' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: '#f5f6fa' }}>
                     <div>商家：{selectedIncomeCompany || '全部'}</div>
                     <div>總出貨數量：{totalQty}</div>
                     <div style={{ fontWeight: 600 }}>總金額：NT$ {Math.round(totalAmt).toLocaleString()}</div>
@@ -922,32 +923,32 @@ function Admin() {
                   <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr style={{ background: '#f5f5f5' }}>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>商家</th>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>店家價</th>
-                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
+                        <tr style={{ background: '#34495e' }}>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>日期</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>商家</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>品項</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>數量</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>成本</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>店家價</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#34495e', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>金額</th>
                         </tr>
                       </thead>
                       <tbody>
                         {rows.sort((a, b) => new Date(a.date) - new Date(b.date)).map((r, idx) => (
                           <tr key={idx}>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.date}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.company}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.name}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{r.qty}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.unitCost).toLocaleString()}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.unitPrice).toLocaleString()}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.amount).toLocaleString()}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>{r.date}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>{r.company}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a' }}>{r.name}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right' }}>{r.qty}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right' }}>NT$ {Math.round(r.unitCost).toLocaleString()}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right' }}>NT$ {Math.round(r.unitPrice).toLocaleString()}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right' }}>NT$ {Math.round(r.amount).toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div style={{ marginTop: 16, color: '#555' }}>備註：本報表僅供內部管理使用。</div>
+                  <div style={{ marginTop: 16, color: '#f5f6fa' }}>備註：本報表僅供內部管理使用。</div>
                 </div>
               );
             })()}
@@ -955,7 +956,12 @@ function Admin() {
               @media print {
                 body * { visibility: hidden; }
                 .income-print-content, .income-print-content * { visibility: visible; }
-                .income-print-content { position: absolute; left: 0; top: 0; width: 100%; }
+                .income-print-content {
+                  position: absolute; left: 0; top: 0; width: 100%;
+                  background: #ffffff !important; color: #333 !important;
+                }
+                .income-print-content thead tr { background: #f5f5f5 !important; }
+                .income-print-content th, .income-print-content td { border-color: #e0e0e0 !important; }
                 @page { margin: 1cm; size: A4; }
               }
             `}</style>
@@ -1055,7 +1061,12 @@ function Admin() {
               @media print {
                 body * { visibility: hidden; }
                 .income-print-content, .income-print-content * { visibility: visible; }
-                .income-print-content { position: absolute; left: 0; top: 0; width: 100%; }
+                .income-print-content {
+                  position: absolute; left: 0; top: 0; width: 100%;
+                  background: #ffffff !important; color: #333 !important;
+                }
+                .income-print-content thead tr { background: #f5f5f5 !important; }
+                .income-print-content th, .income-print-content td { border-color: #e0e0e0 !important; }
                 @page { margin: 1cm; size: A4; }
               }
             `}</style>
@@ -1309,12 +1320,28 @@ function Admin() {
                                       </div>
                                       
                                       {/* 操作按鈕 */}
-                                      <div style={{ display: 'flex', gap: 4 }}>
+                                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          value={(dealerAdjustQty[dealer.username]?.[product.id]) ?? 1}
+                                          onChange={(e) => {
+                                            const val = Math.max(1, parseInt(e.target.value) || 1);
+                                            setDealerAdjustQty(prev => ({
+                                              ...prev,
+                                              [dealer.username]: {
+                                                ...(prev[dealer.username] || {}),
+                                                [product.id]: val
+                                              }
+                                            }));
+                                          }}
+                                          style={{ width: 70, padding: '4px 6px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
+                                        />
                                         <button
                                           onClick={() => {
-                                            const quantity = prompt('請輸入要增加的數量:');
-                                            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
-                                              updateDealerInventory(dealer.username, product.id, quantity, 'add');
+                                            const q = dealerAdjustQty[dealer.username]?.[product.id] ?? 1;
+                                            if (q > 0) {
+                                              updateDealerInventory(dealer.username, product.id, q, 'add');
                                             }
                                           }}
                                           style={{
@@ -1329,17 +1356,14 @@ function Admin() {
                                         >
                                           +
                                         </button>
-                                        
                                         <button
                                           onClick={() => {
-                                            const quantity = prompt('請輸入要減少的數量:');
-                                            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
-                                              if (parseInt(quantity) <= currentStock) {
-                                                updateDealerInventory(dealer.username, product.id, quantity, 'subtract');
-                                              } else {
-                                                alert('減少數量不能超過當前庫存！');
-                                              }
+                                            const q = dealerAdjustQty[dealer.username]?.[product.id] ?? 1;
+                                            if (q > currentStock) {
+                                              alert('減少數量不能超過當前庫存！');
+                                              return;
                                             }
+                                            updateDealerInventory(dealer.username, product.id, q, 'subtract');
                                           }}
                                           style={{
                                             padding: '4px 8px',

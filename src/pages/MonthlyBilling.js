@@ -287,18 +287,20 @@ const MonthlyBilling = () => {
         {selectedData ? (
           <div ref={printRef} className="print-content">
             <div style={{ background: '#ffffff', color: '#333', padding: 24, borderRadius: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-                <h3 style={{ margin: 0 }}>{selectedCompany || '未選擇商家'}</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+                <h2 style={{ margin: 0 }}>月度請款單</h2>
                 <div style={{ color: '#666' }}>{selectedMonth || '未選擇月份'}</div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, color: '#555' }}>
+                <div>店家：{selectedCompany || '未選擇商家'}</div>
+                <div>期間：{selectedMonth || '未選擇月份'}</div>
               </div>
 
               {selectedData.items && selectedData.items.length > 0 ? (
                 <div>
                   <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 16 }}>
                     <div>總出貨數量：{selectedData.totalQuantity || 0}</div>
-                    <div>總金額：{formatCurrency(selectedData.totalAmount || 0)}</div>
-                    <div>總成本：{formatCurrency(selectedData.totalCost || 0)}</div>
-                    <div>總利潤：{formatCurrency((selectedData.totalAmount || 0) - (selectedData.totalCost || 0))}</div>
+                    <div style={{ fontWeight: 600 }}>請款總金額：{formatCurrency(selectedData.totalAmount || 0)}</div>
                   </div>
 
                   <div style={{ overflowX: 'auto' }}>
@@ -308,8 +310,8 @@ const MonthlyBilling = () => {
                           <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
                           <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>單價</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -318,12 +320,19 @@ const MonthlyBilling = () => {
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.cost || 0)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  <div style={{ marginTop: 24 }}>
+                    <div style={{ color: '#555' }}>備註：本請款單依當月出貨記錄統計。</div>
+                    <div style={{ marginTop: 12, display: 'flex', gap: 24 }}>
+                      <div style={{ flex: 1 }}>開立：________________</div>
+                      <div style={{ flex: 1 }}>簽收：________________</div>
+                    </div>
                   </div>
                 </div>
               ) : (

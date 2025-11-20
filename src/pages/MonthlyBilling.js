@@ -402,12 +402,12 @@ const MonthlyBilling = () => {
         {/* 帳單內容 */}
         {selectedData ? (
           <div ref={printRef} className="print-content">
-            <div style={{ background: '#ffffff', color: '#333', padding: 24, borderRadius: 12 }}>
+            <div style={{ background: '#2c3e50', color: '#ecf0f1', padding: 24, borderRadius: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
                 <h2 style={{ margin: 0 }}>月度請款單</h2>
-                <div style={{ color: '#666' }}>{selectedMonth || '未選擇月份'}</div>
+                <div style={{ color: '#f5f6fa' }}>{selectedMonth || '未選擇月份'}</div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, color: '#555' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, color: '#bdc3c7' }}>
                 <div>店家：{selectedCompany || '未選擇商家'}</div>
                 <div>期間：{selectedMonth || '未選擇月份'}</div>
               </div>
@@ -422,12 +422,12 @@ const MonthlyBilling = () => {
                   <div className="mb-table-container" style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
-                        <tr style={{ background: '#f5f5f5' }}>
-                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
-                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>單價</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
+                        <tr style={{ background: '#34495e' }}>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>日期</th>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>品項</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>數量</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>單價</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>金額</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -436,11 +436,11 @@ const MonthlyBilling = () => {
                           if (isPrinting) {
                             return items.map((item, idx) => (
                               <tr key={idx}>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>{formatDate(item.time)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>{item.quantity || 0}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>{formatCurrency(item.amount || 0)}</td>
                               </tr>
                             ));
                           }
@@ -462,11 +462,11 @@ const MonthlyBilling = () => {
                             <tr key="top-pad"><td colSpan="5" style={{ height: topPad }}></td></tr>,
                             ...slice.map((item, idx) => (
                               <tr key={`${start}-${idx}`}>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
-                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>{formatDate(item.time)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', color: '#ecf0f1' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>{item.quantity || 0}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #4a5f7a', textAlign: 'right', color: '#ecf0f1' }}>{formatCurrency(item.amount || 0)}</td>
                               </tr>
                             )),
                             <tr key="bottom-pad"><td colSpan="5" style={{ height: bottomPad }}></td></tr>
@@ -476,7 +476,7 @@ const MonthlyBilling = () => {
                     </table>
                   </div>
                   <div style={{ marginTop: 24 }}>
-                    <div style={{ color: '#555' }}>備註：本請款單依當月出貨記錄統計。</div>
+                    <div style={{ color: '#bdc3c7' }}>備註：本請款單依當月出貨記錄統計。</div>
                     <div style={{ marginTop: 12, display: 'flex', gap: 24 }}>
                       <div style={{ flex: 1 }}>開立：________________</div>
                       <div style={{ flex: 1 }}>簽收：________________</div>
@@ -484,7 +484,7 @@ const MonthlyBilling = () => {
                   </div>
                 </div>
               ) : (
-                <div style={{ color: '#666' }}>本月無出貨資料</div>
+                <div style={{ color: '#aaa' }}>本月無出貨資料</div>
               )}
             </div>
           </div>
@@ -504,22 +504,12 @@ const MonthlyBilling = () => {
         {/* 列印樣式 */}
         <style>{`
           @media print {
-            body * {
-              visibility: hidden;
-            }
-            .print-content, .print-content * {
-              visibility: visible;
-            }
-            .print-content {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-            }
-            @page {
-              margin: 1cm;
-              size: A4;
-            }
+            body * { visibility: hidden; }
+            .print-content, .print-content * { visibility: visible; }
+            .print-content { position: absolute; left: 0; top: 0; width: 100%; background: #ffffff !important; color: #333 !important; }
+            .print-content thead tr { background: #f5f5f5 !important; }
+            .print-content th, .print-content td { border-color: #e0e0e0 !important; }
+            @page { margin: 1cm; size: A4; }
           }
         `}</style>
       </div>

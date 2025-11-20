@@ -851,7 +851,7 @@ function Admin() {
                   onChange={(e) => setSelectedIncomeMonth(e.target.value)}
                   style={{ width: '100%', padding: '10px 12px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}
                 >
-                  <option value="">請選擇月份</option>
+                  <option value="">全部</option>
                   {incomeMonths.map(m => (
                     <option key={m} value={m}>{m}</option>
                   ))}
@@ -912,7 +912,7 @@ function Admin() {
                 <div className="income-print-content" style={{ background: '#2c3e50', color: '#f5f6fa', padding: 16, borderRadius: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
                     <h3 style={{ margin: 0, color: '#f5f6fa' }}>收入統計報表</h3>
-                    <div style={{ color: '#f5f6fa' }}>{selectedIncomeMonth || '未選擇月份'}</div>
+                    <div style={{ color: '#f5f6fa' }}>{selectedIncomeMonth || '全部'}</div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: '#f5f6fa' }}>
                     <div>商家：{selectedIncomeCompany || '全部'}</div>

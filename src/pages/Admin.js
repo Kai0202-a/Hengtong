@@ -48,7 +48,12 @@ function Admin() {
   const [dealers, setDealers] = useState([]);
   const [dealersLoading, setDealersLoading] = useState(false);
   const [dealersError, setDealersError] = useState(null);
-  const [onlineStatus, setOnlineStatus] = useState({}); // 新增：用戶上線狀態
+  const [onlineStatus, setOnlineStatus] = useState({});
+  const [showIncomeStats, setShowIncomeStats] = useState(false);
+  const [incomeMonths, setIncomeMonths] = useState([]);
+  const [incomeCompanies, setIncomeCompanies] = useState([]);
+  const [selectedIncomeMonth, setSelectedIncomeMonth] = useState("");
+  const [selectedIncomeCompany, setSelectedIncomeCompany] = useState("");
 
     // 新增：獲取用戶上線狀態
   const fetchOnlineStatus = useCallback(async (dealersList) => {
@@ -430,6 +435,32 @@ function Admin() {
     });
   };
 
+  useEffect(() => {
+    const monthKeyOf = (d) => {
+      const date = new Date(d);
+      if (isNaN(date.getTime())) return String(d).slice(0, 7);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    };
+    const mSet = new Set();
+    const cSet = new Set();
+    (orders || []).forEach(o => {
+      mSet.add(monthKeyOf(o.createdAt));
+      if (o.company) cSet.add(o.company);
+    });
+    const months = Array.from(mSet).sort().reverse();
+    const companies = Array.from(cSet).sort();
+    setIncomeMonths(months);
+    setIncomeCompanies(companies);
+    if (!selectedIncomeMonth && months.length > 0) {
+      setSelectedIncomeMonth(months[0]);
+    } else if (selectedIncomeMonth && months.length > 0 && !months.includes(selectedIncomeMonth)) {
+      setSelectedIncomeMonth(months[0]);
+    }
+    if (selectedIncomeCompany && companies.length > 0 && !companies.includes(selectedIncomeCompany)) {
+      setSelectedIncomeCompany("");
+    }
+  }, [orders]);
+
   // 新增：檢查是否需要自動清空（每月1號）
   // 修改自動清空檢查邏輯
   return (
@@ -610,6 +641,141 @@ function Admin() {
         )}
       </div>
       
+      <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, color: '#f5f6fa' }}>收入統計</h3>
+          <button
+            onClick={() => setShowIncomeStats(prev => !prev)}
+            style={{
+              padding: '8px 16px',
+              background: showIncomeStats ? '#f44336' : '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer'
+            }}
+          >
+            {showIncomeStats ? '隱藏' : '顯示'}
+          </button>
+        </div>
+        {showIncomeStats && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>選擇月份</label>
+                <select
+                  value={selectedIncomeMonth}
+                  onChange={(e) => setSelectedIncomeMonth(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}
+                >
+                  <option value="">請選擇月份</option>
+                  {incomeMonths.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>選擇商家</label>
+                <select
+                  value={selectedIncomeCompany}
+                  onChange={(e) => setSelectedIncomeCompany(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}
+                >
+                  <option value="">全部</option>
+                  {incomeCompanies.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+              <button
+                onClick={() => window.print()}
+                style={{ padding: '8px 16px', background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                🖨️ 列印
+              </button>
+            </div>
+            {(() => {
+              const monthKeyOf = (d) => {
+                const date = new Date(d);
+                if (isNaN(date.getTime())) return String(d).slice(0, 7);
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+              };
+              const filtered = (orders || []).filter(o => {
+                const mk = monthKeyOf(o.createdAt);
+                const monthOk = selectedIncomeMonth ? mk === selectedIncomeMonth : true;
+                const companyOk = selectedIncomeCompany ? o.company === selectedIncomeCompany : true;
+                return monthOk && companyOk;
+              });
+              const rows = [];
+              filtered.forEach(o => {
+                (o.items || []).forEach(it => {
+                  rows.push({
+                    date: o.time,
+                    company: o.company,
+                    name: it.partName,
+                    qty: it.quantity || 0,
+                    price: it.amount && it.quantity ? (it.amount / it.quantity) : 0,
+                    amount: it.amount || 0
+                  });
+                });
+              });
+              const totalQty = rows.reduce((s, r) => s + (r.qty || 0), 0);
+              const totalAmt = rows.reduce((s, r) => s + (r.amount || 0), 0);
+              return (
+                <div className="income-print-content" style={{ background: '#ffffff', color: '#333', padding: 16, borderRadius: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+                    <h3 style={{ margin: 0 }}>收入統計報表</h3>
+                    <div style={{ color: '#666' }}>{selectedIncomeMonth || '未選擇月份'}</div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, color: '#555' }}>
+                    <div>商家：{selectedIncomeCompany || '全部'}</div>
+                    <div>總出貨數量：{totalQty}</div>
+                    <div style={{ fontWeight: 600 }}>總金額：NT$ {Math.round(totalAmt).toLocaleString()}</div>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: '#f5f5f5' }}>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>商家</th>
+                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>單價</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.sort((a, b) => new Date(a.date) - new Date(b.date)).map((r, idx) => (
+                          <tr key={idx}>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.date}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.company}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.name}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{r.qty}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.price).toLocaleString()}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.amount).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{ marginTop: 16, color: '#555' }}>備註：本報表僅供內部管理使用。</div>
+                </div>
+              );
+            })()}
+            <style>{`
+              @media print {
+                body * { visibility: hidden; }
+                .income-print-content, .income-print-content * { visibility: visible; }
+                .income-print-content { position: absolute; left: 0; top: 0; width: 100%; }
+                @page { margin: 1cm; size: A4; }
+              }
+            `}</style>
+          </div>
+        )}
+      </div>
+
       {/* 通路商管理區塊 */}
       <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

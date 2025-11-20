@@ -10,6 +10,9 @@ const MonthlyBilling = () => {
   const [billingData, setBillingData] = useState({});
   const [companies, setCompanies] = useState([]);
   const [availableMonths, setAvailableMonths] = useState([]);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryData, setSummaryData] = useState(null);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
 
@@ -79,6 +82,57 @@ const MonthlyBilling = () => {
   const handlePrint = () => {
     window.print();
   };
+  const exportMonthlyCSV = () => {
+    if (!selectedData || !selectedData.items || !selectedData.items.length) return;
+    const header = ['日期', '品項', '數量', '單價', '金額'];
+    const rows = selectedData.items.map(item => {
+      const qty = item.quantity || 0;
+      const amount = item.amount || 0;
+      const unitPrice = (item.price != null) ? item.price : (qty ? (amount / qty) : 0);
+      const date = item.time || '';
+      const name = item.partName || item.productName || item.name || item.part || '';
+      return [String(date), name, qty, unitPrice, amount];
+    });
+    const totalQty = selectedData.totalQuantity || rows.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+    const totalAmt = selectedData.totalAmount || rows.reduce((s, r) => s + (parseFloat(r[4]) || 0), 0);
+    const escape = (v) => {
+      if (typeof v === 'string') return '"' + v.replace(/"/g, '""') + '"';
+      return String(v);
+    };
+    const companyName = (() => {
+      try {
+        return localStorage.getItem('reportCompanyHeader') || (process.env.REACT_APP_COMPANY_NAME || '恆通公司');
+      } catch {
+        return process.env.REACT_APP_COMPANY_NAME || '恆通公司';
+      }
+    })();
+    const ts = new Date();
+    const reportId = `RPT-${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}${String(ts.getSeconds()).padStart(2,'0')}`;
+    const info = [
+      ['公司抬頭', companyName],
+      ['報表編號', reportId],
+      ['生成時間', ts.toLocaleString('zh-TW')],
+      ['報表類型', '月度請款單'],
+      ['店家', selectedCompany || '未選擇'],
+      ['月份', selectedMonth || '未選擇']
+    ];
+    const csvParts = [];
+    csvParts.push(info.map(row => row.map(escape).join(',')).join('\n'));
+    csvParts.push('');
+    csvParts.push(header.map(escape).join(','));
+    csvParts.push(rows.map(r => r.map(escape).join(',')).join('\n'));
+    csvParts.push('');
+    csvParts.push(['合計', '', totalQty, '', totalAmt].map(escape).join(','));
+    const BOM = '\uFEFF';
+    const csv = csvParts.join('\n');
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `billing_${selectedCompany || 'company'}_${selectedMonth || 'month'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // 用於顯示金額與日期（渲染中會使用）
   const formatCurrency = (amount) => {
@@ -95,13 +149,14 @@ const MonthlyBilling = () => {
 
   // 獲取選定的帳單資料（固定按日期排序）
   const selectedData = useMemo(() => {
+    if (summaryData) return summaryData;
     if (!selectedCompany || !selectedMonth || !billingData[selectedCompany]) return null;
     const monthData = billingData[selectedCompany][selectedMonth];
     if (!monthData) return { items: [], totalQuantity: 0, totalAmount: 0, totalCost: 0 };
     const data = { ...monthData };
     data.items = [...(data.items || [])].sort((a, b) => new Date(b.time) - new Date(a.time));
     return data;
-  }, [selectedCompany, selectedMonth, billingData]);
+  }, [summaryData, selectedCompany, selectedMonth, billingData]);
 
   useEffect(() => {
     try {
@@ -119,6 +174,43 @@ const MonthlyBilling = () => {
     fetchShipmentData(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchMonthlySummary = useCallback(async (company, month) => {
+    try {
+      setSummaryLoading(true);
+      const cacheKey = `mb_summary_${company}_${month}`;
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && obj.ts && Date.now() - obj.ts < 300000 && obj.data) {
+          setSummaryData(obj.data);
+        }
+      }
+      const resp = await fetch(`${API_BASE_URL}/api/shipments?summary=true&company=${encodeURIComponent(company)}&month=${encodeURIComponent(month)}`);
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.success && result.data) {
+          const data = {
+            items: (result.data.items || []).map(it => ({ ...it })),
+            totalQuantity: result.data.totalQuantity || 0,
+            totalAmount: result.data.totalAmount || 0,
+            totalCost: result.data.totalCost || 0
+          };
+          setSummaryData(data);
+          try { localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() })); } catch {}
+        }
+      }
+    } catch (e) {
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    if (selectedCompany && selectedMonth) {
+      fetchMonthlySummary(selectedCompany, selectedMonth);
+    }
+  }, [selectedCompany, selectedMonth, fetchMonthlySummary]);
 
   // 資料載入完成後，預設選第一個公司與最新月份（若尚未選）
   useEffect(() => {
@@ -151,6 +243,17 @@ const MonthlyBilling = () => {
       setSelectedMonth(newMonths[0]);
     }
   }, [selectedCompany, billingData]);
+
+  useEffect(() => {
+    const beforePrint = () => setIsPrinting(true);
+    const afterPrint = () => setIsPrinting(false);
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint', afterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', beforePrint);
+      window.removeEventListener('afterprint', afterPrint);
+    };
+  }, []);
 
   // 變更選項時保存
   useEffect(() => {
@@ -280,6 +383,19 @@ const MonthlyBilling = () => {
             >
               🖨️ 列印
             </button>
+            <button 
+              onClick={exportMonthlyCSV}
+              style={{ 
+                background: '#9C27B0', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: 6, 
+                padding: '10px 16px', 
+                cursor: 'pointer' 
+              }}
+            >
+              匯出CSV
+            </button>
             {/* 其餘按鈕/內容保持 */}
           </div>
         )}
@@ -303,7 +419,7 @@ const MonthlyBilling = () => {
                     <div style={{ fontWeight: 600 }}>請款總金額：{formatCurrency(selectedData.totalAmount || 0)}</div>
                   </div>
 
-                  <div style={{ overflowX: 'auto' }}>
+                  <div className="mb-table-container" style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#f5f5f5' }}>
@@ -315,15 +431,47 @@ const MonthlyBilling = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedData.items.map((item, idx) => (
-                          <tr key={idx}>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
-                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
-                          </tr>
-                        ))}
+                        {(() => {
+                          const items = selectedData.items || [];
+                          if (isPrinting) {
+                            return items.map((item, idx) => (
+                              <tr key={idx}>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
+                              </tr>
+                            ));
+                          }
+                          const container = document.querySelector('.mb-table-container');
+                          const rowHeight = 44;
+                          let containerHeight = 500;
+                          let scrollTop = 0;
+                          if (container) {
+                            containerHeight = container.clientHeight;
+                            scrollTop = container.scrollTop;
+                          }
+                          const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 5);
+                          const visible = Math.ceil(containerHeight / rowHeight) + 10;
+                          const end = Math.min(items.length, start + visible);
+                          const topPad = start * rowHeight;
+                          const bottomPad = (items.length - end) * rowHeight;
+                          const slice = items.slice(start, end);
+                          return ([
+                            <tr key="top-pad"><td colSpan="5" style={{ height: topPad }}></td></tr>,
+                            ...slice.map((item, idx) => (
+                              <tr key={`${start}-${idx}`}>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{formatDate(item.time)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{item.partName || item.productName || item.name || item.part || '—'}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{item.quantity || 0}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency((item.price != null ? item.price : ((item.amount && item.quantity) ? (item.amount / item.quantity) : 0)) || 0)}</td>
+                                <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{formatCurrency(item.amount || 0)}</td>
+                              </tr>
+                            )),
+                            <tr key="bottom-pad"><td colSpan="5" style={{ height: bottomPad }}></td></tr>
+                          ]);
+                        })()}
                       </tbody>
                     </table>
                   </div>

@@ -54,6 +54,119 @@ function Admin() {
   const [incomeCompanies, setIncomeCompanies] = useState([]);
   const [selectedIncomeMonth, setSelectedIncomeMonth] = useState("");
   const [selectedIncomeCompany, setSelectedIncomeCompany] = useState("");
+  const [showIncomeMatrix, setShowIncomeMatrix] = useState(false);
+  const [incomeMatrixLoading, setIncomeMatrixLoading] = useState(false);
+  const [incomeMatrixData, setIncomeMatrixData] = useState(null);
+  const [matrixGroupBy, setMatrixGroupBy] = useState('company');
+  const [matrixStartMonth, setMatrixStartMonth] = useState('');
+  const [matrixEndMonth, setMatrixEndMonth] = useState('');
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('reportCompanyHeader');
+      if (saved) setCompanyHeader(saved);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem('reportCompanyHeader', companyHeader || '');
+    } catch {}
+  }, [companyHeader]);
+  const exportIncomeMatrixCSV = () => {
+    if (!incomeMatrixData) return;
+    const headerLabel = matrixGroupBy === 'company' ? '商家' : '月份';
+    const header = [headerLabel, '數量', '金額', '成本', '利潤'];
+    const rows = (incomeMatrixData.groups || []).map(g => {
+      const qty = g.totalQuantity || 0;
+      const amt = g.totalAmount || 0;
+      const cost = g.totalCost || 0;
+      const profit = amt - cost;
+      return [g._id, qty, amt, cost, profit];
+    });
+    const totalQty = incomeMatrixData.totalQuantity || 0;
+    const totalAmt = incomeMatrixData.totalAmount || 0;
+    const totalCost = incomeMatrixData.totalCost || 0;
+    const totalProfit = totalAmt - totalCost;
+    const escape = (v) => {
+      if (typeof v === 'string') return '"' + v.replace(/"/g, '""') + '"';
+      return String(v);
+    };
+    const companyName = companyHeader || (process.env.REACT_APP_COMPANY_NAME || '恆通公司');
+    const ts = new Date();
+    const reportId = `RPT-${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}${String(ts.getSeconds()).padStart(2,'0')}`;
+    const info = [
+      ['公司抬頭', companyName],
+      ['報表編號', reportId],
+      ['生成時間', ts.toLocaleString('zh-TW')],
+      ['報表類型', '收入總表'],
+      ['群組方式', matrixGroupBy === 'company' ? '依商家' : '依月份'],
+      ['期間', `${matrixStartMonth} ~ ${matrixEndMonth}`]
+    ];
+    const csvParts = [];
+    csvParts.push(info.map(row => row.map(escape).join(',')).join('\n'));
+    csvParts.push('');
+    csvParts.push(header.map(escape).join(','));
+    csvParts.push(rows.map(r => r.map(escape).join(',')).join('\n'));
+    csvParts.push('');
+    csvParts.push(['合計', totalQty, totalAmt, totalCost, totalProfit].map(escape).join(','));
+    const BOM = '\uFEFF';
+    const csv = csvParts.join('\n');
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `income_${matrixGroupBy}_${matrixStartMonth}_${matrixEndMonth}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const exportIncomeDetailCSV = () => {
+    const items = (incomeSummaryData && incomeSummaryData.items) ? incomeSummaryData.items : [];
+    if (!items.length) return;
+    const header = ['日期', '商家', '品項', '數量', '成本', '店家價', '金額'];
+    const rows = items.map(it => {
+      const qty = it.quantity || 0;
+      const amount = it.amount || 0;
+      const unitCost = (it.cost != null && qty) ? (it.cost / qty) : (qty ? (amount / qty) : 0);
+      const unitPrice = (it.price != null) ? it.price : (qty ? (amount / qty) : 0);
+      const date = it.time || it.createdAt || '';
+      return [String(date), it.company || '', it.partName || '', qty, unitCost, unitPrice, amount];
+    });
+    const totalQty = items.reduce((s, it) => s + (it.quantity || 0), 0);
+    const totalAmount = items.reduce((s, it) => s + (it.amount || 0), 0);
+    const totalCost = items.reduce((s, it) => s + (it.cost || 0), 0);
+    const totalProfit = totalAmount - totalCost;
+    const escape = (v) => {
+      if (typeof v === 'string') return '"' + v.replace(/"/g, '""') + '"';
+      return String(v);
+    };
+    const companyName = companyHeader || (process.env.REACT_APP_COMPANY_NAME || '恆通公司');
+    const ts = new Date();
+    const reportId = `RPT-${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}${String(ts.getSeconds()).padStart(2,'0')}`;
+    const info = [
+      ['公司抬頭', companyName],
+      ['報表編號', reportId],
+      ['生成時間', ts.toLocaleString('zh-TW')],
+      ['報表類型', '收入統計明細'],
+      ['商家', selectedIncomeCompany || '全部'],
+      ['月份', selectedIncomeMonth || '全部']
+    ];
+    const csvParts = [];
+    csvParts.push(info.map(row => row.map(escape).join(',')).join('\n'));
+    csvParts.push('');
+    csvParts.push(header.map(escape).join(','));
+    csvParts.push(rows.map(r => r.map(escape).join(',')).join('\n'));
+    csvParts.push('');
+    csvParts.push(['合計', '', '', totalQty, totalCost, '', totalAmount].map(escape).join(','));
+    csvParts.push(['淨利潤', '', '', '', totalProfit].map(escape).join(','));
+    const BOM = '\uFEFF';
+    const csv = csvParts.join('\n');
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `income_detail_${selectedIncomeCompany || 'all'}_${selectedIncomeMonth || 'all'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
     // 新增：獲取用戶上線狀態
   const fetchOnlineStatus = useCallback(async (dealersList) => {
@@ -459,7 +572,33 @@ function Admin() {
     if (selectedIncomeCompany && companies.length > 0 && !companies.includes(selectedIncomeCompany)) {
       setSelectedIncomeCompany("");
     }
+    if (!matrixStartMonth && months.length > 0) setMatrixStartMonth(months[months.length - 1]);
+    if (!matrixEndMonth && months.length > 0) setMatrixEndMonth(months[0]);
   }, [orders]);
+
+  const fetchIncomeMatrix = useCallback(async () => {
+    try {
+      setIncomeMatrixLoading(true);
+      const params = [];
+      params.push('summary=true');
+      params.push(`groupBy=${encodeURIComponent(matrixGroupBy)}`);
+      if (matrixStartMonth) params.push(`startMonth=${encodeURIComponent(matrixStartMonth)}`);
+      if (matrixEndMonth) params.push(`endMonth=${encodeURIComponent(matrixEndMonth)}`);
+      if (matrixGroupBy === 'month' && selectedIncomeCompany) params.push(`company=${encodeURIComponent(selectedIncomeCompany)}`);
+      const url = `${API_BASE_URL}/api/shipments?${params.join('&')}`;
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.success && result.data) {
+          setIncomeMatrixData(result.data);
+        }
+      }
+    } catch (e) {
+      console.error('獲取收入總表失敗:', e);
+    } finally {
+      setIncomeMatrixLoading(false);
+    }
+  }, [API_BASE_URL, matrixGroupBy, matrixStartMonth, matrixEndMonth, selectedIncomeCompany]);
 
   // 新增：檢查是否需要自動清空（每月1號）
   // 修改自動清空檢查邏輯
@@ -695,37 +834,35 @@ function Admin() {
               >
                 🖨️ 列印
               </button>
+              <button
+                onClick={exportIncomeDetailCSV}
+                style={{ padding: '8px 16px', background: '#9C27B0', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+              >
+                匯出CSV
+              </button>
             </div>
             {(() => {
-              const monthKeyOf = (d) => {
-                const date = new Date(d);
-                if (isNaN(date.getTime())) return String(d).slice(0, 7);
-                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-              };
-              const filtered = (orders || []).filter(o => {
-                const mk = monthKeyOf(o.createdAt);
-                const monthOk = selectedIncomeMonth ? mk === selectedIncomeMonth : true;
-                const companyOk = selectedIncomeCompany ? o.company === selectedIncomeCompany : true;
-                return monthOk && companyOk;
-              });
-              const rows = [];
-              filtered.forEach(o => {
-                (o.items || []).forEach(it => {
-                  rows.push({
-                    date: o.time,
-                    company: o.company,
-                    name: it.partName,
-                    qty: it.quantity || 0,
-                    amount: it.amount || 0,
-                    unitCost: it.cost && it.quantity ? (it.cost / it.quantity) : (it.quantity ? ( (it.amount && it.quantity) ? (it.amount / it.quantity) : 0 ) : 0),
-                    totalCost: it.cost || 0,
-                    unitPrice: (it.price != null) ? it.price : (it.amount && it.quantity ? (it.amount / it.quantity) : 0)
-                  });
-                });
-              });
-              const totalQty = rows.reduce((s, r) => s + (r.qty || 0), 0);
-              const totalAmt = rows.reduce((s, r) => s + (r.amount || 0), 0);
-              const totalCost = rows.reduce((s, r) => s + (r.totalCost || 0), 0);
+              if (incomeSummaryLoading && !incomeSummaryData) {
+                return (
+                  <div style={{ background: '#2a2e37', padding: 16, borderRadius: 8, color: '#aaa', textAlign: 'center' }}>
+                    載入聚合資料中...
+                  </div>
+                );
+              }
+              const items = (incomeSummaryData && incomeSummaryData.items) ? incomeSummaryData.items : [];
+              const rows = items.map(it => ({
+                date: it.time || it.createdAt,
+                company: it.company,
+                name: it.partName,
+                qty: it.quantity || 0,
+                amount: it.amount || 0,
+                unitCost: (it.cost != null && it.quantity) ? (it.cost / it.quantity) : (it.quantity ? ((it.amount && it.quantity) ? (it.amount / it.quantity) : 0) : 0),
+                totalCost: it.cost || 0,
+                unitPrice: (it.price != null) ? it.price : (it.amount && it.quantity ? (it.amount / it.quantity) : 0)
+              }));
+              const totalQty = incomeSummaryData ? (incomeSummaryData.totalQuantity || 0) : rows.reduce((s, r) => s + (r.qty || 0), 0);
+              const totalAmt = incomeSummaryData ? (incomeSummaryData.totalAmount || 0) : rows.reduce((s, r) => s + (r.amount || 0), 0);
+              const totalCost = incomeSummaryData ? (incomeSummaryData.totalCost || 0) : rows.reduce((s, r) => s + (r.totalCost || 0), 0);
               const totalProfit = totalAmt - totalCost;
               return (
                 <div className="income-print-content" style={{ background: '#ffffff', color: '#333', padding: 16, borderRadius: 8 }}>
@@ -739,17 +876,17 @@ function Admin() {
                     <div style={{ fontWeight: 600 }}>總金額：NT$ {Math.round(totalAmt).toLocaleString()}</div>
                     <div>總利潤：NT$ {Math.round(totalProfit).toLocaleString()}</div>
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#f5f5f5' }}>
-                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
-                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>商家</th>
-                          <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>店家價</th>
-                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>日期</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>商家</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>店家價</th>
+                          <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -771,6 +908,106 @@ function Admin() {
                 </div>
               );
             })()}
+            <style>{`
+              @media print {
+                body * { visibility: hidden; }
+                .income-print-content, .income-print-content * { visibility: visible; }
+                .income-print-content { position: absolute; left: 0; top: 0; width: 100%; }
+                @page { margin: 1cm; size: A4; }
+              }
+            `}</style>
+          </div>
+        )}
+      </div>
+
+      <div style={{ width: '95vw', maxWidth: 800, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 style={{ margin: 0, color: '#f5f6fa' }}>收入總表</h3>
+          <button
+            onClick={() => setShowIncomeMatrix(prev => !prev)}
+            style={{ padding: '8px 16px', background: showIncomeMatrix ? '#f44336' : '#4CAF50', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+          >
+            {showIncomeMatrix ? '隱藏' : '顯示'}
+          </button>
+        </div>
+        {showIncomeMatrix && (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6 }}>群組方式</label>
+                <select value={matrixGroupBy} onChange={(e) => setMatrixGroupBy(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
+                  <option value="company">依商家</option>
+                  <option value="month">依月份</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6 }}>起始月份</label>
+                <select value={matrixStartMonth} onChange={(e) => setMatrixStartMonth(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
+                  {incomeMonths.slice().reverse().map(m => (<option key={m} value={m}>{m}</option>))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6 }}>結束月份</label>
+                <select value={matrixEndMonth} onChange={(e) => setMatrixEndMonth(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
+                  {incomeMonths.map(m => (<option key={m} value={m}>{m}</option>))}
+                </select>
+              </div>
+              {matrixGroupBy === 'month' && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: 6 }}>商家</label>
+                  <select value={selectedIncomeCompany} onChange={(e) => setSelectedIncomeCompany(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}>
+                    <option value="">全部</option>
+                    {incomeCompanies.map(c => (<option key={c} value={c}>{c}</option>))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <button onClick={fetchIncomeMatrix} style={{ padding: '8px 16px', background: '#2196F3', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>查詢</button>
+              <button onClick={() => window.print()} style={{ padding: '8px 16px', background: '#4CAF50', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>🖨️ 列印</button>
+              <button onClick={exportIncomeMatrixCSV} style={{ padding: '8px 16px', background: '#9C27B0', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>匯出CSV</button>
+            </div>
+            {incomeMatrixLoading && (
+              <div style={{ background: '#2a2e37', padding: 16, borderRadius: 8, color: '#aaa', textAlign: 'center' }}>載入中...</div>
+            )}
+            {incomeMatrixData && (
+              <div className="income-print-content" style={{ background: '#ffffff', color: '#333', padding: 16, borderRadius: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+                  <h3 style={{ margin: 0 }}>收入總表</h3>
+                  <div style={{ color: '#666' }}>{matrixStartMonth} ~ {matrixEndMonth}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 12, color: '#555' }}>
+                  <div>群組：{matrixGroupBy === 'company' ? '依商家' : '依月份'}</div>
+                  <div>總數量：{incomeMatrixData.totalQuantity || 0}</div>
+                  <div style={{ fontWeight: 600 }}>總金額：NT$ {(incomeMatrixData.totalAmount || 0).toLocaleString()}</div>
+                  <div>總利潤：NT$ {((incomeMatrixData.totalAmount || 0) - (incomeMatrixData.totalCost || 0)).toLocaleString()}</div>
+                </div>
+                <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: '#f5f5f5' }}>
+                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>{matrixGroupBy === 'company' ? '商家' : '月份'}</th>
+                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
+                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
+                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
+                        <th style={{ position: 'sticky', top: 0, background: '#f5f5f5', zIndex: 1, textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>利潤</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(incomeMatrixData.groups || []).map((g, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{g._id}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{(g.totalQuantity || 0).toLocaleString()}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {(g.totalAmount || 0).toLocaleString()}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {(g.totalCost || 0).toLocaleString()}</td>
+                          <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {(((g.totalAmount || 0) - (g.totalCost || 0)) || 0).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             <style>{`
               @media print {
                 body * { visibility: hidden; }
@@ -1094,6 +1331,15 @@ function Admin() {
       {/* 後台管理系統按鈕 */}
       <div style={{ width: '95vw', maxWidth: 600, background: '#23272f', padding: 20, borderRadius: 12, color: '#f5f6fa', margin: '24px auto', boxShadow: '0 2px 12px #0002' }}>
         <h3 style={{ marginTop: 0, color: '#f5f6fa', textAlign: 'center' }}>後台管理系統</h3>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', marginBottom: 6 }}>公司抬頭</label>
+          <input
+            value={companyHeader}
+            onChange={(e) => setCompanyHeader(e.target.value)}
+            placeholder="請輸入公司抬頭"
+            style={{ width: '100%', padding: '8px 10px', border: 'none', borderRadius: 6, background: '#34495e', color: '#f5f6fa' }}
+          />
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
           <button 
             onClick={() => navigate('/inventory')}

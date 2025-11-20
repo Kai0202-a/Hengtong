@@ -86,7 +86,7 @@ export default async function handler(req, res) {
         res.status(200).json({ success: true, message: '出貨資料儲存成功', id: result.insertedId, data: shipmentData });
       }
     } else if (req.method === 'GET') {
-      const { company, startDate, endDate, page = 1, limit } = req.query;
+      const { company, startDate, endDate, page = 1, limit, summary, month, groupBy, startMonth, endMonth } = req.query;
       const actualLimit = limit ? parseInt(limit) : undefined; // 沒有指定時不限制
       let query = {};
       if (company) query.company = company;
@@ -94,6 +94,75 @@ export default async function handler(req, res) {
         query.time = {};
         if (startDate) query.time.$gte = startDate;
         if (endDate) query.time.$lte = endDate;
+      }
+
+      if (summary === 'true') {
+        let match = {};
+        if (company) match.company = company;
+        if (month) {
+          const [y, m] = String(month).split('-');
+          const start = new Date(parseInt(y), parseInt(m) - 1, 1);
+          const end = new Date(parseInt(y), parseInt(m), 1);
+          match.createdAt = { $gte: start, $lt: end };
+        } else if (startMonth || endMonth) {
+          const [sy, sm] = startMonth ? String(startMonth).split('-') : [];
+          const [ey, em] = endMonth ? String(endMonth).split('-') : [];
+          const sDate = startMonth ? new Date(parseInt(sy), parseInt(sm) - 1, 1) : undefined;
+          const eDate = endMonth ? new Date(parseInt(ey), parseInt(em), 1) : undefined;
+          if (sDate && eDate) match.createdAt = { $gte: sDate, $lt: eDate };
+          else if (sDate) match.createdAt = { $gte: sDate };
+          else if (eDate) match.createdAt = { $lt: eDate };
+        } else if (startDate || endDate) {
+          const start = startDate ? new Date(startDate) : undefined;
+          const end = endDate ? new Date(endDate) : undefined;
+          if (start && end) match.createdAt = { $gte: start, $lte: end };
+          else if (start) match.createdAt = { $gte: start };
+          else if (end) match.createdAt = { $lte: end };
+        }
+        if (groupBy === 'company' || groupBy === 'month') {
+          const proj = {
+            company: 1,
+            quantity: 1,
+            amount: 1,
+            cost: 1,
+            createdAt: 1,
+            monthKey: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }
+          };
+          const groupField = groupBy === 'company' ? '$company' : '$monthKey';
+          const pipeline = [
+            { $match: match },
+            { $project: proj },
+            { $group: { _id: groupField, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', 0 ] } } } },
+            { $sort: { _id: 1 } }
+          ];
+          const groups = await collection.aggregate(pipeline).toArray();
+          const totalsPipeline = [
+            { $match: match },
+            { $group: { _id: null, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', 0 ] } } } }
+          ];
+          const totalsAgg = await collection.aggregate(totalsPipeline).toArray();
+          const totals = totalsAgg[0] || { totalQuantity: 0, totalAmount: 0, totalCost: 0 };
+          res.status(200).json({ success: true, data: { groups, totalQuantity: totals.totalQuantity, totalAmount: totals.totalAmount, totalCost: totals.totalCost, groupBy } });
+          return;
+        } else {
+          const pipeline = [
+            { $match: match },
+            { $facet: {
+              items: [
+                { $sort: { createdAt: -1 } },
+                { $project: { company: 1, partName: 1, quantity: 1, amount: 1, price: 1, cost: 1, time: 1, createdAt: 1 } }
+              ],
+              totals: [
+                { $group: { _id: null, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', 0 ] } } } }
+              ]
+            } }
+          ];
+          const resultAgg = await collection.aggregate(pipeline).toArray();
+          const facet = resultAgg[0] || { items: [], totals: [] };
+          const totals = (facet.totals[0]) || { totalQuantity: 0, totalAmount: 0, totalCost: 0 };
+          res.status(200).json({ success: true, data: { company: company || null, month: month || null, items: facet.items, totalQuantity: totals.totalQuantity, totalAmount: totals.totalAmount, totalCost: totals.totalCost } });
+          return;
+        }
       }
       
       // 計算總記錄數

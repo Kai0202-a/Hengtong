@@ -54,6 +54,15 @@ function Admin() {
   const [incomeCompanies, setIncomeCompanies] = useState([]);
   const [selectedIncomeMonth, setSelectedIncomeMonth] = useState("");
   const [selectedIncomeCompany, setSelectedIncomeCompany] = useState("");
+  const [companyHeader, setCompanyHeader] = useState(() => {
+    try {
+      return localStorage.getItem('reportCompanyHeader') || (process.env.REACT_APP_COMPANY_NAME || '恆通公司');
+    } catch {
+      return process.env.REACT_APP_COMPANY_NAME || '恆通公司';
+    }
+  });
+  const [incomeSummaryLoading, setIncomeSummaryLoading] = useState(false);
+  const [incomeSummaryData, setIncomeSummaryData] = useState(null);
   const [showIncomeMatrix, setShowIncomeMatrix] = useState(false);
   const [incomeMatrixLoading, setIncomeMatrixLoading] = useState(false);
   const [incomeMatrixData, setIncomeMatrixData] = useState(null);
@@ -575,6 +584,40 @@ function Admin() {
     if (!matrixStartMonth && months.length > 0) setMatrixStartMonth(months[months.length - 1]);
     if (!matrixEndMonth && months.length > 0) setMatrixEndMonth(months[0]);
   }, [orders]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('reportCompanyHeader', companyHeader || '');
+    } catch {}
+  }, [companyHeader]);
+
+  const fetchIncomeSummary = useCallback(async (company, month) => {
+    try {
+      setIncomeSummaryLoading(true);
+      const params = [];
+      params.push('summary=true');
+      if (company) params.push(`company=${encodeURIComponent(company)}`);
+      if (month) params.push(`month=${encodeURIComponent(month)}`);
+      const url = `${API_BASE_URL}/api/shipments?${params.join('&')}`;
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.success && result.data) {
+          setIncomeSummaryData(result.data);
+        }
+      }
+    } catch (e) {
+      console.error('獲取收入統計聚合失敗:', e);
+    } finally {
+      setIncomeSummaryLoading(false);
+    }
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    if (showIncomeStats) {
+      fetchIncomeSummary(selectedIncomeCompany || '', selectedIncomeMonth || '');
+    }
+  }, [showIncomeStats, selectedIncomeCompany, selectedIncomeMonth, fetchIncomeSummary]);
 
   const fetchIncomeMatrix = useCallback(async () => {
     try {

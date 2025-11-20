@@ -18,7 +18,7 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
   
   // API 基礎 URL
   const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
-  const LOGO_URL = process.env.REACT_APP_LOGO_URL || '/images/logo ht.png';
+  const LOGO_URL = process.env.REACT_APP_LOGO_URL || '/images/logo%20ht.png';
   
   // 添加排序邏輯 - 按照商品編號排序
   // 修改這部分，使用 partsData 而不是 parts 參數
@@ -221,7 +221,7 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
 
   return (
     <div style={{ textAlign: 'center', marginBottom: 16 }}>
-      <img src={LOGO_URL} alt="Logo" style={{ height: 150 }} />
+      <img src={LOGO_URL} alt="Logo" style={{ height: 150 }} onError={(e) => { e.currentTarget.src = '/images/logo2.png'; }} />
       <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
         
         <div style={{ marginBottom: 20 }}>

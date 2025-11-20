@@ -9,6 +9,7 @@ function Inventory({ parts, updateInventory, refreshInventory }) {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
+  const LOGO_URL = process.env.REACT_APP_LOGO_URL || '/images/logo ht.png';
   
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem("user"));
@@ -85,7 +86,7 @@ function Inventory({ parts, updateInventory, refreshInventory }) {
   return (
     <div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16 }}>
-        <img src="/images/logo2.png" alt="logo" style={{ width: 200, height: 200, margin: '24px 0 8px 0' }} />
+        <img src={LOGO_URL} alt="logo" style={{ width: 200, height: 200, margin: '24px 0 8px 0' }} />
         <div style={{ textAlign: 'center', fontSize: '1.6rem', fontWeight: 'lighter', margin: '0 0 24px 0' }}>
           庫存管理 <span style={{ fontSize: '0.8rem', color: '#4CAF50' }}>(雲端同步)</span>
         </div>

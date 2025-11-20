@@ -143,7 +143,7 @@ const MonthlyBilling = () => {
     }
     const newMonths = Array.from(monthsSet).sort().reverse();
     setAvailableMonths(newMonths);
-    if (selectedMonth && newMonths.length > 0 && !newMonths.includes(selectedMonth)) {
+    if (newMonths.length > 0 && (!selectedMonth || !newMonths.includes(selectedMonth))) {
       setSelectedMonth(newMonths[0]);
     }
   }, [selectedCompany, billingData]);

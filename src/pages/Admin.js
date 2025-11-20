@@ -920,7 +920,7 @@ function Admin() {
                     <div style={{ fontWeight: 600 }}>總金額：NT$ {Math.round(totalAmt).toLocaleString()}</div>
                     <div>總利潤：NT$ {Math.round(totalProfit).toLocaleString()}</div>
                   </div>
-                  <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
+                  <div className="print-table-wrapper" style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#34495e' }}>
@@ -1031,7 +1031,7 @@ function Admin() {
                   <div style={{ fontWeight: 600 }}>總金額：NT$ {(incomeMatrixData.totalAmount || 0).toLocaleString()}</div>
                   <div>總利潤：NT$ {((incomeMatrixData.totalAmount || 0) - (incomeMatrixData.totalCost || 0)).toLocaleString()}</div>
                 </div>
-                <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
+                <div className="print-table-wrapper" style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f5f5f5' }}>
@@ -1065,6 +1065,8 @@ function Admin() {
                   position: absolute; left: 0; top: 0; width: 100%;
                   background: #ffffff !important; color: #333 !important;
                 }
+                .income-print-content .print-table-wrapper { max-height: none !important; overflow: visible !important; }
+                .income-print-content th { position: static !important; }
                 .income-print-content thead tr { background: #f5f5f5 !important; }
                 .income-print-content th, .income-print-content td { border-color: #e0e0e0 !important; }
                 @page { margin: 1cm; size: A4; }

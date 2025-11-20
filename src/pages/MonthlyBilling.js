@@ -96,8 +96,10 @@ const MonthlyBilling = () => {
   // 獲取選定的帳單資料（固定按日期排序）
   const selectedData = useMemo(() => {
     if (!selectedCompany || !selectedMonth || !billingData[selectedCompany]) return null;
-    const data = { ...billingData[selectedCompany][selectedMonth] };
-    data.items = [...data.items].sort((a, b) => new Date(b.time) - new Date(a.time));
+    const monthData = billingData[selectedCompany][selectedMonth];
+    if (!monthData) return { items: [], totalQuantity: 0, totalAmount: 0, totalCost: 0 };
+    const data = { ...monthData };
+    data.items = [...(data.items || [])].sort((a, b) => new Date(b.time) - new Date(a.time));
     return data;
   }, [selectedCompany, selectedMonth, billingData]);
 
@@ -143,7 +145,9 @@ const MonthlyBilling = () => {
     }
     const newMonths = Array.from(monthsSet).sort().reverse();
     setAvailableMonths(newMonths);
-    if (newMonths.length > 0 && (!selectedMonth || !newMonths.includes(selectedMonth))) {
+    if (newMonths.length === 0) {
+      if (selectedMonth) setSelectedMonth('');
+    } else if (!selectedMonth || !newMonths.includes(selectedMonth)) {
       setSelectedMonth(newMonths[0]);
     }
   }, [selectedCompany, billingData]);

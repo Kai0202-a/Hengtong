@@ -718,7 +718,8 @@ function Admin() {
                     qty: it.quantity || 0,
                     amount: it.amount || 0,
                     unitCost: it.cost && it.quantity ? (it.cost / it.quantity) : (it.quantity ? ( (it.amount && it.quantity) ? (it.amount / it.quantity) : 0 ) : 0),
-                    totalCost: it.cost || 0
+                    totalCost: it.cost || 0,
+                    unitPrice: (it.price != null) ? it.price : (it.amount && it.quantity ? (it.amount / it.quantity) : 0)
                   });
                 });
               });
@@ -747,6 +748,7 @@ function Admin() {
                           <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>品項</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>數量</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>成本</th>
+                          <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>店家價</th>
                           <th style={{ textAlign: 'right', padding: '8px 12px', borderBottom: '1px solid #e0e0e0' }}>金額</th>
                         </tr>
                       </thead>
@@ -758,6 +760,7 @@ function Admin() {
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee' }}>{r.name}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>{r.qty}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.unitCost).toLocaleString()}</td>
+                            <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.unitPrice).toLocaleString()}</td>
                             <td style={{ padding: '8px 12px', borderBottom: '1px solid #eee', textAlign: 'right' }}>NT$ {Math.round(r.amount).toLocaleString()}</td>
                           </tr>
                         ))}

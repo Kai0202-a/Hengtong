@@ -404,6 +404,7 @@ function Admin() {
       const newPassword = (dealerResetPw[dealerUsername] || '').trim();
       if (!newPassword || newPassword.length < 6) { alert('請輸入至少 6 碼的新密碼'); return; }
       const token = localStorage.getItem('authToken');
+      if (!token) { alert('未授權：請先以管理者重新登入'); return; }
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const payload = { username: dealerUsername, newPassword };

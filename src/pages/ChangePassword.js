@@ -33,6 +33,11 @@ const ChangePassword = () => {
       setMsg('新密碼與確認密碼不一致');
       return;
     }
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setMsg('未授權：請先重新登入');
+      return;
+    }
     setSubmitting(true);
     try {
       const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -41,9 +46,8 @@ const ChangePassword = () => {
         currentPassword,
         newPassword
       };
-      const token = localStorage.getItem('authToken');
       const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
       const resp = await fetch(`${AUTH_BASE_URL}/api/change-password`, {
         method: 'POST',
         headers,

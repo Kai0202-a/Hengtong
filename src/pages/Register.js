@@ -20,7 +20,7 @@ function Register() {
     
     try {
       // 使用環境變數替換硬編碼的 URL
-      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
       
       const response = await fetch(`${API_BASE_URL}/api/dealers`, {
         method: 'POST',

@@ -11,7 +11,7 @@ async function getDb() {
     client = new MongoClient(uri, { maxPoolSize: 10 });
     await client.connect();
   }
-  db = client.db(process.env.MONGODB_DB || 'app');
+  db = client.db(process.env.MONGODB_DB || process.env.DB_NAME || 'hengtong');
   return db;
 }
 

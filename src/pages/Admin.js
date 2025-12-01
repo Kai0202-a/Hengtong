@@ -37,6 +37,7 @@ function Admin() {
   const [products, setProducts] = useState([]);
   const [dealerAdjustQty, setDealerAdjustQty] = useState({});
   const [dealerResetPw, setDealerResetPw] = useState({});
+  const [adminConfirmPw, setAdminConfirmPw] = useState({});
   
   // 新增：訂單單據相關狀態
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -403,11 +404,11 @@ function Admin() {
     try {
       const newPassword = (dealerResetPw[dealerUsername] || '').trim();
       if (!newPassword || newPassword.length < 6) { alert('請輸入至少 6 碼的新密碼'); return; }
-      const token = localStorage.getItem('authToken');
-      if (!token) { alert('未授權：請先以管理者重新登入'); return; }
       const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const payload = { username: dealerUsername, newPassword };
+      const adminUsername = process.env.REACT_APP_ADMIN_USERNAME || 'admin';
+      const adminPassword = (adminConfirmPw[dealerUsername] || '').trim();
+      if (!adminPassword) { alert('請輸入管理者密碼以確認'); return; }
+      const payload = { username: dealerUsername, newPassword, adminUsername, adminPassword };
       if (userId) payload.userId = userId;
       const resp = await fetch(`${AUTH_BASE_URL}/api/admin/reset-password`, {
         method: 'POST',
@@ -1183,6 +1184,13 @@ function Admin() {
                             placeholder="輸入新密碼"
                             value={(dealerResetPw[dealer.username] ?? '')}
                             onChange={(e) => setDealerResetPw(prev => ({ ...prev, [dealer.username]: e.target.value }))}
+                            style={{ marginLeft: 8, padding: '6px 8px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
+                          />
+                          <input
+                            type="password"
+                            placeholder="管理者密碼"
+                            value={(adminConfirmPw[dealer.username] ?? '')}
+                            onChange={(e) => setAdminConfirmPw(prev => ({ ...prev, [dealer.username]: e.target.value }))}
                             style={{ marginLeft: 8, padding: '6px 8px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
                           />
                           <button

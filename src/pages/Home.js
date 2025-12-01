@@ -34,6 +34,18 @@ function Home() {
       const userObj = { username: "admin", role: "admin" };
       localStorage.setItem("user", JSON.stringify(userObj));
       setUser(userObj);
+      try {
+        const AUTH_BASE_URL = process.env.REACT_APP_AUTH_BASE_URL || '';
+        const resp = await fetch(`${AUTH_BASE_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const r = await resp.json().catch(() => ({}));
+        if (resp.ok && r && r.token) {
+          try { localStorage.setItem('authToken', r.token); } catch {}
+        }
+      } catch {}
       setLoginMsg("管理者登入成功！");
       setTimeout(() => navigate("/admin"), 800);
       return;

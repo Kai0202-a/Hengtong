@@ -45,6 +45,7 @@ function Home() {
     try {
       // 使用環境變數替換硬編碼的 URL
       const AUTH_BASE_URL = process.env.REACT_APP_AUTH_BASE_URL || '';
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
       
       const response = await fetch(`${AUTH_BASE_URL}/api/login`, {
         method: 'POST',

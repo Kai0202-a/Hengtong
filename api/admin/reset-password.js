@@ -9,8 +9,9 @@ module.exports = async (req, res) => {
     if (!check(req, 'admin-reset', 10, 60_000)) return res.status(429).json({ success: false, error: 'Too Many Requests' });
     const { username, userId, newPassword, adminUsername, adminPassword, company } = req.body || {};
     if (!newPassword || newPassword.length < 6) return res.status(400).json({ success: false, error: '操作失敗' });
-    const envAdminUser = process.env.ADMIN_USERNAME || 'admin';
-    const envAdminPass = process.env.ADMIN_PASSWORD || 'admin123';
+    const envAdminUser = process.env.ADMIN_USERNAME;
+    const envAdminPass = process.env.ADMIN_PASSWORD;
+    if (!envAdminUser || !envAdminPass) return res.status(500).json({ success: false, error: '操作失敗' });
     if (!(adminUsername === envAdminUser && adminPassword === envAdminPass)) return res.status(401).json({ success: false, error: '操作失敗' });
     const db = await getDb();
     const users = db.collection('users');

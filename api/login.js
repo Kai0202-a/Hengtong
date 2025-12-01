@@ -14,9 +14,9 @@ module.exports = async (req, res) => {
     let user = await users.findOne({ username });
 
     if (!user) {
-      const adminUser = process.env.ADMIN_USERNAME || 'admin';
-      const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
-      if (username === adminUser && password === adminPass) {
+      const adminUser = process.env.ADMIN_USERNAME;
+      const adminPass = process.env.ADMIN_PASSWORD;
+      if (adminUser && adminPass && username === adminUser && password === adminPass) {
         const hash = await bcrypt.hash(adminPass, 10);
         user = { username: adminUser, role: 'admin', status: 'active', company: process.env.REACT_APP_COMPANY_NAME || '恆通公司', passwordHash: hash, createdAt: new Date() };
         await users.insertOne(user);

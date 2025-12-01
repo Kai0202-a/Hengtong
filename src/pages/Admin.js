@@ -4,6 +4,7 @@ import { UserContext } from "../UserContext";
 
 // 在檔案開頭添加 API_BASE_URL 常數
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+const AUTH_BASE_URL = process.env.REACT_APP_AUTH_BASE_URL || '';
 
 function Admin() {
   const navigate = useNavigate();
@@ -407,7 +408,7 @@ function Admin() {
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const payload = { username: dealerUsername, newPassword };
       if (userId) payload.userId = userId;
-      const resp = await fetch(`${API_BASE_URL}/api/admin/reset-password`, {
+      const resp = await fetch(`${AUTH_BASE_URL}/api/admin/reset-password`, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)

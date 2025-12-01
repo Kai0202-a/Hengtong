@@ -10,7 +10,7 @@ const ChangePassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+  const AUTH_BASE_URL = process.env.REACT_APP_AUTH_BASE_URL || '';
 
   useEffect(() => {
     const localUser = user || JSON.parse(localStorage.getItem('user'));
@@ -44,7 +44,7 @@ const ChangePassword = () => {
       const token = localStorage.getItem('authToken');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const resp = await fetch(`${API_BASE_URL}/api/change-password`, {
+      const resp = await fetch(`${AUTH_BASE_URL}/api/change-password`, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)

@@ -27,29 +27,6 @@ function Home() {
   }, [navigate]);
 
   const handleLogin = async () => {
-    const adminUsername = process.env.REACT_APP_ADMIN_USERNAME || "admin";
-    const adminPassword = process.env.REACT_APP_ADMIN_PASSWORD || "admin123";
-
-    if (username === adminUsername && password === adminPassword) {
-      const userObj = { username: "admin", role: "admin" };
-      localStorage.setItem("user", JSON.stringify(userObj));
-      setUser(userObj);
-      try {
-        const AUTH_BASE_URL = process.env.REACT_APP_AUTH_BASE_URL || '';
-        const resp = await fetch(`${AUTH_BASE_URL}/api/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        const r = await resp.json().catch(() => ({}));
-        if (resp.ok && r && r.token) {
-          try { localStorage.setItem('authToken', r.token); } catch {}
-        }
-      } catch {}
-      setLoginMsg("管理者登入成功！");
-      setTimeout(() => navigate("/admin"), 800);
-      return;
-    }
 
     setIsLoggingIn(true);
     setLoginMsg("");
@@ -72,7 +49,7 @@ function Home() {
       if (result.success) {
         const userObj = {
           username: result.data.username,
-          role: "dealer",
+          role: result.data.role || "dealer",
           status: "active",
           company: result.data.company || result.data.name
         };
@@ -100,7 +77,7 @@ function Home() {
         }
         
         setLoginMsg("登入成功！");
-        setTimeout(() => navigate("/shipping"), 800);
+        setTimeout(() => navigate(userObj.role === 'admin' ? "/admin" : "/shipping"), 800);
       } else {
         if (result.status === 'pending') {
           setLoginMsg(result.message || "您的帳號正在審核中，請等待管理員審核通過後再登入。");

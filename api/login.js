@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
     if (user.status === 'pending') return res.status(403).json({ success: false, status: 'pending', message: '帳號審核中' });
 
     const token = jwt.sign({ username: user.username, role: user.role }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '12h' });
-    res.json({ success: true, data: { username: user.username, company: user.company || user.name }, token });
+    res.json({ success: true, data: { username: user.username, role: user.role, company: user.company || user.name }, token });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message || 'Server error' });
   }

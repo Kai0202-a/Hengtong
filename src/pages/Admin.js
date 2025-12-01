@@ -398,21 +398,26 @@ function Admin() {
       alert('更新失敗，請稍後再試');
     }
   };
-  const resetDealerPassword = async (dealerUsername) => {
+  const resetDealerPassword = async (dealerUsername, userId) => {
     try {
       const newPassword = (dealerResetPw[dealerUsername] || '').trim();
-      if (!newPassword) { alert('請先輸入新密碼'); return; }
+      if (!newPassword || newPassword.length < 6) { alert('請輸入至少 6 碼的新密碼'); return; }
+      const token = localStorage.getItem('authToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const payload = { username: dealerUsername, newPassword };
+      if (userId) payload.userId = userId;
       const resp = await fetch(`${API_BASE_URL}/api/admin/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: dealerUsername, newPassword })
+        headers,
+        body: JSON.stringify(payload)
       });
       const result = await resp.json().catch(() => ({}));
       if (resp.ok && result && result.success) {
         alert('密碼已重設');
         setDealerResetPw(prev => ({ ...prev, [dealerUsername]: '' }));
       } else {
-        alert(result.message || '重設失敗');
+        alert((result && (result.message || result.error)) || `重設失敗 (HTTP ${resp.status})`);
       }
     } catch (e) {
       alert('重設失敗，請稍後再試');
@@ -1179,7 +1184,7 @@ function Admin() {
                             style={{ marginLeft: 8, padding: '6px 8px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
                           />
                           <button
-                            onClick={() => resetDealerPassword(dealer.username)}
+                            onClick={() => resetDealerPassword(dealer.username, dealer._id || dealer.id)}
                             style={{ marginLeft: 8, padding: '6px 12px', background: '#E91E63', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
                           >
                             🔐 重設密碼

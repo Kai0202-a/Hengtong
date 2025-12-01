@@ -63,6 +63,9 @@ function Home() {
           status: "active",
           company: result.data.company || result.data.name
         };
+        if (result.token) {
+          try { localStorage.setItem('authToken', result.token); } catch {}
+        }
         localStorage.setItem("user", JSON.stringify(userObj));
         setUser(userObj);
         

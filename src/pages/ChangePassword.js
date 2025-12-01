@@ -41,9 +41,12 @@ const ChangePassword = () => {
         currentPassword,
         newPassword
       };
+      const token = localStorage.getItem('authToken');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const resp = await fetch(`${API_BASE_URL}/api/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       });
       const result = await resp.json().catch(() => ({}));
@@ -53,7 +56,7 @@ const ChangePassword = () => {
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        setMsg(result.message || '更新失敗，請稍後再試');
+        setMsg((result && (result.message || result.error)) || `更新失敗 (HTTP ${resp.status})`);
       }
     } catch (e) {
       setMsg('網路錯誤，請稍後再試');

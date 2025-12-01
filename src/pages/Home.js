@@ -9,6 +9,10 @@ function Home() {
   const [password, setPassword] = useState("");
   const [loginMsg, setLoginMsg] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMsg, setForgotMsg] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
   const LOGO_VERSION = '20251121';
@@ -98,6 +102,33 @@ function Home() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) {
+      setForgotMsg("請輸入信箱");
+      return;
+    }
+    setIsSendingReset(true);
+    setForgotMsg("");
+    try {
+      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://hengtong.vercel.app';
+      const resp = await fetch(`${API_BASE_URL}/api/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      const result = await resp.json().catch(() => ({}));
+      if (resp.ok && result && result.success) {
+        setForgotMsg("重設連結已寄送至您的信箱");
+      } else {
+        setForgotMsg(result.message || "發送失敗，請稍後再試");
+      }
+    } catch (e) {
+      setForgotMsg("網路錯誤，請稍後再試");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 0 }}>
       <img src={LOGO_URL} alt="logo" style={{ width: 200, height: 200, marginBottom: 16 }} onError={(e) => { e.currentTarget.src = `/images/logo2.png?v=${LOGO_VERSION}`; }} />
@@ -160,6 +191,31 @@ function Home() {
           
           <div style={{ marginTop: 32, textAlign: 'center' }}>
             <button onClick={() => navigate('/register')}>申請帳號</button>
+            <div style={{ marginTop: 12 }}>
+              <button onClick={() => setShowForgot(v => !v)} style={{ background: 'transparent', color: '#4FC3F7', border: 'none', cursor: 'pointer' }}>忘記密碼</button>
+            </div>
+            {showForgot && (
+              <div style={{ marginTop: 12, textAlign: 'left' }}>
+                <input
+                  type="email"
+                  placeholder="請輸入註冊信箱"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  style={{ width: '100%', marginBottom: 8 }}
+                  disabled={isSendingReset}
+                />
+                <button
+                  onClick={handleForgotPassword}
+                  disabled={isSendingReset}
+                  style={{ width: '100%', opacity: isSendingReset ? 0.6 : 1 }}
+                >
+                  {isSendingReset ? '寄送中...' : '寄送重設連結'}
+                </button>
+                {forgotMsg && (
+                  <div style={{ marginTop: 8, color: forgotMsg.includes('已寄送') ? '#4CAF50' : '#ff6b6b' }}>{forgotMsg}</div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

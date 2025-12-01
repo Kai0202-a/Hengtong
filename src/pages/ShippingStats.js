@@ -253,13 +253,29 @@ function ShippingStats({ updateInventory, refreshInventory }) {  // 移除 parts
               fontSize: 18, 
               padding: '8px 16px',
               backgroundColor: '#17a2b8',
-              color: 'white',
-              border: 'none',
+              color: 'white', 
+              border: 'none', 
               borderRadius: '4px',
               cursor: 'pointer'
             }}
           >
             🔄 刷新庫存
+          </button>
+          <button 
+            type="button"
+            onClick={() => navigate('/change-password')}
+            style={{
+              fontSize: 18,
+              padding: '8px 16px',
+              backgroundColor: '#9C27B0',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginLeft: 16
+            }}
+          >
+            🔐 變更密碼
           </button>
         </div>
 

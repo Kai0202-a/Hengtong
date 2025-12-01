@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const { getDb } = require('../_mongo');
+const { ObjectId } = require('mongodb');
 
 module.exports = async (req, res) => {
   try {
@@ -11,10 +12,26 @@ module.exports = async (req, res) => {
     if (!(adminUsername === envAdminUser && adminPassword === envAdminPass)) return res.status(401).json({ success: false, error: '未授權' });
     const db = await getDb();
     const users = db.collection('users');
-    const target = username ? await users.findOne({ username }) : (userId ? await users.findOne({ _id: userId }) : null);
-    if (!target) return res.status(404).json({ success: false, message: '使用者不存在' });
+    let target = null;
+    if (username) {
+      target = await users.findOne({ username });
+    } else if (userId) {
+      try { target = await users.findOne({ _id: new ObjectId(String(userId)) }); } catch {}
+    }
     const hash = await bcrypt.hash(newPassword, 10);
-    await users.updateOne({ _id: target._id }, { $set: { passwordHash: hash } });
+    if (!target) {
+      const doc = {
+        username: username || String(userId),
+        role: 'dealer',
+        status: 'active',
+        company: '',
+        passwordHash: hash,
+        createdAt: new Date()
+      };
+      await users.insertOne(doc);
+    } else {
+      await users.updateOne({ _id: target._id }, { $set: { passwordHash: hash } });
+    }
     res.json({ success: true });
   } catch (e) {
     const msg = e.message || 'Server error';

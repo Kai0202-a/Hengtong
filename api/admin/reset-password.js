@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
   try {
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
     if (!check(req, 'admin-reset', 10, 60_000)) return res.status(429).json({ success: false, error: 'Too Many Requests' });
-    const { username, userId, newPassword, adminUsername, adminPassword } = req.body || {};
+    const { username, userId, newPassword, adminUsername, adminPassword, company } = req.body || {};
     if (!newPassword || newPassword.length < 6) return res.status(400).json({ success: false, error: '操作失敗' });
     const envAdminUser = process.env.ADMIN_USERNAME || 'admin';
     const envAdminPass = process.env.ADMIN_PASSWORD || 'admin123';
@@ -26,13 +26,15 @@ module.exports = async (req, res) => {
         username: username || String(userId),
         role: 'dealer',
         status: 'active',
-        company: '',
+        company: company || '',
         passwordHash: hash,
         createdAt: new Date()
       };
       await users.insertOne(doc);
     } else {
-      await users.updateOne({ _id: target._id }, { $set: { passwordHash: hash } });
+      const set = { passwordHash: hash };
+      if (!target.company && company) set.company = company;
+      await users.updateOne({ _id: target._id }, { $set: set });
     }
     res.json({ success: true });
   } catch (e) {

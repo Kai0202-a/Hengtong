@@ -29,8 +29,19 @@ module.exports = async (req, res) => {
     if (user.status === 'suspended') return res.status(403).json({ success: false, error: '操作失敗' });
     if (user.status === 'pending') return res.status(403).json({ success: false, error: '操作失敗' });
 
+    let company = user.company || user.name;
+    try {
+      const dealers = db.collection('dealers');
+      const d = await dealers.findOne({ username: user.username });
+      if (d && (d.company || d.name)) company = d.company || d.name;
+    } catch {}
+    try {
+      if (company && !user.company) {
+        await db.collection('users').updateOne({ _id: user._id }, { $set: { company } });
+      }
+    } catch {}
     const token = jwt.sign({ username: user.username, role: user.role }, process.env.JWT_SECRET || 'dev-secret', { expiresIn: '12h' });
-    res.json({ success: true, data: { username: user.username, role: user.role, company: user.company || user.name }, token });
+    res.json({ success: true, data: { username: user.username, role: user.role, company }, token });
   } catch (e) {
     res.status(500).json({ success: false, error: '操作失敗' });
   }

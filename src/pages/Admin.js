@@ -1201,7 +1201,7 @@ function Admin() {
                             style={{ marginLeft: 8, padding: '6px 8px', background: '#34495e', color: '#f5f6fa', border: '1px solid #4a5f7a', borderRadius: 4, fontSize: 12 }}
                           />
                           <button
-                            onClick={() => resetDealerPassword(dealer.username, dealer._id || dealer.id)}
+                            onClick={() => resetDealerPassword(dealer.username, dealer._id || dealer.id, dealer.company || dealer.name || dealer.username)}
                             style={{ marginLeft: 8, padding: '6px 12px', background: '#E91E63', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
                           >
                             🔐 重設密碼

@@ -89,6 +89,7 @@ export default async function handler(req, res) {
     client = await connectToDatabase();
     const db = client.db(DB_NAME);
     const collection = db.collection('dealers');
+    const usersCol = db.collection('users');
 
     if (req.method === 'GET') {
       const dealers = await collection.find({}).toArray();
@@ -137,6 +138,22 @@ export default async function handler(req, res) {
       };
       
       const result = await collection.insertOne(newDealer);
+
+      await usersCol.updateOne(
+        { username: newDealer.username },
+        {
+          $set: {
+            username: newDealer.username,
+            passwordHash: newDealer.password,
+            role: 'dealer',
+            status: 'pending',
+            company: newDealer.company,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        },
+        { upsert: true }
+      );
       
       // 不返回密碼
       const { password: _, ...dealerResponse } = newDealer;
@@ -177,6 +194,15 @@ export default async function handler(req, res) {
           } 
         }
       );
+
+      const dealer = await collection.findOne({ _id: new ObjectId(id) });
+      if (dealer) {
+        await usersCol.updateOne(
+          { username: dealer.username },
+          { $set: { status, company: dealer.company, updatedAt: new Date() } },
+          { upsert: true }
+        );
+      }
       
       if (result.matchedCount === 0) {
         res.status(404).json({ success: false, error: '找不到該通路商' });

@@ -11,7 +11,9 @@ module.exports = async (req, res) => {
     if (!username || !password) return res.status(400).json({ success: false, error: '操作失敗' });
     const db = await getDb();
     const users = db.collection('users');
-    let user = await users.findOne({ username });
+    const uname = String(username).trim();
+    const unameLower = uname.toLowerCase();
+    let user = await users.findOne({ username: { $in: [uname, unameLower] } });
 
     if (!user) {
       const adminUser = process.env.ADMIN_USERNAME;
@@ -23,6 +25,40 @@ module.exports = async (req, res) => {
       }
     }
 
+    if (!user) {
+      try {
+        const dealers = db.collection('dealers');
+        const d = await dealers.findOne({ username: { $in: [uname, unameLower] } });
+        if (d) {
+          if (d.status === 'suspended') return res.status(403).json({ success: false, error: '操作失敗' });
+          if (d.status === 'pending') return res.status(403).json({ success: false, error: '操作失敗' });
+          const passRaw = d.password || '';
+          let okDealer = false;
+          try {
+            if (typeof passRaw === 'string' && /^\$2[abxy]\$/.test(passRaw)) {
+              okDealer = await bcrypt.compare(password, passRaw);
+            } else {
+              okDealer = password === String(passRaw);
+            }
+          } catch {}
+          if (!okDealer) return res.status(401).json({ success: false, error: '帳號或密碼錯誤' });
+          const hashToUse = (typeof passRaw === 'string' && /^\$2[abxy]\$/.test(passRaw)) ? passRaw : await bcrypt.hash(String(password), 10);
+          const setDoc = {
+            username: d.username,
+            passwordHash: hashToUse,
+            role: 'dealer',
+            status: d.status || 'active',
+            company: d.company || d.name || '',
+            updatedAt: new Date()
+          };
+          await users.updateOne({ username: d.username }, { $set: setDoc, $setOnInsert: { createdAt: new Date() } }, { upsert: true });
+          if (!(typeof passRaw === 'string' && /^\$2[abxy]\$/.test(passRaw))) {
+            await dealers.updateOne({ _id: d._id }, { $set: { password: hashToUse } });
+          }
+          user = await users.findOne({ username: d.username });
+        }
+      } catch {}
+    }
     if (!user) return res.status(401).json({ success: false, error: '帳號或密碼錯誤' });
     const ok = await bcrypt.compare(password, user.passwordHash || '');
     if (!ok) return res.status(401).json({ success: false, error: '帳號或密碼錯誤' });

@@ -10,12 +10,16 @@ module.exports = async (req, res) => {
     if (!newPassword || newPassword.length < 6) return res.status(400).json({ success: false, error: '操作失敗' });
     const db = await getDb();
     const users = db.collection('users');
-    const target = await users.findOne({ username });
+    const dealers = db.collection('dealers');
+    const uname = String(username).trim();
+    const unameLower = uname.toLowerCase();
+    const target = await users.findOne({ username: { $in: [uname, unameLower] } });
     if (!target) return res.status(404).json({ success: false, error: '操作失敗' });
     const ok = await bcrypt.compare(currentPassword || '', target.passwordHash || '');
     if (!ok) return res.status(401).json({ success: false, error: '操作失敗' });
     const hash = await bcrypt.hash(newPassword, 10);
     await users.updateOne({ _id: target._id }, { $set: { passwordHash: hash } });
+    await dealers.updateOne({ username: { $in: [uname, unameLower] } }, { $set: { password: hash } });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: '操作失敗' });

@@ -128,3 +128,14 @@ function App() {
 }
 
 export default App;
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const loc = window.location;
+        const isLocal = /localhost|127\.0\.0\.1/.test(loc.hostname);
+        if (loc.protocol === 'http:' && !isLocal) {
+          loc.href = 'https://' + loc.host + loc.pathname + loc.search + loc.hash;
+        }
+      }
+    } catch {}
+  }, []);

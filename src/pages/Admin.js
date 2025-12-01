@@ -405,7 +405,14 @@ function Admin() {
       const newPassword = (dealerResetPw[dealerUsername] || '').trim();
       if (!newPassword || newPassword.length < 6) { alert('請輸入至少 6 碼的新密碼'); return; }
       const headers = { 'Content-Type': 'application/json' };
-      const adminUsername = process.env.REACT_APP_ADMIN_USERNAME || 'admin';
+      const adminUsername = (() => {
+        try {
+          const u = JSON.parse(localStorage.getItem('user')) || {};
+          return u.username || (process.env.REACT_APP_ADMIN_USERNAME || 'admin');
+        } catch {
+          return process.env.REACT_APP_ADMIN_USERNAME || 'admin';
+        }
+      })();
       const adminPassword = (adminConfirmPw[dealerUsername] || '').trim();
       if (!adminPassword) { alert('請輸入管理者密碼以確認'); return; }
       const payload = { username: dealerUsername, newPassword, adminUsername, adminPassword };

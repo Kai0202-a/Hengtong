@@ -1,14 +1,15 @@
 import { MongoClient } from 'mongodb';
 
-// MongoDB 連接配置
-const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const DB_NAME = process.env.DB_NAME || 'hengtong';
+// MongoDB 連接配置（僅環境變數）
+const uri = process.env.MONGODB_URI;
+const DB_NAME = process.env.DB_NAME || process.env.MONGODB_DB || 'hengtong';
 
 // OpenAI API 金鑰配置
 const apiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key-here';
 
 // 數據庫連接函數
 async function connectToDatabase() {
+  if (!uri) throw new Error('MONGODB_URI not configured');
   const client = new MongoClient(uri);
   await client.connect();
   return client;

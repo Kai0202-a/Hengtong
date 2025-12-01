@@ -1,8 +1,8 @@
 import { MongoClient } from 'mongodb';
 
-// 使用環境變數替換硬編碼的連線字串
-const uri = process.env.MONGODB_URI || 'mongodb+srv://a85709820:zZ_7392786@cluster0.aet0edn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const DB_NAME = process.env.DB_NAME || 'hengtong';
+// 僅使用環境變數連線字串
+const uri = process.env.MONGODB_URI;
+const DB_NAME = process.env.DB_NAME || process.env.MONGODB_DB || 'hengtong';
 
 export default async function handler(req, res) {
   // CORS 設定 - 使用環境變數
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
+      if (!uri) throw new Error('MONGODB_URI not configured');
       client = new MongoClient(uri);
       await client.connect();
       const db = client.db(DB_NAME);
@@ -70,6 +71,7 @@ export default async function handler(req, res) {
   
   else if (req.method === 'POST') {
     try {
+      if (!uri) throw new Error('MONGODB_URI not configured');
       client = new MongoClient(uri);
       await client.connect();
       const db = client.db(DB_NAME);

@@ -52,12 +52,14 @@ export default async function handler(req, res) {
       // 獲取特定通路商的在店庫存
       const { dealerUsername } = req.query;
       
-      if (!dealerUsername) {
-        res.status(400).json({ success: false, error: '缺少通路商帳號' });
-        return;
-      }
+    if (!dealerUsername) {
+      res.status(400).json({ success: false, error: '缺少通路商帳號' });
+      return;
+    }
 
-      const inventory = await collection.findOne({ dealerUsername });
+      const raw = String(dealerUsername).trim();
+      const uname = raw.toLowerCase();
+      const inventory = await collection.findOne({ dealerUsername: { $in: [raw, uname] } });
       
       if (!inventory) {
         // 如果沒有記錄，返回空庫存
@@ -79,7 +81,9 @@ export default async function handler(req, res) {
         return;
       }
 
-      const filter = { dealerUsername };
+      const raw = String(dealerUsername).trim();
+      const uname = raw.toLowerCase();
+      const filter = { dealerUsername: uname };
       const now = new Date();
       
       let updateOperation;
@@ -92,7 +96,7 @@ export default async function handler(req, res) {
             updatedAt: now
           },
           $setOnInsert: {
-            dealerUsername,
+            dealerUsername: uname,
             createdAt: now
           }
         };
@@ -106,7 +110,7 @@ export default async function handler(req, res) {
             updatedAt: now
           },
           $setOnInsert: {
-            dealerUsername,
+            dealerUsername: uname,
             createdAt: now
           }
         };
@@ -120,7 +124,7 @@ export default async function handler(req, res) {
             updatedAt: now
           },
           $setOnInsert: {
-            dealerUsername,
+            dealerUsername: uname,
             createdAt: now
           }
         };

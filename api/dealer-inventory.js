@@ -23,15 +23,15 @@ export default async function handler(req, res) {
     ? process.env.ALLOWED_ORIGINS.split(',').concat([
         /^https:\/\/hengtong.*\.vercel\.app$/
       ])
-    : [
-        'https://hengtong.vercel.app',
-        'https://hengtong-1cac747lk-kais-projects-975b317e.vercel.app',
-        /^https:\/\/hengtong.*\.vercel\.app$/
-      ];
+    : '*';
   
-  const origin = req.headers.origin;
-  if (allowedOrigins.some(allowed => typeof allowed === 'string' ? allowed === origin : allowed.test(origin))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  if (allowedOrigins === '*') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else {
+    const origin = req.headers.origin;
+    if (allowedOrigins.some(allowed => typeof allowed === 'string' ? allowed === origin : allowed.test(origin))) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');

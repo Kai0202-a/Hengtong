@@ -59,14 +59,37 @@ export default async function handler(req, res) {
 
       const raw = String(dealerUsername).trim();
       const uname = raw.toLowerCase();
-      const inventory = await collection.findOne({ dealerUsername: { $in: [raw, uname] } });
+      const docRaw = await collection.findOne({ dealerUsername: raw });
+      const docLower = await collection.findOne({ dealerUsername: uname });
+      let inventory = docLower || docRaw;
+      if (docRaw && docLower && String(docRaw._id) !== String(docLower._id)) {
+        const invA = docRaw.inventory || {};
+        const invB = docLower.inventory || {};
+        const merged = { ...invA };
+        for (const k of Object.keys(invB)) {
+          const a = parseInt(merged[k] || 0);
+          const b = parseInt(invB[k] || 0);
+          merged[k] = (isNaN(b) ? a : Math.max(a, b));
+        }
+        const now = new Date();
+        await collection.updateOne(
+          { dealerUsername: uname },
+          { $set: { dealerUsername: uname, inventory: merged, updatedAt: now }, $setOnInsert: { createdAt: now } },
+          { upsert: true }
+        );
+        await collection.deleteOne({ _id: docRaw._id });
+        inventory = await collection.findOne({ dealerUsername: uname });
+      }
       
       if (!inventory) {
-        // 如果沒有記錄，返回空庫存
-        res.status(200).json({ 
-          success: true, 
-          data: { dealerUsername, inventory: {} } 
-        });
+        const now = new Date();
+        await collection.updateOne(
+          { dealerUsername: uname },
+          { $setOnInsert: { dealerUsername: uname, inventory: {}, createdAt: now, updatedAt: now } },
+          { upsert: true }
+        );
+        const created = await collection.findOne({ dealerUsername: uname });
+        res.status(200).json({ success: true, data: created || { dealerUsername: uname, inventory: {} } });
         return;
       }
 
@@ -83,7 +106,7 @@ export default async function handler(req, res) {
 
       const raw = String(dealerUsername).trim();
       const uname = raw.toLowerCase();
-      const filter = { dealerUsername: uname };
+      const filter = { dealerUsername: { $in: [raw, uname] } };
       const now = new Date();
       
       let updateOperation;
@@ -95,10 +118,7 @@ export default async function handler(req, res) {
             [`inventory.${productId}`]: parseInt(quantity),
             updatedAt: now
           },
-          $setOnInsert: {
-            dealerUsername: uname,
-            createdAt: now
-          }
+          $setOnInsert: { dealerUsername: uname, createdAt: now }
         };
       } else if (action === 'add') {
         // 增加庫存
@@ -109,10 +129,7 @@ export default async function handler(req, res) {
           $set: {
             updatedAt: now
           },
-          $setOnInsert: {
-            dealerUsername: uname,
-            createdAt: now
-          }
+          $setOnInsert: { dealerUsername: uname, createdAt: now }
         };
       } else if (action === 'subtract') {
         // 減少庫存
@@ -123,10 +140,7 @@ export default async function handler(req, res) {
           $set: {
             updatedAt: now
           },
-          $setOnInsert: {
-            dealerUsername: uname,
-            createdAt: now
-          }
+          $setOnInsert: { dealerUsername: uname, createdAt: now }
         };
       } else {
         res.status(400).json({ success: false, error: '無效的操作類型' });

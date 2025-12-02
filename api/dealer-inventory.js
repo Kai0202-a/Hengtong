@@ -77,8 +77,7 @@ export default async function handler(req, res) {
           { $set: { dealerUsername: uname, inventory: merged, updatedAt: now }, $setOnInsert: { createdAt: now } },
           { upsert: true }
         );
-        await collection.deleteOne({ _id: docRaw._id });
-        inventory = await collection.findOne({ dealerUsername: uname });
+        inventory = await collection.findOne({ dealerUsername: uname }) || docRaw;
       }
       
       if (!inventory) {

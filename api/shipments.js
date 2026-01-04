@@ -133,13 +133,13 @@ export default async function handler(req, res) {
           const pipeline = [
             { $match: match },
             { $project: proj },
-            { $group: { _id: groupField, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', 0 ] } } } },
+            { $group: { _id: groupField, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', '$amount' ] } } } },
             { $sort: { _id: 1 } }
           ];
           const groups = await collection.aggregate(pipeline).toArray();
           const totalsPipeline = [
             { $match: match },
-            { $group: { _id: null, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', 0 ] } } } }
+            { $group: { _id: null, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', '$amount' ] } } } }
           ];
           const totalsAgg = await collection.aggregate(totalsPipeline).toArray();
           const totals = totalsAgg[0] || { totalQuantity: 0, totalAmount: 0, totalCost: 0 };
@@ -154,7 +154,7 @@ export default async function handler(req, res) {
                 { $project: { company: 1, partName: 1, quantity: 1, amount: 1, price: 1, cost: 1, time: 1, createdAt: 1 } }
               ],
               totals: [
-                { $group: { _id: null, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', 0 ] } } } }
+                { $group: { _id: null, totalQuantity: { $sum: { $ifNull: [ '$quantity', 0 ] } }, totalAmount: { $sum: { $ifNull: [ '$amount', 0 ] } }, totalCost: { $sum: { $ifNull: [ '$cost', '$amount' ] } } } }
               ]
             } }
           ];

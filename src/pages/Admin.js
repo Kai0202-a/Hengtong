@@ -138,14 +138,20 @@ function Admin() {
     const rows = items.map(it => {
       const qty = it.quantity || 0;
       const amount = it.amount || 0;
-      const unitCost = (it.cost != null && qty) ? (it.cost / qty) : (qty ? (amount / qty) : 0);
+      // 修正：CSV 匯出的成本欄位應為總成本，以與合計欄位一致
+      // 如果有成本資料則使用之，否則使用總金額（視為無利潤）
+      const rowTotalCost = (it.cost != null) ? it.cost : amount;
       const unitPrice = (it.price != null) ? it.price : (qty ? (amount / qty) : 0);
       const date = it.time || it.createdAt || '';
-      return [String(date), it.company || '', it.partName || '', qty, unitCost, unitPrice, amount];
+      return [String(date), it.company || '', it.partName || '', qty, rowTotalCost, unitPrice, amount];
     });
     const totalQty = items.reduce((s, it) => s + (it.quantity || 0), 0);
     const totalAmount = items.reduce((s, it) => s + (it.amount || 0), 0);
-    const totalCost = items.reduce((s, it) => s + (it.cost || 0), 0);
+    // 修正：總成本計算需包含回退機制 (若無成本則視為成本=金額)
+    const totalCost = items.reduce((s, it) => {
+      const itemCost = (it.cost != null) ? it.cost : (it.amount || 0);
+      return s + itemCost;
+    }, 0);
     const totalProfit = totalAmount - totalCost;
     const escape = (v) => {
       if (typeof v === 'string') return '"' + v.replace(/"/g, '""') + '"';

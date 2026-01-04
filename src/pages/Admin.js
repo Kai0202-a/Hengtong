@@ -138,19 +138,19 @@ function Admin() {
     const rows = items.map(it => {
       const qty = it.quantity || 0;
       const amount = it.amount || 0;
-      // 修正：CSV 匯出的成本欄位應為總成本，以與合計欄位一致
-      // 如果有成本資料則使用之，否則使用總金額（視為無利潤）
-      const rowTotalCost = (it.cost != null) ? it.cost : amount;
+      // 修正：it.cost 為單位成本，需乘上數量才是總成本
+      // 若無成本資料，則以 amount (總金額) 作為總成本 (利潤為 0)
+      const unitCost = (it.cost != null) ? it.cost : (qty ? (amount / qty) : 0);
+      const rowTotalCost = (it.cost != null) ? (it.cost * qty) : amount;
       const unitPrice = (it.price != null) ? it.price : (qty ? (amount / qty) : 0);
       const date = it.time || it.createdAt || '';
       return [String(date), it.company || '', it.partName || '', qty, rowTotalCost, unitPrice, amount];
     });
     const totalQty = items.reduce((s, it) => s + (it.quantity || 0), 0);
     const totalAmount = items.reduce((s, it) => s + (it.amount || 0), 0);
-    // 修正：總成本計算需包含回退機制 (若無成本則視為成本=金額)
     const totalCost = items.reduce((s, it) => {
-      const itemCost = (it.cost != null) ? it.cost : (it.amount || 0);
-      return s + itemCost;
+      const itemTotalCost = (it.cost != null) ? (it.cost * (it.quantity || 0)) : (it.amount || 0);
+      return s + itemTotalCost;
     }, 0);
     const totalProfit = totalAmount - totalCost;
     const escape = (v) => {
@@ -942,8 +942,8 @@ function Admin() {
                 name: it.partName,
                 qty: it.quantity || 0,
                 amount: it.amount || 0,
-                unitCost: (it.cost != null && it.quantity) ? (it.cost / it.quantity) : (it.quantity ? ((it.amount && it.quantity) ? (it.amount / it.quantity) : 0) : 0),
-                totalCost: it.cost || 0,
+                unitCost: (it.cost != null) ? it.cost : (it.quantity ? ((it.amount && it.quantity) ? (it.amount / it.quantity) : 0) : 0),
+                totalCost: (it.cost != null) ? (it.cost * (it.quantity || 0)) : (it.amount || 0),
                 unitPrice: (it.price != null) ? it.price : (it.amount && it.quantity ? (it.amount / it.quantity) : 0)
               }));
               const totalQty = incomeSummaryData ? (incomeSummaryData.totalQuantity || 0) : rows.reduce((s, r) => s + (r.qty || 0), 0);

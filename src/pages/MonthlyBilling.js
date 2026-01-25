@@ -12,7 +12,6 @@ const MonthlyBilling = () => {
   const [billingData, setBillingData] = useState({});
   const [companies, setCompanies] = useState([]);
   const [availableMonths, setAvailableMonths] = useState([]);
-  const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryData, setSummaryData] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -186,7 +185,6 @@ const MonthlyBilling = () => {
 
   const fetchMonthlySummary = useCallback(async (company, month) => {
     try {
-      setSummaryLoading(true);
       const cacheKey = `mb_summary_${company}_${month}`;
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
@@ -211,7 +209,6 @@ const MonthlyBilling = () => {
       }
     } catch (e) {
     } finally {
-      setSummaryLoading(false);
     }
   }, [API_BASE_URL]);
 
@@ -251,7 +248,7 @@ const MonthlyBilling = () => {
     } else if (!selectedMonth || !newMonths.includes(selectedMonth)) {
       setSelectedMonth(newMonths[0]);
     }
-  }, [selectedCompany, billingData]);
+  }, [selectedCompany, billingData, selectedMonth]);
 
   useEffect(() => {
     const beforePrint = () => setIsPrinting(true);

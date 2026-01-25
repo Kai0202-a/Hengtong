@@ -67,12 +67,7 @@ function Admin() {
   });
   const [incomeSummaryLoading, setIncomeSummaryLoading] = useState(false);
   const [incomeSummaryData, setIncomeSummaryData] = useState(null);
-  const [showIncomeMatrix, setShowIncomeMatrix] = useState(false);
-  const [incomeMatrixLoading, setIncomeMatrixLoading] = useState(false);
-  const [incomeMatrixData, setIncomeMatrixData] = useState(null);
-  const [matrixGroupBy, setMatrixGroupBy] = useState('company');
-  const [matrixStartMonth, setMatrixStartMonth] = useState('');
-  const [matrixEndMonth, setMatrixEndMonth] = useState('');
+  
   useEffect(() => {
     try {
       const saved = localStorage.getItem('reportCompanyHeader');
@@ -84,53 +79,6 @@ function Admin() {
       localStorage.setItem('reportCompanyHeader', companyHeader || '');
     } catch {}
   }, [companyHeader]);
-  const exportIncomeMatrixCSV = () => {
-    if (!incomeMatrixData) return;
-    const headerLabel = matrixGroupBy === 'company' ? '商家' : '月份';
-    const header = [headerLabel, '數量', '金額', '成本', '利潤'];
-    const rows = (incomeMatrixData.groups || []).map(g => {
-      const qty = g.totalQuantity || 0;
-      const amt = g.totalAmount || 0;
-      const cost = g.totalCost || 0;
-      const profit = amt - cost;
-      return [g._id, qty, amt, cost, profit];
-    });
-    const totalQty = incomeMatrixData.totalQuantity || 0;
-    const totalAmt = incomeMatrixData.totalAmount || 0;
-    const totalCost = incomeMatrixData.totalCost || 0;
-    const totalProfit = totalAmt - totalCost;
-    const escape = (v) => {
-      if (typeof v === 'string') return '"' + v.replace(/"/g, '""') + '"';
-      return String(v);
-    };
-    const companyName = companyHeader || (process.env.REACT_APP_COMPANY_NAME || '恆通公司');
-    const ts = new Date();
-    const reportId = `RPT-${ts.getFullYear()}${String(ts.getMonth()+1).padStart(2,'0')}${String(ts.getDate()).padStart(2,'0')}${String(ts.getHours()).padStart(2,'0')}${String(ts.getMinutes()).padStart(2,'0')}${String(ts.getSeconds()).padStart(2,'0')}`;
-    const info = [
-      ['公司抬頭', companyName],
-      ['報表編號', reportId],
-      ['生成時間', ts.toLocaleString('zh-TW')],
-      ['報表類型', '收入總表'],
-      ['群組方式', matrixGroupBy === 'company' ? '依商家' : '依月份'],
-      ['期間', `${matrixStartMonth} ~ ${matrixEndMonth}`]
-    ];
-    const csvParts = [];
-    csvParts.push(info.map(row => row.map(escape).join(',')).join('\n'));
-    csvParts.push('');
-    csvParts.push(header.map(escape).join(','));
-    csvParts.push(rows.map(r => r.map(escape).join(',')).join('\n'));
-    csvParts.push('');
-    csvParts.push(['合計', totalQty, totalAmt, totalCost, totalProfit].map(escape).join(','));
-    const BOM = '\uFEFF';
-    const csv = csvParts.join('\n');
-    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `income_${matrixGroupBy}_${matrixStartMonth}_${matrixEndMonth}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
   const exportIncomeDetailCSV = () => {
     const items = (incomeSummaryData && incomeSummaryData.items) ? incomeSummaryData.items : [];
     if (!items.length) return;
@@ -140,7 +88,6 @@ function Admin() {
       const amount = it.amount || 0;
       // 修正：it.cost 為單位成本，需乘上數量才是總成本
       // 若無成本資料，則以 amount (總金額) 作為總成本 (利潤為 0)
-      const unitCost = (it.cost != null) ? it.cost : (qty ? (amount / qty) : 0);
       const rowTotalCost = (it.cost != null) ? (it.cost * qty) : amount;
       const unitPrice = (it.price != null) ? it.price : (qty ? (amount / qty) : 0);
       const date = it.time || it.createdAt || '';
@@ -624,9 +571,7 @@ function Admin() {
     if (selectedIncomeCompany && companies.length > 0 && !companies.includes(selectedIncomeCompany)) {
       setSelectedIncomeCompany("");
     }
-    if (!matrixStartMonth && months.length > 0) setMatrixStartMonth(months[months.length - 1]);
-    if (!matrixEndMonth && months.length > 0) setMatrixEndMonth(months[0]);
-  }, [orders]);
+  }, [orders, selectedIncomeCompany, selectedIncomeMonth]);
 
   useEffect(() => {
     try {
@@ -654,37 +599,13 @@ function Admin() {
     } finally {
       setIncomeSummaryLoading(false);
     }
-  }, [API_BASE_URL]);
+  }, []);
 
   useEffect(() => {
     if (showIncomeStats) {
       fetchIncomeSummary(selectedIncomeCompany || '', selectedIncomeMonth || '');
     }
   }, [showIncomeStats, selectedIncomeCompany, selectedIncomeMonth, fetchIncomeSummary]);
-
-  const fetchIncomeMatrix = useCallback(async () => {
-    try {
-      setIncomeMatrixLoading(true);
-      const params = [];
-      params.push('summary=true');
-      params.push(`groupBy=${encodeURIComponent(matrixGroupBy)}`);
-      if (matrixStartMonth) params.push(`startMonth=${encodeURIComponent(matrixStartMonth)}`);
-      if (matrixEndMonth) params.push(`endMonth=${encodeURIComponent(matrixEndMonth)}`);
-      if (matrixGroupBy === 'month' && selectedIncomeCompany) params.push(`company=${encodeURIComponent(selectedIncomeCompany)}`);
-      const url = `${API_BASE_URL}/api/shipments?${params.join('&')}`;
-      const resp = await fetch(url);
-      if (resp.ok) {
-        const result = await resp.json();
-        if (result.success && result.data) {
-          setIncomeMatrixData(result.data);
-        }
-      }
-    } catch (e) {
-      console.error('獲取收入總表失敗:', e);
-    } finally {
-      setIncomeMatrixLoading(false);
-    }
-  }, [API_BASE_URL, matrixGroupBy, matrixStartMonth, matrixEndMonth, selectedIncomeCompany]);
 
   // 新增：檢查是否需要自動清空（每月1號）
   // 修改自動清空檢查邏輯

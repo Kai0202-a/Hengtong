@@ -244,7 +244,14 @@ const partsData = [
     cost: 480, 
     price: 600, 
     image: "" 
-}
+  },
+  { id: 35, 
+    name: "5W30賽用機油(4.73L)", 
+    stock: 50, 
+    cost: 1300, 
+    price: 1700, 
+    image: "" 
+  }
 ];
 
 export default async function handler(req, res) {

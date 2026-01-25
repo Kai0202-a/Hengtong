@@ -32,5 +32,6 @@ export const partsData = [
   { id: 31, name: "K&N辛烷值提升劑99-2020", stock: 50, cost: 350, price: 400,endPrice: "750", image: ""},
   { id: 32, name: "K&N燃油系統清潔99-2050", stock: 50, cost: 350, price: 400,endPrice: "750", image: ""},
   { id: 33, name: "K&N柴油辛烷值提升劑99-2030", stock: 50, cost: 350, price: 400,endPrice: "750", image: ""},
-  { id: 34, name: "EI賽用級全取代水箱精", stock: 50, cost: 480, price: 600,endPrice: "1250", image: ""},
+  { id: 34, name: "EI賽用級全取代水箱精", stock: 50, cost: 480, price: 600,endPrice: "1250", image: "" },
+  { id: 35, name: "5W30賽用機油(4.73L)", stock: 50, cost: 1300, price: 1700, endPrice: "", image: "" }
 ];

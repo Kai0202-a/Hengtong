@@ -1396,6 +1396,42 @@ function Admin() {
           </button>
           
           <button 
+            onClick={async () => {
+              if (window.confirm('確定要將程式碼中的商品列表同步到資料庫嗎？\n(這將更新商品資訊，但保留庫存數量)')) {
+                try {
+                  const res = await fetch(`${API_BASE_URL}/api/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'sync_partsdata' })
+                  });
+                  const result = await res.json();
+                  if (result.success) {
+                    alert('同步成功！請重新整理頁面。');
+                    fetchProducts(); 
+                  } else {
+                    alert('同步失敗: ' + (result.message || '未知錯誤'));
+                  }
+                } catch (e) {
+                  console.error(e);
+                  alert('同步發生錯誤');
+                }
+              }
+            }}
+            style={{ 
+              padding: '16px', 
+              background: '#009688', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}
+          >
+            🔄 同步商品資料庫
+          </button>
+
+          <button 
             onClick={() => {
               const confirmed = window.confirm('確定要備份數據嗎？');
               if (confirmed) {

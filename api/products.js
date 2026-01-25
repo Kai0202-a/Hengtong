@@ -289,11 +289,42 @@ export default async function handler(req, res) {
     const inventoryCollection = db.collection('inventory');
 
     if (req.method === 'GET') {
-      // 優先從 MongoDB products 集合獲取數據
-      const products = await productsCollection.find({}).toArray();
+      // 1. 獲取當前 DB 中的商品列表
+      let products = await productsCollection.find({}).toArray();
       
+      // 2. 自動同步檢查：找出程式碼中有但 DB 中沒有的商品 (例如新增加的 ID 35)
+      const dbProductIds = new Set(products.map(p => p.id));
+      const missingProducts = partsData.filter(p => !dbProductIds.has(p.id));
+      
+      if (missingProducts.length > 0) {
+        console.log(`[Auto-Sync] 發現 ${missingProducts.length} 個新商品，正在同步至資料庫...`);
+        
+        // 準備商品文件 (排除 stock，因為 stock 在 inventory collection 管理)
+        const newProductDocs = missingProducts.map(p => {
+            const { stock, ...doc } = p;
+            return doc;
+        });
+        
+        if (newProductDocs.length > 0) {
+            await productsCollection.insertMany(newProductDocs);
+        }
+        
+        // 初始化新商品的庫存記錄 (預設為 0，或使用 partsData 中的 stock)
+        for (const p of missingProducts) {
+             await inventoryCollection.updateOne(
+                 { id: p.id },
+                 { $setOnInsert: { stock: p.stock || 0 } }, 
+                 { upsert: true }
+             );
+        }
+        
+        // 同步完成後，重新獲取完整的商品列表
+        products = await productsCollection.find({}).toArray();
+      }
+
+      // 3. 合併庫存資訊並回傳
       if (products.length > 0) {
-        // 如果 MongoDB 中有商品數據，合併庫存資訊
+        // 獲取所有庫存
         const inventory = await inventoryCollection.find({}).toArray();
         const inventoryMap = new Map(inventory.map(item => [item.id, item.stock]));
         
@@ -302,9 +333,12 @@ export default async function handler(req, res) {
           stock: inventoryMap.get(product.id) || 0
         }));
         
+        // 按照 ID 排序，確保前端顯示順序正確
+        productsWithStock.sort((a, b) => (a.id || 0) - (b.id || 0));
+        
         res.status(200).json({ success: true, data: productsWithStock });
       } else {
-        // 如果 MongoDB 中沒有商品數據，使用 partsData 並合併庫存
+        // 如果 DB 仍為空 (理論上不會發生，因為有 auto-sync)，使用 partsData
         const inventory = await inventoryCollection.find({}).toArray();
         const inventoryMap = new Map(inventory.map(item => [item.id, item.stock]));
         
